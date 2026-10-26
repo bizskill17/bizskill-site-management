@@ -1,0 +1,2688 @@
+/* Full-screen app pages: suppress any WordPress admin-bar residue. */
+html{margin-top:0!important}
+body.bsm-blank-body #wpadminbar{display:none!important}
+:root{--bg:#f5f6f8;--panel:#fff;--text:#1f2937;--muted:#6b7280;--line:#7eb6ff;--primary:#111827;--danger:#dc2626;--soft:#f9fafb;--radius:10px}
+*{box-sizing:border-box}.bsm-blank-body{margin:0;background:var(--bg);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text)}
+.bsm-app{min-height:100vh}.bsm-shell{min-height:100vh;display:flex}.bsm-sidebar{width:245px;background:#fff;border-right:1px solid var(--line);display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;z-index:40;overflow:hidden}.bsm-sidebar-head{padding:18px 16px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;flex:0 0 auto}.bsm-sidebar-head small{display:block;color:var(--muted);margin-top:2px}.bsm-logo{width:36px;height:36px;border-radius:8px;background:var(--primary);color:#fff;display:grid;place-items:center;font-weight:800}#bsm-nav{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding-bottom:12px;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent}#bsm-nav::-webkit-scrollbar{width:7px}#bsm-nav::-webkit-scrollbar-track{background:transparent}#bsm-nav::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}#bsm-nav::-webkit-scrollbar-thumb:hover{background:#94a3b8}.bsm-nav-group{padding:6px 8px 0}.bsm-nav-group>summary{list-style:none}.bsm-nav-group>summary::-webkit-details-marker{display:none}.bsm-nav-label{width:100%;border:0;background:transparent;padding:9px 10px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#9ca3af;font-weight:700;display:flex;align-items:center;justify-content:space-between;cursor:pointer;text-align:left;border-radius:7px;box-sizing:border-box}.bsm-nav-label:hover{background:#f8fafc;color:#6b7280}.bsm-nav-chevron{font-size:14px;line-height:1;transition:transform .18s ease}.bsm-nav-group[open] .bsm-nav-chevron{transform:rotate(180deg)}.bsm-nav-items{display:none;padding-top:2px}.bsm-nav-group[open]>.bsm-nav-items{display:block}.bsm-nav-item{display:block;width:100%;border:0;background:transparent;text-align:left;padding:9px 10px;border-radius:7px;color:#374151;cursor:pointer;text-decoration:none;box-sizing:border-box}.bsm-nav-item:hover,.bsm-nav-item.active{background:#f3f4f6;color:#111827;font-weight:600}.bsm-logout{margin:10px 12px 14px;flex:0 0 auto;background:#dc2626;color:white;border:0;border-radius:8px;padding:10px;cursor:pointer}.bsm-main{margin-left:245px;width:calc(100% - 245px);min-height:100vh}.bsm-topbar{height:76px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;gap:16px;position:sticky;top:0;z-index:25}.bsm-topbar h1{margin:0;font-size:21px}.bsm-muted{font-size:12px;color:var(--muted);margin-top:3px}.bsm-user-box{margin-left:auto;font-size:13px;font-weight:600}.bsm-content{padding:22px}.bsm-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:12px}.bsm-search{min-width:320px;max-width:520px;width:42%;height:40px}.bsm-spacer{flex:1}.bsm-btn,.bsm-icon-btn{border:1px solid var(--line);background:white;color:var(--text);border-radius:8px;padding:9px 13px;cursor:pointer}.bsm-btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}.bsm-btn-small{padding:6px 10px}.bsm-icon-btn{padding:8px 11px;font-size:18px}.bsm-panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}.bsm-panel-head{display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}.bsm-panel-head h3{margin:0}.bsm-panel-head .bsm-btn{margin-left:auto}.bsm-table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px 12px;border-bottom:1px solid var(--line);border-right:1px solid #111827;text-align:left;vertical-align:top}th{background:#fafafa;font-weight:700;white-space:nowrap}.num{text-align:right!important;font-variant-numeric:tabular-nums}.bsm-actions{white-space:nowrap}.bsm-actions button,.bsm-user-edit{border:0;background:transparent;cursor:pointer;padding:4px 7px}.bsm-action-delete{color:var(--danger)}.bsm-pill{display:inline-block;background:#f3f4f6;border-radius:999px;padding:3px 8px;font-size:11px;text-transform:capitalize}.bsm-empty,.bsm-loading{padding:24px;text-align:center;color:var(--muted)}.bsm-pagination{display:flex;justify-content:center;gap:14px;align-items:center;padding:12px}.bsm-filters{display:flex;flex-wrap:wrap;gap:10px;background:#fff;border:1px solid var(--line);padding:12px;border-radius:var(--radius);margin-bottom:12px}.bsm-filters label{min-width:160px;font-size:12px;color:var(--muted)}.bsm-filters input,.bsm-filters select{display:block;width:100%;margin-top:4px}.bsm-cards{display:grid;grid-template-columns:repeat(6,minmax(150px,1fr));gap:12px;margin-bottom:16px}.bsm-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:15px}.bsm-card span{font-size:12px;color:var(--muted);display:block}.bsm-card strong{font-size:21px;display:block;margin-top:8px}.bsm-modal{position:fixed;inset:0;background:rgba(17,24,39,.5);z-index:100;display:flex;align-items:flex-start;justify-content:center;padding:30px 14px;overflow:auto}.bsm-modal-panel{background:#fff;border-radius:12px;width:min(1120px,100%);box-shadow:0 20px 60px rgba(0,0,0,.2)}.bsm-modal-head{display:flex;align-items:center;padding:16px 18px;border-bottom:1px solid var(--line);position:static;background:#fff;border-radius:12px 12px 0 0}.bsm-modal-head h2{margin:0;font-size:18px}.bsm-modal-head button{margin-left:auto}.bsm-form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px}.bsm-form-grid label{font-size:12px;color:#4b5563}.bsm-form-grid label.wide{grid-column:1/-1}.bsm-form-grid input,.bsm-form-grid select,.bsm-form-grid textarea,.bsm-lines input,.bsm-lines select{display:block;width:100%;margin-top:5px}.bsm-form-grid textarea{min-height:72px}.bsm-form-actions{display:flex;justify-content:flex-end;gap:10px;padding:14px 16px;border-top:1px solid var(--line)}input,select,textarea{border:1px solid #d1d5db;border-radius:7px;padding:9px 10px;background:#fff;color:#111827;font:inherit}input:focus,select:focus,textarea:focus{outline:none;border-color:#6b7280;box-shadow:0 0 0 2px #f3f4f6}.bsm-lines{border-top:1px solid var(--line);padding:0 16px 16px}.bsm-lines-head{display:flex;align-items:center;padding:12px 0}.bsm-lines-head h3{margin:0}.bsm-lines-head button{margin-left:auto}.bsm-lines td{padding:7px;min-width:110px}.bsm-lines .line-field{display:block}.bsm-remove-line{border:0;background:#fee2e2;color:#b91c1c;border-radius:6px;padding:5px 8px;cursor:pointer}.bsm-docbox{padding:14px 16px;border-top:1px solid var(--line)}.bsm-docbox h3{margin:0 0 10px}.bsm-doc-upload{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.bsm-doc-list{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.bsm-doc-list a{padding:6px 9px;background:#f3f4f6;border-radius:6px;color:#111827;text-decoration:none;font-size:12px}.bsm-note{padding:12px 16px;background:#fffbeb;color:#92400e;border-top:1px solid #fef3c7;font-size:12px}.bsm-login-card{width:min(420px,calc(100% - 28px));margin:9vh auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:26px;box-shadow:0 15px 50px rgba(0,0,0,.08)}.bsm-login-card h2{margin:14px 0}.bsm-login-card label{display:block;margin:12px 0;font-size:13px}.bsm-login-card input{display:block;width:100%;margin-top:5px}.bsm-login-card button{width:100%;margin-top:8px}.bsm-brand{font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}.bsm-form-msg{color:#b91c1c;font-size:12px;margin-top:8px}.bsm-toast{position:fixed;right:18px;bottom:18px;background:#111827;color:#fff;padding:11px 14px;border-radius:8px;z-index:200}.bsm-toast.error{background:#b91c1c}.mobile-only{display:none}
+@media(max-width:1100px){.bsm-cards{grid-template-columns:repeat(3,1fr)}.bsm-form-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.mobile-only{display:inline-block}.bsm-sidebar{transform:translateX(-100%);transition:.2s}.bsm-sidebar.open{transform:translateX(0)}.bsm-main{margin-left:0;width:100%}.bsm-topbar{padding:0 12px;height:68px}.bsm-content{padding:12px}.bsm-search{min-width:0;width:100%}.bsm-toolbar{flex-wrap:wrap}.bsm-toolbar .bsm-spacer{display:none}.bsm-cards{grid-template-columns:repeat(2,1fr)}.bsm-form-grid{grid-template-columns:1fr}.bsm-form-grid label.wide{grid-column:auto}.bsm-modal{padding:0}.bsm-modal-panel{min-height:100vh;border-radius:0}.bsm-user-box{display:none}.bsm-filters{display:grid!important;grid-template-columns:1fr 1fr}.bsm-table-wrap{border-radius:0}th,td{padding:8px 9px}.bsm-sidebar-head .mobile-only{margin-left:auto}.bsm-lines{padding:0 8px 12px}}
+
+/* v0.1.7 visual refresh — dark interactive sidebar + light workspace */
+:root{
+  --bsm-navy-950:#071a35;
+  --bsm-navy-900:#0a2347;
+  --bsm-navy-800:#12366a;
+  --bsm-blue:#1769ff;
+  --bsm-blue-2:#2b7cff;
+  --bsm-workspace:#f4f8fd;
+  --bsm-card:#ffffff;
+}
+.bsm-blank-body{
+  background:
+    radial-gradient(circle at 92% 92%,rgba(64,128,255,.10),transparent 27%),
+    linear-gradient(135deg,#f8fbff 0%,#f2f7fd 58%,#eef5ff 100%);
+}
+.bsm-sidebar{
+  width:245px;
+  color:#eef5ff;
+  background:
+    radial-gradient(circle at 15% 8%,rgba(44,118,255,.20),transparent 25%),
+    radial-gradient(circle at 90% 92%,rgba(50,104,205,.16),transparent 28%),
+    linear-gradient(180deg,var(--bsm-navy-900) 0%,var(--bsm-navy-950) 100%);
+  border-right:1px solid rgba(255,255,255,.08);
+  box-shadow:10px 0 28px rgba(7,26,53,.08);
+}
+.bsm-sidebar-head{
+  min-height:96px;
+  padding:18px 16px;
+  border-bottom:1px solid rgba(255,255,255,.10);
+  background:linear-gradient(135deg,rgba(34,91,170,.35),rgba(15,49,100,.10));
+}
+.bsm-sidebar-head strong{color:#fff;font-size:15px;letter-spacing:.01em}
+.bsm-sidebar-head small{color:#b9c9e2;margin-top:4px}
+.bsm-logo{
+  width:42px;height:42px;border-radius:11px;
+  background:linear-gradient(145deg,#102d55,#04152c);
+  box-shadow:0 8px 20px rgba(0,0,0,.18);
+  font-size:17px;
+}
+#bsm-nav{padding:10px 10px 14px;scrollbar-color:rgba(184,205,237,.45) transparent}
+#bsm-nav::-webkit-scrollbar-thumb{background:rgba(184,205,237,.45)}
+#bsm-nav::-webkit-scrollbar-thumb:hover{background:rgba(220,232,250,.65)}
+.bsm-nav-group{padding:2px 0;margin:0 0 3px}
+.bsm-nav-label{
+  min-height:42px;padding:9px 10px;border-radius:9px;
+  color:#dbe7f7;font-size:13px;letter-spacing:0;text-transform:none;font-weight:600;
+  transition:background .16s ease,color .16s ease,transform .16s ease;
+}
+.bsm-nav-label-main{display:flex;align-items:center;gap:10px;min-width:0}
+.bsm-nav-section-icon{display:inline-grid;place-items:center;width:24px;height:24px;color:#d9e7ff;font-size:17px;line-height:1}
+.bsm-nav-label:hover{background:rgba(255,255,255,.07);color:#fff}
+.bsm-nav-group[open]>.bsm-nav-label{
+  color:#fff;
+  background:linear-gradient(90deg,rgba(32,99,222,.68),rgba(30,78,157,.30));
+  box-shadow:inset 3px 0 0 #4f90ff;
+}
+.bsm-nav-chevron{color:#c9d9ef;font-size:13px}
+.bsm-nav-items{padding:6px 0 5px 12px}
+.bsm-nav-item{
+  display:flex;align-items:center;gap:10px;min-height:39px;
+  padding:8px 10px;border-radius:8px;
+  color:#d4e0f1;font-size:13px;
+  transition:background .15s ease,color .15s ease,transform .15s ease,box-shadow .15s ease;
+}
+.bsm-nav-item-icon{display:inline-grid;place-items:center;width:18px;min-width:18px;color:#bcd1ee;font-size:14px}
+.bsm-nav-item:hover{background:rgba(255,255,255,.08);color:#fff;transform:translateX(2px)}
+.bsm-nav-item.active{
+  color:#fff;font-weight:700;
+  background:linear-gradient(90deg,var(--bsm-blue) 0%,var(--bsm-blue-2) 100%);
+  box-shadow:0 7px 18px rgba(23,105,255,.28),inset 0 0 0 1px rgba(255,255,255,.12);
+}
+.bsm-nav-item.active .bsm-nav-item-icon{color:#fff}
+
+.bsm-sidebar-user{
+  flex:0 0 auto;margin:8px 12px 0;padding:10px 12px;border-radius:10px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10);
+  color:#fff;font-size:13px;font-weight:700;line-height:1.25;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;
+}
+.bsm-sidebar-user:empty{display:none}
+.bsm-logout{
+  min-height:46px;margin:10px 12px 14px;border-radius:10px;
+  background:linear-gradient(90deg,#ef2e35,#ff3838);
+  box-shadow:0 8px 20px rgba(239,46,53,.22);
+  font-weight:700;
+}
+.bsm-logout:hover{filter:brightness(.97)}
+.bsm-main{background:transparent}
+.bsm-topbar{
+  height:76px;background:rgba(255,255,255,.96);
+  border-bottom:1px solid #e3eaf3;
+  box-shadow:0 6px 18px rgba(44,72,110,.04);
+  backdrop-filter:blur(10px);
+}
+.bsm-topbar h1{font-size:24px;color:#0d203c;font-weight:750;letter-spacing:-.02em}
+.bsm-muted{color:#6f7f95;font-size:12px}
+.bsm-user-box{display:none}
+.bsm-content{padding:28px 28px 34px}
+.bsm-toolbar{background:var(--bsm-card);border:1px solid #e1e9f3;border-radius:14px;padding:14px 16px;margin-bottom:14px;box-shadow:0 8px 24px rgba(28,58,97,.05)}
+.bsm-search{height:44px;border-color:#cfdceb;background:#fbfdff;padding-left:13px}
+.bsm-btn,.bsm-icon-btn{border-color:#dbe5f0;border-radius:9px}
+.bsm-btn-primary{background:linear-gradient(180deg,#1f74ff,#0f62ee);border-color:#1769ff;box-shadow:0 6px 14px rgba(23,105,255,.18)}
+.bsm-btn-primary:hover{filter:brightness(.98)}
+.bsm-panel{
+  border:1px solid #e1e9f3;border-radius:14px;background:rgba(255,255,255,.98);
+  box-shadow:0 10px 30px rgba(29,59,96,.055);
+}
+.bsm-panel-head{padding:15px 18px;border-bottom:1px solid #e7edf5}
+.bsm-panel-head h3{color:#122744}
+th{background:#f3f7fc;color:#122744;border-bottom:1px solid #dce6f1}
+th,td{padding:11px 12px;border-right:1px solid #e7edf5}
+tbody tr:hover td{background:#fbfdff}
+.bsm-pill{background:#e9f8f1;color:#0b8f5a;font-weight:700;padding:4px 9px}
+.bsm-filters{border-color:#e1e9f3;border-radius:14px;box-shadow:0 8px 24px rgba(28,58,97,.04)}
+.bsm-card{border-color:#e1e9f3;border-radius:14px;box-shadow:0 8px 24px rgba(28,58,97,.05)}
+.bsm-card strong{color:#102746}
+input,select,textarea{border-color:#cfd9e6;border-radius:9px}
+input:focus,select:focus,textarea:focus{border-color:#6aa0ff;box-shadow:0 0 0 3px rgba(23,105,255,.10)}
+.bsm-modal-panel{border:1px solid #e3eaf3;box-shadow:0 25px 70px rgba(7,26,53,.22)}
+.bsm-pagination{justify-content:flex-end;padding:14px 16px}
+.bsm-pagination button{min-width:36px}
+@media(max-width:760px){
+  .bsm-content{padding:14px}
+  .bsm-sidebar{box-shadow:14px 0 34px rgba(7,26,53,.26)}
+  .bsm-sidebar-head{min-height:82px}
+  .bsm-toolbar{padding:10px}
+}
+
+
+/* v0.1.19 - full cell borders on every plugin table */
+.bsm-app table{border-collapse:collapse;border:1px solid #d8e2ee;}
+.bsm-app table th,.bsm-app table td{border:1px solid #d8e2ee !important;}
+.bsm-app .bsm-lines table{border:1px solid #d8e2ee;}
+.bsm-app .bsm-lines th,.bsm-app .bsm-lines td{border:1px solid #d8e2ee !important;}
+
+/* v0.1.21 Excel download icon */
+.bsm-excel-btn{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;padding:8px;color:#167c45;background:#fff}.bsm-excel-btn:hover{background:#eefaf3;border-color:#9bd4b4}.bsm-excel-btn svg{width:19px;height:19px;display:block}
+
+/* v0.1.22 required fields and inline master add */
+.bsm-required{color:#dc2626;font-weight:800;margin-left:3px}.bsm-field-label{display:inline-block;margin-bottom:6px}.bsm-select-add{display:flex;gap:7px;align-items:stretch}.bsm-select-add select{flex:1;min-width:0}.bsm-quick-add{width:42px;min-width:42px;border:1px solid #2563eb;background:#2563eb;color:#fff;border-radius:8px;font-size:22px;font-weight:700;cursor:pointer;line-height:1}.bsm-quick-add:hover{filter:brightness(.95)}
+
+/* v0.1.23 quick master modal */
+.bsm-quick-modal{position:fixed;inset:0;background:rgba(15,23,42,.58);z-index:180;display:flex;align-items:center;justify-content:center;padding:20px}.bsm-quick-panel{width:min(460px,calc(100% - 28px));background:#fff;border:1px solid #dbe5f0;border-radius:14px;box-shadow:0 28px 80px rgba(7,26,53,.30);overflow:hidden}.bsm-quick-head{display:flex;align-items:center;padding:16px 18px;border-bottom:1px solid var(--line)}.bsm-quick-head h3{margin:0;font-size:18px}.bsm-quick-head .bsm-icon-btn{margin-left:auto}.bsm-quick-body{padding:20px}.bsm-quick-body label{display:block;font-size:12px;color:#4b5563}.bsm-quick-body input{display:block;width:100%;margin-top:7px;box-sizing:border-box}.bsm-quick-actions{display:flex;justify-content:flex-end;gap:10px;padding:14px 18px;border-top:1px solid var(--line);background:#fafcff}.bsm-required-star{color:#dc2626;font-weight:700}.bsm-quick-modal .bsm-form-msg{min-height:18px;margin-top:8px}.bsm-quick-modal[style*="display:none"]{display:none!important}
+.bsm-btn-danger{background:#dc2626;color:#fff;border-color:#dc2626}.bsm-btn-danger:hover{background:#b91c1c}.bsm-approval-actions{display:flex;justify-content:flex-start;margin-top:14px}.bsm-quick-item-grid{grid-template-columns:repeat(2,minmax(0,1fr))}@media(max-width:700px){.bsm-quick-item-grid{grid-template-columns:1fr}}
+
+.bsm-invalid{border-color:#dc2626!important;box-shadow:0 0 0 3px rgba(220,38,38,.12)!important;}
+
+/* v0.1.29 delete actions */
+.bsm-action-delete,.bsm-user-delete{color:#991b1b!important}.bsm-action-delete:hover,.bsm-user-delete:hover{color:#7f1d1d!important;background:#fee2e2!important;border-radius:6px}
+
+/* v0.1.30 custom delete icon */
+.bsm-delete-icon{display:block;width:16px;height:16px;object-fit:contain}.bsm-action-delete,.bsm-user-delete{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle}.bsm-action-delete:hover,.bsm-user-delete:hover{background:#fee2e2!important;border-radius:6px}
+
+
+/* v0.1.31 searchable dropdowns — no search icon */
+.bsm-native-select{position:absolute!important;opacity:0!important;pointer-events:none!important;width:1px!important;height:1px!important;margin:0!important;padding:0!important;border:0!important;clip:rect(0 0 0 0)!important;clip-path:inset(50%)!important;white-space:nowrap!important;}
+.bsm-searchable-select{position:relative;width:100%;min-width:0;font-size:13px;color:#172b4d;}
+.bsm-select-control{position:relative;display:flex;align-items:center;width:100%;min-height:40px;background:#fff;border:1px solid #cfd9e6;border-radius:9px;transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;}
+.bsm-select-search{width:100%!important;height:38px!important;min-height:38px!important;border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;padding:8px 34px 8px 12px!important;border-radius:9px!important;font:inherit!important;color:#172b4d!important;box-sizing:border-box!important;}
+.bsm-select-search::placeholder{color:#7a8798;opacity:1;}
+.bsm-select-arrow{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-size:14px;color:#1f2937;pointer-events:auto;cursor:pointer;line-height:1;}
+.bsm-searchable-select.open .bsm-select-control{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.10);}
+.bsm-searchable-select.is-disabled .bsm-select-control{background:#f3f6fa;border-color:#d8e1ec;}
+.bsm-searchable-select.is-disabled .bsm-select-search{color:#6b7280!important;cursor:not-allowed;}
+.bsm-searchable-select.is-disabled .bsm-select-arrow{cursor:not-allowed;color:#9ca3af;}
+.bsm-select-menu{display:none;position:absolute;z-index:260;left:0;right:0;top:calc(100% + 4px);max-height:220px;overflow:auto;background:#fff;border:1px solid #d6e0ec;border-radius:9px;box-shadow:0 12px 28px rgba(15,35,65,.16);padding:4px;}
+.bsm-searchable-select.open .bsm-select-menu{display:block;}
+.bsm-select-option{display:block;width:100%;border:0;background:transparent;color:#172b4d;text-align:left;padding:9px 10px;border-radius:6px;font:inherit;cursor:pointer;white-space:normal;line-height:1.3;}
+.bsm-select-option:hover,.bsm-select-option.keyboard-active{background:#eef5ff;color:#0f4fbb;}
+.bsm-select-option.selected{background:#dbeafe;color:#0f4fbb;font-weight:600;}
+.bsm-select-empty{padding:12px 10px;color:#6b7280;text-align:center;font-size:12px;}
+.bsm-invalid-wrap .bsm-select-control{border-color:#dc2626!important;box-shadow:0 0 0 3px rgba(220,38,38,.12)!important;}
+.bsm-select-add>.bsm-searchable-select{flex:1;min-width:0;}
+.bsm-lines td .bsm-searchable-select{min-width:120px;}
+.bsm-filters .bsm-searchable-select{min-width:160px;}
+@media(max-width:760px){.bsm-select-menu{max-height:190px}.bsm-select-option{min-height:42px;padding:11px 10px}.bsm-select-search{font-size:16px!important;}}
+
+/* v0.1.34 requisition form polish */
+.bsm-lines th .bsm-required{margin-left:3px;color:#dc2626;font-weight:800}
+.bsm-lines td .bsm-field-label:empty{display:none}
+.bsm-lines td label.line-field{display:block;margin:0}
+.bsm-lines td .bsm-searchable-select{min-width:150px}
+.bsm-lines td .bsm-select-control{min-height:44px;background:#fff;border-color:#bfcddd}
+.bsm-lines td .bsm-select-search{height:42px!important;min-height:42px!important;padding:9px 34px 9px 12px!important;color:#102746!important}
+.bsm-lines td input,.bsm-lines td textarea{min-height:42px}
+.bsm-lines td .bsm-select-menu{min-width:220px}
+
+/* v0.1.35 - keep searchable dropdown menus fully visible inside line-item tables */
+.bsm-lines .bsm-table-wrap{overflow:visible;position:relative;}
+.bsm-lines table{position:relative;}
+.bsm-lines td{overflow:visible;position:relative;}
+.bsm-lines td:has(.bsm-searchable-select.open){z-index:420;}
+.bsm-lines .bsm-searchable-select.open{z-index:430;}
+.bsm-lines .bsm-select-menu{z-index:440;min-width:100%;width:max-content;max-width:340px;}
+@media(max-width:760px){
+  .bsm-lines .bsm-table-wrap{overflow-x:auto;overflow-y:visible;}
+  .bsm-lines .bsm-select-menu{width:260px;max-width:calc(100vw - 32px);}
+}
+
+
+/* v0.1.46 item-wise requisition approval layout */
+.bsm-approval-lines .bsm-col-item{width:30%}
+.bsm-approval-lines .bsm-col-requested{width:12%}
+.bsm-approval-lines .bsm-col-approved{width:13%}
+.bsm-approval-lines .bsm-col-rejected{width:13%}
+.bsm-approval-lines .bsm-col-unit{width:9%}
+.bsm-approval-lines .bsm-col-remarks{width:23%}
+.bsm-approval-lines td:first-child,.bsm-approval-lines th:first-child{min-width:220px}
+.bsm-approval-lines td:last-child,.bsm-approval-lines th:last-child{min-width:180px}
+.bsm-approval-lines td:nth-child(2),.bsm-approval-lines td:nth-child(3),.bsm-approval-lines td:nth-child(4),.bsm-approval-lines td:nth-child(5){white-space:nowrap}
+.bsm-approval-lines .bsm-approved-qty{max-width:150px;margin-left:auto}
+@media(max-width:760px){.bsm-approval-lines td:first-child,.bsm-approval-lines th:first-child{min-width:180px}.bsm-approval-lines td:last-child,.bsm-approval-lines th:last-child{min-width:150px}}
+
+
+/* v0.1.47 requisition entry layout */
+.bsm-requisition-lines table{table-layout:fixed;width:100%}
+.bsm-requisition-lines th:nth-child(1),.bsm-requisition-lines td:nth-child(1){width:38%}
+.bsm-requisition-lines th:nth-child(2),.bsm-requisition-lines td:nth-child(2){width:15%}
+.bsm-requisition-lines th:nth-child(3),.bsm-requisition-lines td:nth-child(3){width:15%}
+.bsm-requisition-lines th:nth-child(4),.bsm-requisition-lines td:nth-child(4){width:26%}
+.bsm-requisition-lines th:nth-child(5),.bsm-requisition-lines td:nth-child(5){width:6%}
+.bsm-requisition-lines td:nth-child(2) input,.bsm-requisition-lines td:nth-child(3) .bsm-searchable-select{min-width:0!important;width:100%!important}
+@media(max-width:760px){.bsm-requisition-lines table{min-width:760px}}
+
+/* v0.1.48 compact form tables + approval summary in one line */
+@media(min-width:1101px){
+  .bsm-form-grid.bsm-approval-summary{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px 16px;align-items:end}
+  .bsm-form-grid.bsm-approval-summary label{min-width:0}
+}
+.bsm-lines{padding:0 12px 10px}
+.bsm-lines-head{padding:8px 0}
+.bsm-lines-head h3{font-size:17px}
+.bsm-lines table{font-size:12px;border:1px solid #7eb6ff!important}
+.bsm-lines table th,.bsm-lines table td{border:1px solid #7eb6ff!important;padding:5px 7px!important;vertical-align:middle}
+.bsm-lines table th{padding-top:7px!important;padding-bottom:7px!important;background:#f2f7ff}
+.bsm-lines td input,.bsm-lines td textarea{min-height:32px!important;height:32px;padding:5px 8px!important;margin-top:0!important;border-radius:6px}
+.bsm-lines td textarea{height:34px!important;min-height:34px!important;resize:vertical}
+.bsm-lines td .bsm-select-control{min-height:32px!important;height:32px;border-radius:6px}
+.bsm-lines td .bsm-select-search{height:30px!important;min-height:30px!important;padding:4px 30px 4px 8px!important}
+.bsm-lines td .bsm-select-arrow{right:8px}
+.bsm-lines .bsm-remove-line{padding:3px 6px}
+.bsm-approval-lines .bsm-approved-qty{height:32px!important;min-height:32px!important}
+@media(max-width:1100px) and (min-width:761px){.bsm-form-grid.bsm-approval-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* v0.1.49 requisition summary in one desktop row */
+@media(min-width:1101px){
+  .bsm-form-grid.bsm-requisition-summary{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px 16px;align-items:end}
+  .bsm-form-grid.bsm-requisition-summary label{min-width:0}
+}
+@media(max-width:1100px) and (min-width:761px){.bsm-form-grid.bsm-requisition-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* v0.1.50 modal title/close icon scroll naturally with form */
+.bsm-modal-head{position:static!important;top:auto!important;z-index:auto!important;}
+
+
+/* v0.1.51 dispatch form: four key fields in one desktop row */
+@media(min-width:1101px){
+  .bsm-form-grid.bsm-dispatch-summary{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px 16px;align-items:end}
+  .bsm-form-grid.bsm-dispatch-summary label{min-width:0}
+  .bsm-form-grid.bsm-dispatch-summary label:nth-child(8){grid-column:span 2}
+  .bsm-form-grid.bsm-dispatch-summary label:nth-child(9){grid-column:span 2}
+}
+@media(max-width:1100px) and (min-width:761px){.bsm-form-grid.bsm-dispatch-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* v0.1.76 - Unit is master-controlled in transaction item rows */
+.bsm-line select[name="unit_id"]:disabled + .bsm-searchable-select .bsm-select-control{
+  background:#f3f6fa;
+  cursor:not-allowed;
+}
+.bsm-line select[name="unit_id"]:disabled + .bsm-searchable-select .bsm-select-search{
+  color:#475569;
+  cursor:not-allowed;
+}
+
+
+/* v0.1.83 - Material Inward header remarks below item table */
+.bsm-inward-bottom-remarks{display:block;margin:12px 12px 4px;font-size:12px;color:#4b5563}
+.bsm-inward-bottom-remarks textarea{display:block;width:100%;min-height:72px;margin-top:5px;resize:vertical}
+
+
+/* v0.1.89 - stronger form labels + clear read-only/disabled field styling */
+.bsm-form-grid label,
+.bsm-form-grid .bsm-field-label,
+.bsm-quick-body label,
+.bsm-inward-bottom-remarks,
+.bsm-login-card label{
+  color:#111827!important;
+}
+
+/* Native non-editable controls */
+.bsm-app input[readonly],
+.bsm-app input:disabled,
+.bsm-app textarea[readonly],
+.bsm-app textarea:disabled,
+.bsm-app select:disabled{
+  background:#e5e7eb!important;
+  color:#374151!important;
+  border-color:#cbd5e1!important;
+  cursor:not-allowed!important;
+  opacity:1!important;
+}
+
+/* Searchable-select replacement used for disabled selects */
+.bsm-app .bsm-searchable-select.is-disabled .bsm-select-control,
+.bsm-app .bsm-line select:disabled + .bsm-searchable-select .bsm-select-control{
+  background:#e5e7eb!important;
+  border-color:#cbd5e1!important;
+  cursor:not-allowed!important;
+}
+.bsm-app .bsm-searchable-select.is-disabled .bsm-select-search,
+.bsm-app .bsm-line select:disabled + .bsm-searchable-select .bsm-select-search{
+  color:#374151!important;
+  cursor:not-allowed!important;
+}
+.bsm-app .bsm-searchable-select.is-disabled .bsm-select-arrow,
+.bsm-app .bsm-line select:disabled + .bsm-searchable-select .bsm-select-arrow{
+  color:#6b7280!important;
+  cursor:not-allowed!important;
+}
+
+/* v0.1.90: inline item-row add/remove controls */
+.bsm-line-actions{white-space:nowrap;min-width:82px!important;text-align:center;vertical-align:middle!important}.bsm-add-line-inline,.bsm-remove-line{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0!important;border-radius:7px;cursor:pointer;font-size:18px;line-height:1}.bsm-add-line-inline{border:0;background:#2563eb;color:#fff;margin-right:6px}.bsm-add-line-inline:hover{background:#1d4ed8}.bsm-remove-line{border:0;background:#fee2e2;color:#b91c1c}.bsm-lines-head button#bsm-add-line{display:none!important}
+
+
+/* v0.1.91 - black borders throughout forms; keep intentional blue item-grid borders */
+.bsm-app input,
+.bsm-app select,
+.bsm-app textarea,
+.bsm-app .bsm-select-control,
+.bsm-app .bsm-toolbar,
+.bsm-app .bsm-panel,
+.bsm-app .bsm-filters,
+.bsm-app .bsm-modal-panel,
+.bsm-app .bsm-modal-head,
+.bsm-app .bsm-form-actions,
+.bsm-app .bsm-docbox,
+.bsm-app .bsm-quick-panel,
+.bsm-app .bsm-quick-head,
+.bsm-app .bsm-quick-actions {
+  border-color:#7eb6ff!important;
+}
+.bsm-app input[readonly],
+.bsm-app input:disabled,
+.bsm-app textarea[readonly],
+.bsm-app textarea:disabled,
+.bsm-app select:disabled,
+.bsm-app .bsm-searchable-select.is-disabled .bsm-select-control,
+.bsm-app .bsm-line select:disabled + .bsm-searchable-select .bsm-select-control {
+  border-color:#7eb6ff!important;
+}
+/* Preserve the established blue borders of the compact item tables. */
+.bsm-app .bsm-lines table,
+.bsm-app .bsm-lines table th,
+.bsm-app .bsm-lines table td {
+  border-color:#7eb6ff!important;
+}
+
+.bsm-app .bsm-select-menu{border-color:#7eb6ff!important;}
+
+
+/* v0.1.92 - keep inline + / x controls clearly inside their own action column */
+.bsm-lines th.bsm-line-actions-head,
+.bsm-lines td.bsm-line-actions{
+  width:86px!important;
+  min-width:86px!important;
+  max-width:86px!important;
+  padding:5px!important;
+  box-sizing:border-box;
+  text-align:center!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
+}
+.bsm-lines td.bsm-line-actions{
+  display:table-cell!important;
+  vertical-align:middle!important;
+}
+.bsm-lines td.bsm-line-actions .bsm-add-line-inline,
+.bsm-lines td.bsm-line-actions .bsm-remove-line{
+  width:30px!important;
+  min-width:30px!important;
+  height:30px!important;
+  margin:0!important;
+  vertical-align:middle;
+}
+.bsm-lines td.bsm-line-actions .bsm-add-line-inline{margin-right:6px!important;}
+
+
+/* v0.1.93 - consistent blue borders for all table cells/fields */
+.bsm-app table{border:1px solid #7eb6ff!important;}
+.bsm-app table th,.bsm-app table td{border:1px solid #7eb6ff!important;}
+.bsm-app table input,.bsm-app table select,.bsm-app table textarea{border-color:#7eb6ff!important;}
+.bsm-app table .bsm-select-control{border-color:#7eb6ff!important;}
+
+
+/* v0.1.94 - all application borders use the same blue line color */
+.bsm-app input,
+.bsm-app select,
+.bsm-app textarea,
+.bsm-app .bsm-select-control,
+.bsm-app .bsm-select-menu,
+.bsm-app .bsm-toolbar,
+.bsm-app .bsm-panel,
+.bsm-app .bsm-filters,
+.bsm-app .bsm-modal-panel,
+.bsm-app .bsm-modal-head,
+.bsm-app .bsm-form-actions,
+.bsm-app .bsm-docbox,
+.bsm-app .bsm-quick-panel,
+.bsm-app .bsm-quick-head,
+.bsm-app .bsm-quick-actions,
+.bsm-app .bsm-topbar,
+.bsm-app .bsm-sidebar,
+.bsm-app .bsm-sidebar-head,
+.bsm-app table,
+.bsm-app table th,
+.bsm-app table td {
+  border-color:#7eb6ff!important;
+}
+.bsm-app input[readonly],
+.bsm-app input:disabled,
+.bsm-app textarea[readonly],
+.bsm-app textarea:disabled,
+.bsm-app select:disabled,
+.bsm-app .bsm-searchable-select.is-disabled .bsm-select-control,
+.bsm-app .bsm-line select:disabled + .bsm-searchable-select .bsm-select-control {
+  border-color:#7eb6ff!important;
+}
+
+/* v0.1.98 - Daily Labour Report compact filter actions */
+.bsm-clear-report-btn,.bsm-excel-btn{width:42px;height:42px;display:inline-flex;align-items:center;justify-content:center;padding:9px}.bsm-clear-report-btn svg,.bsm-excel-btn svg{width:19px;height:19px}.bsm-clear-report-btn{color:#dc2626}
+
+
+/* v0.1.103 - dedicated Form views render directly inside page content */
+.bsm-inline-form-host{width:100%;}
+.bsm-inline-form-host .bsm-modal-panel.bsm-inline-panel{
+  width:100%!important;max-width:none!important;margin:0!important;
+  border-radius:10px!important;box-shadow:none!important;background:#fff;
+}
+.bsm-inline-form-host .bsm-inline-panel .bsm-modal-head{border-radius:10px 10px 0 0!important;}
+.bsm-inline-form-host .bsm-inline-panel #bsm-modal-close{display:none!important;}
+@media(max-width:760px){.bsm-inline-form-host .bsm-modal-panel.bsm-inline-panel{min-height:0!important;border-radius:8px!important;}}
+
+/* v0.1.104 User access permissions */
+.bsm-user-access{grid-column:1/-1;margin-top:6px}
+.bsm-access-note{padding:12px;border:1px solid #60a5fa;border-radius:9px;background:#eff6ff;color:#172b4d}
+.bsm-access-sites{margin-bottom:14px}
+.bsm-multiselect{position:relative;max-width:100%;margin-top:6px}
+.bsm-multiselect-control{height:40px;border:1px solid #60a5fa;border-radius:9px;background:#fff;display:flex;align-items:center;padding:0 10px;cursor:pointer}
+.bsm-multiselect-search{border:0!important;outline:0!important;box-shadow:none!important;flex:1;height:36px!important;background:transparent!important}
+.bsm-multiselect-menu{display:none;position:absolute;z-index:900;left:0;right:0;top:44px;max-height:230px;overflow:auto;background:#fff;border:1px solid #60a5fa;border-radius:9px;box-shadow:0 10px 28px rgba(15,23,42,.16);padding:6px}
+.bsm-multiselect.open .bsm-multiselect-menu{display:block}
+.bsm-multiselect-option{display:flex!important;align-items:center;gap:8px;padding:8px 9px;margin:0!important;cursor:pointer;border-radius:6px}
+.bsm-multiselect-option:hover{background:#eff6ff}
+.bsm-multiselect-option input{width:16px!important;height:16px!important;min-height:0!important;margin:0!important}
+.bsm-multiselect-selected{font-size:12px;color:#475569;margin-top:6px;min-height:18px}
+.bsm-access-table{overflow:auto;border:1px solid #60a5fa;border-radius:9px}
+.bsm-access-table table{width:100%;border-collapse:collapse}
+.bsm-access-table th,.bsm-access-table td{border:1px solid #60a5fa;padding:8px 10px;text-align:left}
+.bsm-access-table th:last-child,.bsm-access-table td:last-child{width:100px;text-align:center}
+.bsm-access-table input[type=checkbox]{width:17px!important;height:17px!important;min-height:0!important}
+.bsm-access-group{font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase}
+
+
+/* v0.1.111 contractor form: four fields per row on desktop */
+@media(min-width:1101px){
+  .bsm-form-grid.bsm-contractor-summary{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px 16px;align-items:end}
+  .bsm-form-grid.bsm-contractor-summary label{min-width:0}
+  .bsm-form-grid.bsm-contractor-summary label.wide{grid-column:1/-1}
+}
+@media(max-width:1100px) and (min-width:761px){
+  .bsm-form-grid.bsm-contractor-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* v0.1.112 - Pending Contractor Payment inline status update */
+#bsm-report-table .bsm-payment-status-cell{min-width:160px}
+#bsm-report-table .bsm-payment-remarks-cell{min-width:220px}
+#bsm-report-table .bsm-payment-status-cell select,#bsm-report-table .bsm-payment-remarks-cell input{margin:0;width:100%;box-sizing:border-box}
+#bsm-report-table .bsm-actions{vertical-align:middle}
+@media(max-width:760px){#bsm-report-table .bsm-payment-status-cell{min-width:155px}#bsm-report-table .bsm-payment-remarks-cell{min-width:190px}}
+
+/* v0.1.114 - Pending Payment compact status action */
+.bsm-payment-status-inline{display:flex;align-items:center;gap:8px;min-width:210px}.bsm-payment-status-inline .bsm-payment-status{flex:1;min-width:125px}.bsm-payment-status-inline .bsm-update-payment-status{white-space:nowrap}
+
+
+/* v0.1.115 - Keep Pending Payment status dropdown fully visible */
+#bsm-report-table .bsm-payment-status-cell{min-width:285px;overflow:visible;position:relative}
+#bsm-report-table .bsm-payment-status-inline{min-width:260px;overflow:visible;position:relative}
+#bsm-report-table .bsm-payment-status{min-width:165px;height:42px;font-size:13px;padding:9px 34px 9px 12px;position:relative;z-index:6}
+#bsm-report-table .bsm-update-payment-status{min-width:70px;height:38px}
+.bsm-table-wrap.bsm-status-dropdown-open{overflow:visible!important;position:relative;z-index:60}
+.bsm-table-wrap.bsm-status-dropdown-open #bsm-report-table{position:relative;z-index:61}
+@media(max-width:760px){#bsm-report-table .bsm-payment-status-cell{min-width:270px}#bsm-report-table .bsm-payment-status-inline{min-width:245px}#bsm-report-table .bsm-payment-status{min-width:155px}}
+
+
+/* v0.1.116 - Pending Payment status: clear native dropdown and top-aligned Update button */
+#bsm-report-table .bsm-payment-status-inline{align-items:flex-start!important;}
+#bsm-report-table select.bsm-payment-status{display:block!important;width:185px!important;min-width:185px!important;height:42px!important;margin:0!important;padding:8px 34px 8px 12px!important;background:#fff!important;color:#172b4d!important;border:1px solid #7eb6ff!important;border-radius:9px!important;position:relative!important;z-index:80!important;}
+#bsm-report-table .bsm-update-payment-status{align-self:flex-start!important;margin-top:0!important;height:42px!important;position:relative!important;z-index:81!important;}
+#bsm-report-table .bsm-payment-status-cell{overflow:visible!important;vertical-align:top!important;}
+#bsm-report-table .bsm-payment-status-inline{overflow:visible!important;}
+@media(max-width:760px){#bsm-report-table select.bsm-payment-status{width:170px!important;min-width:170px!important;}}
+
+/* v0.1.117 - Pending Payment document link */
+#bsm-report-table .bsm-document-cell{min-width:85px;text-align:center}
+#bsm-report-table .bsm-document-link{display:inline-block;font-weight:600;color:#1769e0;text-decoration:underline;cursor:pointer}
+
+/* v0.1.121 - editable paid amount in Pending Payment */
+.bsm-inline-money-input{width:120px;max-width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:#fff;text-align:right;font:inherit;box-sizing:border-box;}
+.bsm-inline-money-input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(37,99,235,.12);}
+
+
+/* v0.1.130 - Purchase Form desktop fit + clear GST dropdown */
+.bsm-main,.bsm-content,.bsm-inline-form-host,.bsm-inline-form-host .bsm-inline-panel{min-width:0;max-width:100%;box-sizing:border-box;}
+.bsm-inline-form-host .bsm-purchase-lines{max-width:100%;overflow:hidden;}
+.bsm-inline-form-host .bsm-purchase-lines .bsm-table-wrap{max-width:100%;overflow:visible!important;}
+.bsm-inline-form-host .bsm-purchase-lines table{width:100%!important;table-layout:fixed!important;min-width:0!important;}
+.bsm-inline-form-host .bsm-purchase-lines th,
+.bsm-inline-form-host .bsm-purchase-lines td{min-width:0!important;padding:5px 6px!important;box-sizing:border-box;}
+.bsm-inline-form-host .bsm-purchase-lines td .bsm-searchable-select{min-width:0!important;width:100%!important;}
+.bsm-inline-form-host .bsm-purchase-lines td .bsm-select-add{gap:4px;min-width:0;}
+.bsm-inline-form-host .bsm-purchase-lines td .bsm-select-add>.bsm-searchable-select{min-width:0!important;}
+.bsm-inline-form-host .bsm-purchase-lines td input,
+.bsm-inline-form-host .bsm-purchase-lines td select{width:100%!important;min-width:0!important;box-sizing:border-box;}
+.bsm-inline-form-host .bsm-purchase-lines td .bsm-quick-add{display:none!important;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(1),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(1){width:16%;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(3),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(3){width:8%;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(4),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(4){width:10%;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(5),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(5){width:9%;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(7),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(7){width:11%;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(8),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(8){width:9%;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(9),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(9),
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(10),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(10),
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(11),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(11){width:10%;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(12),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(12){width:11%;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(13),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(13){width:72px;}
+.bsm-native-gst-rate{appearance:auto!important;-webkit-appearance:auto!important;background:#fff!important;padding-right:24px!important;cursor:pointer;}
+@media(max-width:760px){
+  .bsm-inline-form-host .bsm-purchase-lines{overflow:visible;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-table-wrap{overflow-x:auto!important;overflow-y:visible!important;}
+  .bsm-inline-form-host .bsm-purchase-lines table{min-width:920px!important;table-layout:auto!important;}
+  .bsm-inline-form-host .bsm-purchase-lines th,.bsm-inline-form-host .bsm-purchase-lines td{min-width:88px!important;}
+  .bsm-inline-form-host .bsm-purchase-lines th:nth-child(1),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(1){min-width:150px!important;}
+}
+
+
+/* v0.1.131 - Purchase Form: readable Item/GST dropdowns and compact columns */
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(1),
+.bsm-inline-form-host .bsm-purchase-lines td:nth-child(1){width:20%!important;min-width:180px!important;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(3),
+.bsm-inline-form-host .bsm-purchase-lines td:nth-child(3){width:8%!important;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(4),
+.bsm-inline-form-host .bsm-purchase-lines td:nth-child(4){width:9%!important;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(5),
+.bsm-inline-form-host .bsm-purchase-lines td:nth-child(5){width:8%!important;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(7),
+.bsm-inline-form-host .bsm-purchase-lines td:nth-child(7){width:10%!important;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(8),
+.bsm-inline-form-host .bsm-purchase-lines td:nth-child(8){width:9%!important;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(9),
+.bsm-inline-form-host .bsm-purchase-lines td:nth-child(9),
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(10),
+.bsm-inline-form-host .bsm-purchase-lines td:nth-child(10),
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(11),
+.bsm-inline-form-host .bsm-purchase-lines td:nth-child(11){width:9%!important;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(12),
+.bsm-inline-form-host .bsm-purchase-lines td:nth-child(12){width:10%!important;}
+.bsm-inline-form-host .bsm-purchase-lines .bsm-select-search{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bsm-inline-form-host .bsm-purchase-lines select.bsm-native-gst-rate{display:block!important;width:100%!important;min-width:74px!important;height:32px!important;padding:4px 24px 4px 8px!important;border:1px solid #7eb6ff;border-radius:6px;background:#fff;color:#102746;font:inherit;}
+@media(max-width:760px){
+  .bsm-inline-form-host .bsm-purchase-lines th:nth-child(1),
+  .bsm-inline-form-host .bsm-purchase-lines td:nth-child(1){min-width:190px!important;}
+}
+
+/* v0.1.132 - Purchase dropdown direction + extra invoice fields */
+.bsm-inline-form-host .bsm-purchase-lines{overflow:visible!important;}
+.bsm-searchable-select.drop-up .bsm-select-menu{top:auto!important;bottom:calc(100% + 4px)!important;}
+.bsm-searchable-select.drop-up .bsm-select-arrow{transform:translateY(-50%) rotate(180deg);}
+.bsm-inline-form-host .bsm-purchase-lines td:has(.bsm-searchable-select.open),
+.bsm-inline-form-host .bsm-purchase-lines .bsm-searchable-select.open{z-index:900!important;}
+.bsm-inline-form-host .bsm-purchase-lines .bsm-select-menu{z-index:910!important;}
+
+/* v0.1.133 - Purchase invoice workflow */
+.bsm-pdf-link{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;padding:2px;border:0;border-radius:7px;color:#ef2020;text-decoration:none;background:transparent;cursor:pointer;vertical-align:middle}
+.bsm-pdf-link:hover{background:#fff1f1}
+.bsm-pdf-link .bsm-pdf-icon{width:30px;height:34px;display:block;overflow:visible}
+.bsm-invoice-cell{text-align:center;vertical-align:middle}
+.bsm-pending-invoice-upload{display:flex;align-items:center;gap:8px;min-width:300px}
+.bsm-pending-invoice-upload input[type=file]{min-width:190px;padding:6px 8px}
+.bsm-purchase-existing-invoice{margin-top:7px;font-size:12px}
+.bsm-purchase-existing-invoice a{color:#2563eb;text-decoration:none}
+@media(max-width:720px){.bsm-pending-invoice-upload{min-width:260px;flex-direction:column;align-items:stretch}}
+
+/* v0.1.135 - collapsible desktop sidebar */
+.bsm-desktop-sidebar-toggle{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;padding:0;font-size:20px;flex:0 0 auto;}
+@media(min-width:761px){
+  .bsm-sidebar,.bsm-main{transition:width .2s ease,margin-left .2s ease,transform .2s ease;}
+  .bsm-shell.bsm-sidebar-collapsed .bsm-sidebar{transform:translateX(-100%);}
+  .bsm-shell.bsm-sidebar-collapsed .bsm-main{margin-left:0;width:100%;}
+}
+@media(max-width:760px){.bsm-desktop-sidebar-toggle{display:none!important;}}
+
+
+/* v0.1.136 - expandable Purchase Register item details */
+.bsm-purchase-row{cursor:pointer;}
+.bsm-purchase-row:hover td{background:#f8fbff;}
+.bsm-purchase-row.is-expanded td{background:#f8fbff;}
+.bsm-purchase-details-row>td{padding:0!important;background:#fbfdff;border-bottom:1px solid var(--line);}
+.bsm-purchase-item-details{padding:12px 14px 14px 44px;}
+.bsm-purchase-detail-wrap{border:1px solid var(--line);border-radius:8px;overflow-x:auto;background:#fff;}
+.bsm-purchase-detail-table{width:100%;background:#fff;border-collapse:collapse;}
+.bsm-purchase-detail-table th,.bsm-purchase-detail-table td{border:1px solid var(--line);}
+.bsm-purchase-detail-table th:first-child,.bsm-purchase-detail-table td:first-child{border-left:0;}
+.bsm-purchase-detail-table th:last-child,.bsm-purchase-detail-table td:last-child{border-right:0;}
+.bsm-purchase-detail-table thead tr:first-child th{border-top:0;}
+.bsm-purchase-detail-table tbody tr:last-child td{border-bottom:0;}
+.bsm-purchase-detail-table th,.bsm-purchase-detail-table td{padding:8px 10px;font-size:12px;}
+@media(max-width:760px){.bsm-purchase-item-details{padding:10px 8px}.bsm-purchase-detail-table{min-width:850px;}}
+
+/* v0.1.139 - Purchase Register filter polish */
+#bsm-purchase-filters label,
+#bsm-purchase-filters input,
+#bsm-purchase-filters select,
+#bsm-purchase-filters .bsm-select-search{color:#111827!important;}
+#bsm-purchase-filters input::placeholder,
+#bsm-purchase-filters .bsm-select-search::placeholder,
+#bsm-search::placeholder{color:#111827!important;opacity:1;}
+#bsm-purchase-filters .bsm-native-date{color:#111827!important;color-scheme:light;}
+#bsm-purchase-filters .bsm-native-date::-webkit-calendar-picker-indicator{opacity:1;cursor:pointer;}
+.bsm-purchase-clear-btn{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;padding:9px;color:#dc2626!important;border-color:#fecaca!important;background:#fff!important;align-self:flex-end;}
+.bsm-purchase-clear-btn svg{width:20px;height:20px;stroke:#dc2626;}
+/* v0.1.141 - expandable Material Requisitions */
+.bsm-requisition-row{cursor:pointer;}
+.bsm-requisition-row:hover td{background:#f8fbff;}
+.bsm-requisition-row.is-expanded td{background:#f8fbff;}
+.bsm-requisition-details-row>td{padding:0!important;background:#fbfdff;border-bottom:1px solid var(--line);}
+
+/* v0.1.142 - hide number input spinner arrows */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button{
+  -webkit-appearance:none;
+  margin:0;
+}
+input[type="number"]{
+  -moz-appearance:textfield;
+  appearance:textfield;
+}
+
+/* v0.1.143 - expandable Pending Approval rows */
+.bsm-pending-approval-row{cursor:pointer;}
+.bsm-pending-approval-row:hover td{background:#f8fbff;}
+.bsm-pending-approval-row.is-expanded td{background:#f8fbff;}
+.bsm-pending-approval-details-row>td{padding:0!important;background:#fbfdff;border-bottom:1px solid var(--line);}
+
+/* v0.1.144 - green approve button */
+.bsm-btn-success{background:#16a34a!important;color:#fff!important;border-color:#16a34a!important;}
+.bsm-btn-success:hover{background:#15803d!important;border-color:#15803d!important;}
+
+/* v0.1.149 - Site Receipt form close button */
+#bsm-modal.bsm-site-receipt-modal #bsm-modal-close{background:#dc2626!important;border-color:#dc2626!important;color:#fff!important;}
+#bsm-modal.bsm-site-receipt-modal #bsm-modal-close:hover{background:#b91c1c!important;border-color:#b91c1c!important;}
+
+/* v0.1.150 - fixed Dispatch in Site Receipt opened from Pending Receipt */
+.bsm-readonly-select{pointer-events:none;}
+.bsm-readonly-select .bsm-select-search{background:#f5f7fb;cursor:default;}
+
+/* v0.1.156 - Office Attendance */
+.bsm-office-att-toolbar{align-items:flex-end;gap:10px;}
+.bsm-inline-date-label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:#374151;}
+.bsm-inline-date-label input{min-height:40px;border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:#fff;color:#111827;}
+.bsm-pa-toggle{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;}
+.bsm-pa-btn{min-width:44px;height:36px;border:0;border-right:1px solid var(--line);background:#fff;color:#374151;font-weight:700;cursor:pointer;}
+.bsm-pa-btn:last-of-type{border-right:0;}
+.bsm-pa-btn[data-value="P"].active{background:#16a34a;color:#fff;}
+.bsm-pa-btn[data-value="A"].active{background:#dc2626;color:#fff;}
+.bsm-office-att-table td,.bsm-office-att-table th{vertical-align:middle;}
+.bsm-salary-note{padding:10px 12px;margin-bottom:10px;background:#f8fafc;border:1px solid var(--line);border-radius:8px;font-size:12px;color:#475569;}
+@media(max-width:760px){.bsm-office-att-toolbar{align-items:stretch}.bsm-inline-date-label{width:100%}.bsm-office-att-toolbar .bsm-btn{width:100%;}.bsm-pa-btn{min-width:48px;height:40px;}}
+
+/* v0.1.160 - Payments view filters */
+.bsm-payment-filters label,
+.bsm-payment-filters input,
+.bsm-payment-filters select,
+.bsm-payment-filters .bsm-select-search{
+  color:#111827!important;
+}
+.bsm-payment-filters input::placeholder,
+.bsm-payment-filters .bsm-select-search::placeholder{
+  color:#111827!important;
+  opacity:1;
+}
+.bsm-payment-clear{
+  color:#dc2626!important;
+  border-color:#fecaca!important;
+  background:#fff!important;
+  font-weight:600;
+}
+.bsm-payment-clear:hover{
+  background:#fef2f2!important;
+  border-color:#fca5a5!important;
+}
+
+/* v0.1.161 - Inventory grouping and receiving challan */
+.bsm-inventory-group{margin:0 0 18px 0;border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden;}
+.bsm-inventory-group>h3{margin:0;padding:10px 12px;border-bottom:1px solid var(--line);font-size:15px;font-weight:700;color:#111827;background:#f8fafc;}
+.bsm-inventory-group .bsm-table-wrap{border:0;border-radius:0;}
+.bsm-site-receipt-challan-field input[type="file"]{color:#111827;}
+#bsm-pending-challan-list .bsm-pending-invoice-upload{min-width:260px;}
+
+/* v0.1.167 - management dashboard */
+.bsm-dashboard-toolbar{display:flex;align-items:end;gap:14px;flex-wrap:wrap;margin-bottom:14px}.bsm-dashboard-toolbar label{min-width:240px;color:#111827;font-weight:600}.bsm-dashboard-toolbar select{color:#111827}.bsm-dashboard-date{margin-left:auto;color:#4b5563;font-size:14px;padding-bottom:9px}.bsm-dashboard-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:14px}.bsm-dashboard-kpi{border:1px solid var(--line);background:#fff;border-radius:10px;padding:14px;text-align:left;cursor:pointer;min-width:0}.bsm-dashboard-kpi span{display:block;color:#6b7280;font-size:12px;font-weight:600;margin-bottom:8px}.bsm-dashboard-kpi strong{font-size:24px;color:#111827}.bsm-dashboard-kpi:hover{border-color:#9ca3af}.bsm-dashboard-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:14px}.bsm-dashboard-summary-card{margin:0}.bsm-link-btn{border:0;background:transparent;color:var(--accent,#2563eb);cursor:pointer;font-weight:600}.bsm-summary-lines{display:grid;gap:0}.bsm-summary-lines>div,.bsm-summary-lines>button{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border:0;border-bottom:1px solid var(--line);background:transparent;width:100%;text-align:left;color:#111827}.bsm-summary-lines>button{cursor:pointer}.bsm-summary-lines>div:last-child,.bsm-summary-lines>button:last-child{border-bottom:0}.bsm-summary-lines span{color:#4b5563}.bsm-summary-lines strong{white-space:nowrap}.bsm-summary-lines small{font-size:11px;color:#6b7280;margin-left:4px}.bsm-dashboard-site-work{margin-bottom:14px}.bsm-dashboard-note{font-size:12px;color:#6b7280}.bsm-dashboard-count{min-width:32px;height:30px;border-radius:7px;border:1px solid var(--line);background:#fff;color:#111827;cursor:pointer;font-weight:700}.bsm-dashboard-count.has-pending{background:#fff7ed;border-color:#fdba74;color:#9a3412}.bsm-dashboard-count.is-clear{background:#f0fdf4;border-color:#bbf7d0;color:#166534}.bsm-attention-high td:first-child{border-left:4px solid #dc2626}.bsm-attention-mid td:first-child{border-left:4px solid #f59e0b}.bsm-attention-clear td:first-child{border-left:4px solid #16a34a}.bsm-dashboard-two-col{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:14px;margin-bottom:14px}.bsm-dashboard-two-col>.bsm-panel{margin:0}.bsm-dashboard-activity{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.bsm-dashboard-activity button{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#111827;cursor:pointer;text-align:left}.bsm-dashboard-activity span{color:#4b5563}.bsm-dashboard-activity strong{font-size:18px}.bsm-dashboard-quick-actions{display:flex;gap:10px;flex-wrap:wrap}.bsm-dashboard-site-work tbody tr:hover td,.bsm-dashboard-two-col tbody tr:hover td{background:#fafafa}
+@media(max-width:1200px){.bsm-dashboard-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.bsm-dashboard-summary-grid{grid-template-columns:1fr}.bsm-dashboard-two-col{grid-template-columns:1fr}}
+@media(max-width:760px){.bsm-dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.bsm-dashboard-kpi{padding:11px}.bsm-dashboard-kpi strong{font-size:20px}.bsm-dashboard-toolbar label{min-width:100%;width:100%}.bsm-dashboard-date{margin-left:0}.bsm-dashboard-activity{grid-template-columns:1fr}.bsm-dashboard-quick-actions .bsm-btn{flex:1 1 calc(50% - 10px)}}
+
+/* v0.1.168 - polished dashboard summary cards */
+.bsm-dashboard-summary-grid{gap:18px}
+.bsm-dashboard-summary-card{position:relative;overflow:hidden;border:1px solid #dbe5f3!important;border-radius:16px!important;background:#fff!important;box-shadow:0 8px 24px rgba(15,23,42,.055);min-height:218px}
+.bsm-dashboard-summary-card:before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:#dbeafe}
+.bsm-dashboard-summary-card.bsm-summary-fund:before{background:#2563eb}
+.bsm-dashboard-summary-card.bsm-summary-petty:before{background:#16a34a}
+.bsm-dashboard-summary-card.bsm-summary-docs:before{background:#f59e0b}
+.bsm-dashboard-summary-card .bsm-panel-head{padding:17px 18px 14px;border-bottom:1px solid #edf2f7;background:linear-gradient(180deg,#fff,#fbfdff);align-items:center}
+.bsm-summary-title{display:flex;align-items:center;gap:11px;min-width:0}
+.bsm-summary-title .bsm-summary-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;font-size:17px;font-weight:800;flex:0 0 36px}
+.bsm-summary-fund .bsm-summary-icon{background:#eff6ff;color:#2563eb}
+.bsm-summary-petty .bsm-summary-icon{background:#f0fdf4;color:#16a34a}
+.bsm-summary-docs .bsm-summary-icon{background:#fffbeb;color:#d97706}
+.bsm-summary-title h3{margin:0!important;font-size:18px!important;line-height:1.15;color:#0f172a}
+.bsm-summary-title small{display:block;margin-top:3px;color:#94a3b8;font-size:11px;font-weight:600}
+.bsm-dashboard-summary-card .bsm-link-btn{padding:7px 10px;border-radius:8px;background:#f8fafc;color:#2563eb;font-size:12px;transition:.15s ease}
+.bsm-dashboard-summary-card .bsm-link-btn:hover{background:#eff6ff}
+.bsm-dashboard-summary-card .bsm-summary-lines{padding:4px 18px 8px}
+.bsm-dashboard-summary-card .bsm-summary-lines>div,.bsm-dashboard-summary-card .bsm-summary-lines>button{min-height:45px;padding:10px 0;border-bottom:1px dashed #e2e8f0}
+.bsm-dashboard-summary-card .bsm-summary-lines>div:last-child,.bsm-dashboard-summary-card .bsm-summary-lines>button:last-child{border-bottom:0}
+.bsm-dashboard-summary-card .bsm-summary-lines span{color:#64748b;font-size:13px;font-weight:600}
+.bsm-dashboard-summary-card .bsm-summary-lines strong{font-size:15px;color:#0f172a;font-weight:800;letter-spacing:-.15px}
+.bsm-dashboard-summary-card .bsm-summary-lines .bsm-summary-primary strong{font-size:19px;color:#15803d}
+.bsm-positive-badge,.bsm-warning-badge{display:inline-flex!important;align-items:center;padding:3px 6px;border-radius:999px;margin-left:5px;font-size:10px!important;font-weight:800!important;vertical-align:middle}
+.bsm-positive-badge{background:#ecfdf5;color:#047857!important}
+.bsm-warning-badge{background:#fff7ed;color:#c2410c!important}
+.bsm-summary-progress{height:6px;margin:0 18px 15px;border-radius:999px;background:#eef2f7;overflow:hidden}
+.bsm-summary-progress span{display:block;height:100%;border-radius:inherit;background:#2563eb;transition:width .25s ease}
+.bsm-summary-docs .bsm-summary-lines>button{transition:.15s ease;border-radius:9px;padding-left:7px;padding-right:7px}
+.bsm-summary-docs .bsm-summary-lines>button:hover{background:#f8fafc}
+.bsm-doc-count{display:grid!important;place-items:center;min-width:30px;height:30px;padding:0 8px;border-radius:9px;font-size:13px!important}
+.bsm-doc-count.has-pending{background:#fff7ed;color:#c2410c!important;border:1px solid #fed7aa}
+.bsm-doc-count.is-clear{background:#f0fdf4;color:#15803d!important;border:1px solid #bbf7d0}
+@media(max-width:1200px){.bsm-dashboard-summary-card{min-height:0}}
+@media(max-width:760px){.bsm-dashboard-summary-grid{gap:12px}.bsm-dashboard-summary-card{border-radius:13px!important}.bsm-dashboard-summary-card .bsm-panel-head{padding:14px}.bsm-dashboard-summary-card .bsm-summary-lines{padding-left:14px;padding-right:14px}.bsm-summary-progress{margin-left:14px;margin-right:14px}.bsm-summary-title h3{font-size:16px!important}}
+
+/* v0.1.169 - Employee Allowance workflow */
+.bsm-allowance-reject{background:#fff!important;color:#dc2626!important;border-color:#fecaca!important;}
+.bsm-allowance-reject:hover{background:#fef2f2!important;border-color:#fca5a5!important;}
+#bsm-allowance-filters label,#bsm-allowance-filters input,#bsm-allowance-filters select{color:#111827!important;}
+
+
+/* v0.1.171 - Salary upload and salary slip workflow */
+.bsm-salary-upload-panel{margin-bottom:14px}
+.bsm-small-muted{font-size:12px;color:var(--muted);margin-top:2px}
+.bsm-error-list{padding:14px;color:#991b1b;background:#fff7f7;border:1px solid #fecaca;border-radius:8px}
+.bsm-error-list ul{margin:8px 0 0 20px;padding:0}
+.bsm-error-list li{margin:4px 0}
+#bsm-salary-preview-area .bsm-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+/* v0.1.173 - native calendar picker for every date field */
+input[type="date"],
+.bsm-native-date{
+  color-scheme: light;
+  cursor: pointer;
+}
+input[type="date"]::-webkit-calendar-picker-indicator,
+.bsm-native-date::-webkit-calendar-picker-indicator{
+  display: block;
+  opacity: 1;
+  cursor: pointer;
+}
+input[type="date"]::-webkit-datetime-edit,
+.bsm-native-date::-webkit-datetime-edit{
+  color: inherit;
+}
+
+/* v0.1.175 - Pending Dispatch action button */
+.bsm-btn-dispatch{background:#f97316!important;color:#fff!important;border-color:#f97316!important;}
+.bsm-btn-dispatch:hover{background:#ea580c!important;border-color:#ea580c!important;}
+
+/* v0.1.178 - keep Received By and Receiving Challan on the same row */
+@media(min-width:761px){
+  #bsm-modal.bsm-site-receipt-modal .bsm-site-receipt-challan-field{grid-column:span 2;}
+}
+@media(max-width:760px){
+  #bsm-modal.bsm-site-receipt-modal .bsm-site-receipt-challan-field{grid-column:auto;}
+}
+
+/* v0.1.181 - clickable material return rows */
+.bsm-material-return-row,.bsm-pending-return-row{cursor:pointer;}
+.bsm-material-return-row:hover td,.bsm-pending-return-row:hover td{background:#f8fbff;}
+.bsm-material-return-row.is-expanded td,.bsm-pending-return-row.is-expanded td{background:#f8fbff;}
+.bsm-material-return-details-row>td,.bsm-pending-return-details-row>td{padding:0!important;background:#fbfdff;border-bottom:1px solid var(--line);}
+
+
+/* v0.1.190 - compact Pending Labour Contractor Payment columns */
+.bsm-contractor-payment-table{
+  table-layout:auto;
+  width:100%;
+  font-size:12px;
+}
+.bsm-contractor-payment-table th,
+.bsm-contractor-payment-table td{
+  padding:7px 8px!important;
+  white-space:nowrap;
+  vertical-align:middle;
+}
+.bsm-contractor-payment-table th:nth-child(1),
+.bsm-contractor-payment-table td:nth-child(1){min-width:92px;width:92px;}
+.bsm-contractor-payment-table th:nth-child(2),
+.bsm-contractor-payment-table td:nth-child(2){min-width:82px;width:82px;}
+.bsm-contractor-payment-table th:nth-child(3),
+.bsm-contractor-payment-table td:nth-child(3){min-width:100px;width:100px;white-space:normal;}
+.bsm-contractor-payment-table th:nth-child(4),
+.bsm-contractor-payment-table td:nth-child(4){min-width:92px;width:92px;white-space:normal;}
+.bsm-contractor-payment-table th:nth-child(5),
+.bsm-contractor-payment-table td:nth-child(5),
+.bsm-contractor-payment-table th:nth-child(6),
+.bsm-contractor-payment-table td:nth-child(6),
+.bsm-contractor-payment-table th:nth-child(7),
+.bsm-contractor-payment-table td:nth-child(7),
+.bsm-contractor-payment-table th:nth-child(8),
+.bsm-contractor-payment-table td:nth-child(8),
+.bsm-contractor-payment-table th:nth-child(10),
+.bsm-contractor-payment-table td:nth-child(10),
+.bsm-contractor-payment-table th:nth-child(11),
+.bsm-contractor-payment-table td:nth-child(11){min-width:88px;width:88px;}
+.bsm-contractor-payment-table th:nth-child(9),
+.bsm-contractor-payment-table td:nth-child(9){min-width:48px;width:48px;text-align:center;}
+.bsm-contractor-payment-table th:nth-child(12),
+.bsm-contractor-payment-table td:nth-child(12){min-width:74px;width:74px;}
+.bsm-contractor-payment-table .bsm-inline-money-input{
+  width:92px!important;
+  min-width:92px!important;
+  padding:7px 8px!important;
+}
+.bsm-contractor-payment-table .bsm-btn-small{
+  padding:7px 10px!important;
+  min-width:auto!important;
+}
+
+
+/* v0.1.191 - wrap long contractor payment headers */
+.bsm-contractor-payment-table th:nth-child(6),
+.bsm-contractor-payment-table th:nth-child(11){
+  white-space:normal!important;
+  line-height:1.15;
+  text-align:center;
+}
+
+
+/* v0.1.194 - Employee Allowance Limit */
+.bsm-allowance-limit-box{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  padding:12px 14px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#f8fbff;
+  color:#111827;
+}
+.bsm-allowance-limit-box>div{min-width:0;}
+@media(max-width:760px){.bsm-allowance-limit-box{grid-template-columns:1fr;}}
+
+/* v0.1.199 - Quotation / Tax Invoice */
+.bsm-sales-master-row{cursor:pointer;}
+.bsm-sales-master-row:hover td{background:#f8fbff;}
+.bsm-sales-details-row>td{padding:0!important;background:#fbfdff;}
+#bsm-form[data-module="quotations"] .bsm-lines table,
+#bsm-form[data-module="tax_invoices"] .bsm-lines table{min-width:1450px;}
+#bsm-form[data-module="quotations"] input[readonly],
+#bsm-form[data-module="tax_invoices"] input[readonly]{background:#f4f6f8;}
+
+/* v0.1.201 - compact quotation form inspired by approved reference */
+#bsm-form.bsm-quotation-style{background:#fff}
+#bsm-form.bsm-quotation-style .bsm-form-grid.bsm-quotation-head{
+  grid-template-columns:1fr 1fr 1fr 1fr;
+  gap:12px;
+  padding:14px 16px 10px;
+  align-items:end;
+}
+#bsm-form.bsm-quotation-style .bsm-form-grid.bsm-quotation-head>label:not(.bsm-quote-made-by){min-width:0}
+#bsm-form.bsm-quotation-style .bsm-quote-made-by{display:block!important;grid-column:auto!important}
+#bsm-form.bsm-quotation-style .bsm-quote-made-by input{background:#f4f7fb}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines{padding:0 16px 10px;border-top:1px solid #dbe5ef}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines .bsm-lines-head{padding:10px 0 8px}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines .bsm-lines-head h3{font-size:13px;font-weight:500;color:#374151}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines .bsm-quote-add-item{
+  margin-left:auto!important;width:auto!important;height:30px!important;padding:0 11px!important;
+  border:1px solid #0f8f9d!important;background:#fff!important;color:#0f172a!important;font-size:12px!important
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines .bsm-table-wrap{overflow-x:auto!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines table{min-width:900px!important;width:100%!important;table-layout:fixed!important;border-color:#0f8f9d!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td{border-color:#0f8f9d!important;padding:5px!important;min-width:0!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th{background:#f8fbfc;font-size:11px;white-space:normal}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(1),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(1){width:19%}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(2),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(2){width:20%}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(3),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(3){width:8%}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(4),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4){width:12%}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(5),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(5){width:10%}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(6),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(6){width:8%}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(7),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(7){width:10%}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(8),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(8){width:10%}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(9),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(9){width:42px}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines .bsm-line-actions .bsm-add-line-inline{display:none!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td input,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td .bsm-select-control{height:30px!important;min-height:30px!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td .bsm-select-search{height:28px!important;min-height:28px!important}
+#bsm-form.bsm-quotation-style .bsm-quote-totals{
+  display:flex;justify-content:flex-end;gap:8px;align-items:end;padding:0 16px 12px
+}
+#bsm-form.bsm-quotation-style .bsm-quote-totals label{font-size:10px;color:#374151;width:145px}
+#bsm-form.bsm-quotation-style .bsm-quote-totals input{width:100%;height:32px;margin-top:5px;text-align:right;background:#f8fbfc}
+#bsm-form.bsm-quotation-style .bsm-quote-totals #bsm-quote-round{background:#fff}
+#bsm-form.bsm-quotation-style .bsm-quote-notes{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 16px 14px
+}
+#bsm-form.bsm-quotation-style .bsm-quote-notes label{font-size:12px;color:#111827}
+#bsm-form.bsm-quotation-style .bsm-quote-notes textarea{width:100%;min-height:72px;margin-top:5px}
+#bsm-form.bsm-quotation-style .bsm-form-actions{justify-content:flex-start;padding:12px 16px}
+#bsm-form.bsm-quotation-style .bsm-form-actions #bsm-form-save{order:0;background:#0f95a5}
+#bsm-form.bsm-quotation-style .bsm-form-actions #bsm-form-cancel{order:1}
+@media(max-width:900px){
+  #bsm-form.bsm-quotation-style .bsm-form-grid.bsm-quotation-head{grid-template-columns:1fr 1fr}
+  #bsm-form.bsm-quotation-style .bsm-quote-notes{grid-template-columns:1fr}
+  #bsm-form.bsm-quotation-style .bsm-quote-totals{flex-wrap:wrap;justify-content:flex-start}
+}
+@media(max-width:600px){
+  #bsm-form.bsm-quotation-style .bsm-form-grid.bsm-quotation-head{grid-template-columns:1fr}
+  #bsm-form.bsm-quotation-style .bsm-quote-totals label{width:calc(50% - 4px)}
+}
+
+/* v0.1.203 - quotation item dropdown clarity and simplified footer */
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(1),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(1){width:22%!important;overflow:visible!important;position:relative;z-index:4}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(2),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(2){width:20%!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(3),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(3){width:8%!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(4),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4){width:11%!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(5),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(5){width:10%!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(6),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(6){width:8%!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(7),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(7){width:10%!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(8),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(8){width:11%!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:first-child .bsm-searchable-select{position:relative;z-index:20}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:first-child .bsm-select-menu{min-width:280px!important;z-index:9999!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:first-child .bsm-select-search{font-size:12px!important;color:#111827!important}
+#bsm-form.bsm-quotation-style .bsm-quote-notes{grid-template-columns:1fr!important}
+#bsm-form.bsm-quotation-style .bsm-quote-notes label{max-width:100%!important}
+
+/* v0.1.204 - quotation dropdown opens upward and unit field is narrower */
+#bsm-form.bsm-quotation-style .bsm-quotation-lines .bsm-table-wrap{overflow:visible!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines table{overflow:visible!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td{overflow:visible!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:has(.bsm-searchable-select.open){z-index:1200!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines .bsm-searchable-select.open{z-index:1210!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines .bsm-select-menu{z-index:1220!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines .bsm-searchable-select.drop-up .bsm-select-menu{top:auto!important;bottom:calc(100% + 5px)!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(1),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(1){width:24%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(2),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(2){width:20%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(3),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(3){width:8%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(4),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4){width:8%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(5),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(5){width:10%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(6),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(6){width:8%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(7),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(7){width:10%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(8),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(8){width:12%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-searchable-select{min-width:85px!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-select-control{min-width:85px!important;}
+
+
+/* v0.1.205 - prevent Unit and Rate controls from overlapping in Quotation rows */
+#bsm-form.bsm-quotation-style .bsm-quotation-lines table{
+  min-width:980px!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(1),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(1){width:23%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(2),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(2){width:19%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(3),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(3){width:7%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(4),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4){width:8%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(5),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(5){width:9%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(6),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(6){width:8%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(7),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(7){width:9%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(8),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(8){width:11%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(9),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(9){width:4%!important;}
+
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(5){
+  overflow:hidden!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) select,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-searchable-select,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-select-control,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(5) input{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-searchable-select.open{
+  overflow:visible!important;
+}
+
+/* v0.1.215 - distinct colour identity for every left-menu section */
+#bsm-nav .bsm-nav-standalone{
+  background:linear-gradient(90deg,#1769ff 0%,#245bd7 100%);
+  color:#fff;
+  font-weight:700;
+  box-shadow:0 6px 16px rgba(23,105,255,.22);
+  margin-bottom:5px;
+}
+#bsm-nav .bsm-nav-standalone .bsm-nav-item-icon{color:#fff}
+#bsm-nav .bsm-nav-standalone:hover,
+#bsm-nav .bsm-nav-standalone.active{
+  background:linear-gradient(90deg,#2380ff 0%,#1769ff 100%);
+  color:#fff;
+}
+
+/* Each section owns its colour; child active view follows the same family. */
+#bsm-nav .bsm-nav-group[data-group="1"]{--sec-bg:linear-gradient(90deg,#3b5ccc,#314aa4);--sec-active:linear-gradient(90deg,#5375ed,#3b5ccc);--sec-shadow:rgba(59,92,204,.28)}
+#bsm-nav .bsm-nav-group[data-group="2"]{--sec-bg:linear-gradient(90deg,#008f9c,#087582);--sec-active:linear-gradient(90deg,#09a8b7,#008f9c);--sec-shadow:rgba(0,143,156,.28)}
+#bsm-nav .bsm-nav-group[data-group="3"]{--sec-bg:linear-gradient(90deg,#c78a13,#a86d08);--sec-active:linear-gradient(90deg,#e2a329,#c78a13);--sec-shadow:rgba(199,138,19,.27)}
+#bsm-nav .bsm-nav-group[data-group="4"]{--sec-bg:linear-gradient(90deg,#e56718,#c54f0a);--sec-active:linear-gradient(90deg,#ff7d27,#e56718);--sec-shadow:rgba(229,103,24,.28)}
+#bsm-nav .bsm-nav-group[data-group="5"]{--sec-bg:linear-gradient(90deg,#188b5b,#116b45);--sec-active:linear-gradient(90deg,#20a96d,#188b5b);--sec-shadow:rgba(24,139,91,.28)}
+#bsm-nav .bsm-nav-group[data-group="6"]{--sec-bg:linear-gradient(90deg,#708b22,#586d17);--sec-active:linear-gradient(90deg,#88a92a,#708b22);--sec-shadow:rgba(112,139,34,.28)}
+#bsm-nav .bsm-nav-group[data-group="7"]{--sec-bg:linear-gradient(90deg,#b94863,#93354d);--sec-active:linear-gradient(90deg,#d25a76,#b94863);--sec-shadow:rgba(185,72,99,.28)}
+#bsm-nav .bsm-nav-group[data-group="8"]{--sec-bg:linear-gradient(90deg,#087fa7,#096485);--sec-active:linear-gradient(90deg,#1199c4,#087fa7);--sec-shadow:rgba(8,127,167,.28)}
+#bsm-nav .bsm-nav-group[data-group="9"]{--sec-bg:linear-gradient(90deg,#4b57b8,#3c4592);--sec-active:linear-gradient(90deg,#6471d4,#4b57b8);--sec-shadow:rgba(75,87,184,.28)}
+#bsm-nav .bsm-nav-group[data-group="10"]{--sec-bg:linear-gradient(90deg,#7654ba,#5e4099);--sec-active:linear-gradient(90deg,#906bd3,#7654ba);--sec-shadow:rgba(118,84,186,.28)}
+#bsm-nav .bsm-nav-group[data-group="11"]{--sec-bg:linear-gradient(90deg,#a5449a,#84347b);--sec-active:linear-gradient(90deg,#be59b2,#a5449a);--sec-shadow:rgba(165,68,154,.28)}
+#bsm-nav .bsm-nav-group[data-group="12"]{--sec-bg:linear-gradient(90deg,#315bc5,#24479d);--sec-active:linear-gradient(90deg,#4773df,#315bc5);--sec-shadow:rgba(49,91,197,.28)}
+#bsm-nav .bsm-nav-group[data-group="13"]{--sec-bg:linear-gradient(90deg,#0492a8,#037487);--sec-active:linear-gradient(90deg,#0bacc4,#0492a8);--sec-shadow:rgba(4,146,168,.28)}
+#bsm-nav .bsm-nav-group[data-group="14"]{--sec-bg:linear-gradient(90deg,#28a348,#1d8137);--sec-active:linear-gradient(90deg,#38bd59,#28a348);--sec-shadow:rgba(40,163,72,.28)}
+#bsm-nav .bsm-nav-group[data-group="15"]{--sec-bg:linear-gradient(90deg,#f26a21,#d94d11);--sec-active:linear-gradient(90deg,#ff813b,#f26a21);--sec-shadow:rgba(242,106,33,.30)}
+#bsm-nav .bsm-nav-group[data-group="16"]{--sec-bg:linear-gradient(90deg,#713ec2,#562d9d);--sec-active:linear-gradient(90deg,#8954d9,#713ec2);--sec-shadow:rgba(113,62,194,.30)}
+#bsm-nav .bsm-nav-group[data-group="17"]{--sec-bg:linear-gradient(90deg,#ca2f4c,#a51e38);--sec-active:linear-gradient(90deg,#eb3d5d,#ca2f4c);--sec-shadow:rgba(202,47,76,.30)}
+#bsm-nav .bsm-nav-group[data-group="18"]{--sec-bg:linear-gradient(90deg,#8b5a2b,#6d431e);--sec-active:linear-gradient(90deg,#a96d35,#8b5a2b);--sec-shadow:rgba(139,90,43,.28)}
+#bsm-nav .bsm-nav-group[data-group="19"]{--sec-bg:linear-gradient(90deg,#355fd0,#274aa6);--sec-active:linear-gradient(90deg,#4a75e8,#355fd0);--sec-shadow:rgba(53,95,208,.28)}
+#bsm-nav .bsm-nav-group[data-group="20"]{--sec-bg:linear-gradient(90deg,#52677f,#3f5369);--sec-active:linear-gradient(90deg,#687f98,#52677f);--sec-shadow:rgba(82,103,127,.28)}
+
+#bsm-nav .bsm-nav-group>.bsm-nav-label,
+#bsm-nav .bsm-nav-group[open]>.bsm-nav-label{
+  background:var(--sec-bg)!important;
+  color:#fff!important;
+  box-shadow:0 5px 13px var(--sec-shadow),inset 0 0 0 1px rgba(255,255,255,.10)!important;
+  margin-bottom:3px;
+}
+#bsm-nav .bsm-nav-group>.bsm-nav-label .bsm-nav-section-icon,
+#bsm-nav .bsm-nav-group>.bsm-nav-label .bsm-nav-chevron{color:#fff!important}
+#bsm-nav .bsm-nav-group>.bsm-nav-label:hover{filter:brightness(1.08)}
+#bsm-nav .bsm-nav-group .bsm-nav-item.active{
+  background:var(--sec-active)!important;
+  box-shadow:0 6px 16px var(--sec-shadow),inset 0 0 0 1px rgba(255,255,255,.12)!important;
+}
+#bsm-nav .bsm-nav-group[open]>.bsm-nav-items{
+  border-left:2px solid rgba(255,255,255,.14);
+  margin-left:10px;
+  padding-left:7px;
+}
+
+/* v0.1.227 - compact Upload Bill column in Pending Labour Contractor Bill Copy */
+#bsm-pending-contractor-bill-list th:last-child,
+#bsm-pending-contractor-bill-list td:last-child{
+  width:190px!important;
+  min-width:190px!important;
+  max-width:190px!important;
+}
+#bsm-pending-contractor-bill-list .bsm-pending-invoice-upload{
+  min-width:0!important;
+  width:100%!important;
+  gap:6px!important;
+}
+#bsm-pending-contractor-bill-list .bsm-pending-contractor-bill-file{
+  min-width:0!important;
+  width:125px!important;
+  max-width:125px!important;
+  padding:4px 6px!important;
+}
+#bsm-pending-contractor-bill-list .bsm-upload-pending-contractor-bill{
+  padding:6px 10px!important;
+  white-space:nowrap;
+}
+
+
+/* v0.1.234 - Company logo upload + top-right header logo */
+.bsm-topbar{display:flex;align-items:center;gap:12px}
+.bsm-topbar-spacer{flex:1 1 auto}
+.bsm-topbar-company-logo-wrap{display:flex;align-items:center;justify-content:flex-end;min-width:70px;max-width:180px;height:52px;padding:4px 8px}
+.bsm-topbar-company-logo{display:block;max-width:160px;max-height:44px;width:auto;height:auto;object-fit:contain}
+.bsm-company-logo-field{grid-column:1/-1!important}
+.bsm-company-logo-upload{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:6px}
+.bsm-company-logo-upload img{max-width:180px;max-height:72px;object-fit:contain;border:1px solid #dbe5f0;border-radius:10px;background:#fff;padding:6px}
+.bsm-logo-placeholder{min-width:180px;min-height:60px;display:flex;align-items:center;justify-content:center;border:1px dashed #b9c7d8;border-radius:10px;color:#6b7280;background:#f8fbff;padding:8px}
+.bsm-company-logo-upload input[type=file]{max-width:320px}
+@media(max-width:760px){.bsm-topbar-company-logo-wrap{max-width:110px;min-width:50px}.bsm-topbar-company-logo{max-width:100px;max-height:38px}}
+
+
+/* v0.1.251 - quotation GST and Unit field clarity */
+#bsm-form.bsm-quotation-style .bsm-quotation-lines table{min-width:1080px!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(1),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(1){width:22%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(2),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(2){width:18%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(3),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(3){width:7%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(4),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4){width:9%!important;overflow:visible!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(5),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(5){width:9%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(6),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(6){width:10%!important;overflow:visible!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(7),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(7){width:9%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(8),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(8){width:12%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(9),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(9){width:4%!important;}
+
+/* Unit: keep the auto-filled value easy to read even though it is locked. */
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-searchable-select,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-select-control{
+  width:100%!important;min-width:92px!important;max-width:none!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-select-control.disabled,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-select-control[aria-disabled="true"]{
+  opacity:1!important;background:#f4f7fb!important;color:#102746!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) select:disabled{
+  opacity:1!important;color:#102746!important;background:#f4f7fb!important;-webkit-text-fill-color:#102746!important;
+}
+
+/* GST %: use a normal, full-width select so the selected rate (e.g. 12%, 18%) is never clipped. */
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(6) select.bsm-native-gst-rate{
+  display:block!important;width:100%!important;min-width:96px!important;max-width:none!important;
+  height:32px!important;line-height:30px!important;padding:4px 28px 4px 10px!important;
+  border:1px solid #7eb6ff!important;border-radius:7px!important;background:#fff!important;
+  color:#102746!important;font-size:12px!important;font-weight:500!important;opacity:1!important;
+  appearance:auto!important;-webkit-appearance:menulist!important;
+}
+
+
+/* v0.1.254 - clearer Unit field border in Quotation / Tax Invoice */
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-select-control{
+  border:1px solid #7eb6ff!important;
+  border-radius:7px!important;
+  background:#f4f7fb!important;
+  box-shadow:inset 0 0 0 1px rgba(126,182,255,.10)!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-select-search{
+  color:#102746!important;
+  -webkit-text-fill-color:#102746!important;
+  opacity:1!important;
+  background:transparent!important;
+}
+
+
+/* v0.1.255 - make locked Unit control visually identical to other quotation/invoice inputs */
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4){
+  padding:5px!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) select[name="unit_id"],
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) select[name="unit_id"]:disabled,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-select-control,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-select-control.disabled,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-select-control[aria-disabled="true"]{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  height:32px!important;
+  min-height:32px!important;
+  box-sizing:border-box!important;
+  border:1px solid #5fa8ff!important;
+  border-radius:7px!important;
+  background:#f4f7fb!important;
+  color:#102746!important;
+  opacity:1!important;
+  outline:none!important;
+  box-shadow:0 0 0 1px rgba(95,168,255,.08)!important;
+  -webkit-text-fill-color:#102746!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-searchable-select{
+  width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-select-search{
+  width:100%!important;
+  height:30px!important;
+  min-height:30px!important;
+  box-sizing:border-box!important;
+  padding:4px 8px!important;
+  border:0!important;
+  color:#102746!important;
+  background:transparent!important;
+  opacity:1!important;
+  -webkit-text-fill-color:#102746!important;
+}
+
+
+/* v0.1.256 - locked Unit field must look exactly like a normal bordered input */
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4){
+  padding:6px!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-searchable-select,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-searchable-select.is-disabled{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-select-control,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-searchable-select.is-disabled .bsm-select-control,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) select[name="unit_id"]:disabled + .bsm-searchable-select .bsm-select-control{
+  display:flex!important;
+  width:100%!important;
+  height:32px!important;
+  min-height:32px!important;
+  box-sizing:border-box!important;
+  background:#fff!important;
+  border:1.5px solid #69a9ff!important;
+  border-radius:7px!important;
+  box-shadow:none!important;
+  opacity:1!important;
+  overflow:hidden!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-searchable-select.is-disabled .bsm-select-search,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) select[name="unit_id"]:disabled + .bsm-searchable-select .bsm-select-search{
+  color:#374151!important;
+  -webkit-text-fill-color:#374151!important;
+  opacity:1!important;
+  background:#fff!important;
+  cursor:default!important;
+  padding:5px 8px!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-searchable-select.is-disabled .bsm-select-arrow{
+  display:none!important;
+}
+
+
+/* v0.1.257 - Quotation / Tax Invoice Unit must look like a plain inner input */
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-searchable-select,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-searchable-select.is-disabled{
+  width:100%!important;
+  display:block!important;
+  margin:0!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-select-control,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-searchable-select.is-disabled .bsm-select-control,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) select[name="unit_id"]:disabled + .bsm-searchable-select .bsm-select-control{
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-select-search,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-searchable-select.is-disabled .bsm-select-search,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) select[name="unit_id"]:disabled + .bsm-searchable-select .bsm-select-search{
+  display:block!important;
+  width:100%!important;
+  height:32px!important;
+  min-height:32px!important;
+  box-sizing:border-box!important;
+  margin:0!important;
+  padding:4px 8px!important;
+  border:1.5px solid #69a9ff!important;
+  border-radius:7px!important;
+  background:#fff!important;
+  color:#374151!important;
+  -webkit-text-fill-color:#374151!important;
+  opacity:1!important;
+  box-shadow:none!important;
+  outline:none!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-select-arrow,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-select-menu{
+  display:none!important;
+}
+
+
+/* v0.1.258 - final sales item-row fit + plain Unit input */
+#bsm-form.bsm-quotation-style .bsm-quotation-lines{
+  width:100%!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines .bsm-table-wrap{
+  width:100%!important;
+  max-width:100%!important;
+  overflow:visible!important;
+  box-sizing:border-box!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines table{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  table-layout:fixed!important;
+  box-sizing:border-box!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td{
+  box-sizing:border-box!important;
+  min-width:0!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(1),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(1){width:22%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(2),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(2){width:18%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(3),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(3){width:7%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(4),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4){width:9%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(5),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(5){width:9%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(6),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(6){width:10%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(7),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(7){width:9%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(8),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(8){width:12%!important;}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(9),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(9){width:4%!important;}
+
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4){
+  padding:5px!important;
+  overflow:hidden!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) select.bsm-sales-unit-native,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4) .bsm-searchable-select{
+  display:none!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines .bsm-sales-unit-display{
+  display:block!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  height:32px!important;
+  min-height:32px!important;
+  box-sizing:border-box!important;
+  margin:0!important;
+  padding:4px 8px!important;
+  border:1px solid #69a9ff!important;
+  border-radius:7px!important;
+  background:#fff!important;
+  color:#374151!important;
+  -webkit-text-fill-color:#374151!important;
+  opacity:1!important;
+  box-shadow:none!important;
+  outline:none!important;
+}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td input,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td select,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td .bsm-select-control{
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+}
+@media(max-width:760px){
+  #bsm-form.bsm-quotation-style .bsm-quotation-lines .bsm-table-wrap{overflow-x:auto!important;overflow-y:visible!important;}
+  #bsm-form.bsm-quotation-style .bsm-quotation-lines table{min-width:900px!important;}
+}
+
+/* v0.1.267 - All Cancel buttons use orange background */
+#bsm-form-cancel,
+#bsm-quick-cancel{
+  background:#f97316!important;
+  border-color:#f97316!important;
+  color:#fff!important;
+}
+#bsm-form-cancel:hover,
+#bsm-quick-cancel:hover{
+  background:#ea580c!important;
+  border-color:#ea580c!important;
+  color:#fff!important;
+}
+
+
+/* Company Settings: read-only table first, form only when Edit is requested. */
+.bsm-settings-view-head{display:flex;justify-content:flex-end;align-items:center;margin-bottom:12px}
+.bsm-company-settings-table-wrap{overflow-x:auto}
+.bsm-company-settings-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.bsm-company-settings-table th,.bsm-company-settings-table td{border:1px solid #8fb9ff;padding:11px 14px;text-align:left;vertical-align:middle}
+.bsm-company-settings-table th:first-child,.bsm-company-settings-table td:first-child{width:220px;font-weight:600;color:#13253f}
+.bsm-company-settings-table thead th{background:#0d3765;color:#fff}
+.bsm-company-settings-table .bsm-preline{white-space:pre-line}
+.bsm-company-settings-logo-view{display:block;max-width:90px;max-height:90px;object-fit:contain;border:1px solid #c9d7ea;padding:4px;background:#fff}
+@media(max-width:700px){.bsm-company-settings-table th:first-child,.bsm-company-settings-table td:first-child{width:135px}.bsm-company-settings-table th,.bsm-company-settings-table td{padding:9px 10px}}
+
+/* View/page names use blue for clearer visual hierarchy. */
+.bsm-topbar h1,#bsm-page-title{color:#2563eb!important;}
+
+
+/* v0.1.270 - Purchase Form compact header */
+@media (min-width:761px){
+  #bsm-form[data-module="material_inwards"] #bsm-form-fields.bsm-purchase-summary{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:10px 12px!important;
+    align-items:end;
+  }
+  #bsm-form[data-module="material_inwards"] #bsm-form-fields.bsm-purchase-summary>label{
+    min-width:0!important;
+  }
+  #bsm-form[data-module="material_inwards"] #bsm-form-fields.bsm-purchase-summary>label.wide{
+    grid-column:1/-1!important;
+  }
+}
+
+/* v0.1.273 - keep both Company Settings table headers white. */
+.bsm-company-settings-table thead th:first-child,
+.bsm-company-settings-table thead th{color:#fff!important;}
+
+
+/* v0.1.276 - compact all data/list table rows to show more records per screen */
+.bsm-app table th,.bsm-app table td{padding-top:6px!important;padding-bottom:6px!important;line-height:1.22!important;}
+.bsm-app table th{font-size:12px!important;}
+.bsm-app table td{font-size:12.5px!important;}
+.bsm-app .bsm-actions button,.bsm-app .bsm-user-edit{padding:2px 5px!important;}
+.bsm-app table input,.bsm-app table select,.bsm-app table textarea{min-height:32px!important;padding-top:6px!important;padding-bottom:6px!important;}
+@media(max-width:760px){.bsm-app table th,.bsm-app table td{padding-top:5px!important;padding-bottom:5px!important;}}
+
+
+/* v0.1.277 - global blue table headers with white text */
+.bsm-app table thead th,.bsm-app table th{background:#0d3765!important;color:#fff!important;border-color:#7eb6ff!important;}
+.bsm-app table thead th a,.bsm-app table th a,.bsm-app table thead th button,.bsm-app table th button{color:#fff!important;}
+.bsm-app table thead th svg,.bsm-app table th svg{color:#fff!important;fill:currentColor;}
+
+
+/* v0.1.278 - Purchase Form: increase Item column width for easier item selection */
+@media(min-width:761px){
+  .bsm-inline-form-host .bsm-purchase-lines table{table-layout:fixed!important;}
+  .bsm-inline-form-host .bsm-purchase-lines th:nth-child(1),
+  .bsm-inline-form-host .bsm-purchase-lines td:nth-child(1){width:24%!important;min-width:240px!important;}
+  .bsm-inline-form-host .bsm-purchase-lines th:nth-child(2),
+  .bsm-inline-form-host .bsm-purchase-lines td:nth-child(2),
+  .bsm-inline-form-host .bsm-purchase-lines th:nth-child(3),
+  .bsm-inline-form-host .bsm-purchase-lines td:nth-child(3),
+  .bsm-inline-form-host .bsm-purchase-lines th:nth-child(4),
+  .bsm-inline-form-host .bsm-purchase-lines td:nth-child(4),
+  .bsm-inline-form-host .bsm-purchase-lines th:nth-child(5),
+  .bsm-inline-form-host .bsm-purchase-lines td:nth-child(5),
+  .bsm-inline-form-host .bsm-purchase-lines th:nth-child(6),
+  .bsm-inline-form-host .bsm-purchase-lines td:nth-child(6){width:10%!important;}
+  .bsm-inline-form-host .bsm-purchase-lines th:last-child,
+  .bsm-inline-form-host .bsm-purchase-lines td:last-child{width:14%!important;min-width:110px!important;}
+  .bsm-inline-form-host .bsm-purchase-lines td:nth-child(1) .bsm-searchable-select,
+  .bsm-inline-form-host .bsm-purchase-lines td:nth-child(1) select{min-width:0!important;width:100%!important;}
+}
+
+
+/* v0.1.279 - Login screen: show company logo instead of company name/Login headings */
+.bsm-login-logo-wrap{display:flex;justify-content:center;align-items:center;margin:0 0 18px;}
+.bsm-login-logo{display:block;max-width:150px;max-height:95px;width:auto;height:auto;object-fit:contain;}
+
+
+/* v0.1.281 - Login password show/hide eye control */
+.bsm-password-wrap{position:relative;margin-top:5px;}
+.bsm-password-wrap input{margin-top:0!important;padding-right:46px!important;}
+.bsm-password-toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px!important;height:34px!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important;color:#475569!important;border-radius:7px!important;display:grid!important;place-items:center!important;cursor:pointer!important;box-shadow:none!important;font-size:18px!important;line-height:1!important;}
+.bsm-password-toggle:hover{background:#eef4ff!important;color:#1769ff!important;}
+.bsm-password-toggle:focus-visible{outline:2px solid #1769ff!important;outline-offset:1px;}
+.bsm-password-toggle.is-visible{color:#1769ff!important;}
+
+
+/* v0.1.283 - Purchase Form: Item Master Price display after Unit */
+.bsm-purchase-lines .bsm-col-item_id{width:23%!important;min-width:220px!important;}
+.bsm-purchase-lines .bsm-col-item_price{width:10%!important;min-width:92px!important;}
+.bsm-purchase-lines .bsm-display-item_price{width:100%!important;min-width:0!important;height:32px!important;padding:6px 8px!important;box-sizing:border-box!important;border:1px solid #7eb6ff!important;border-radius:6px!important;background:#eef2f7!important;color:#334155!important;cursor:default!important;}
+@media(max-width:760px){.bsm-purchase-lines .bsm-col-item_id{min-width:190px!important}.bsm-purchase-lines .bsm-col-item_price{min-width:100px!important}}
+
+
+/* v0.1.285 - Purchase Pending Approval */
+#bsm-purchase-approval-lines .bsm-purchase-approved-qty{width:110px;max-width:100%;text-align:right;}
+
+
+/* v0.1.287 - Purchase item row: compact, readable columns and wrapped item name */
+@media(min-width:761px){
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-table-wrap{overflow-x:hidden!important;}
+  .bsm-inline-form-host .bsm-purchase-lines table{width:100%!important;min-width:0!important;table-layout:fixed!important;}
+  .bsm-inline-form-host .bsm-purchase-lines th,
+  .bsm-inline-form-host .bsm-purchase-lines td{padding:3px 4px!important;min-width:0!important;vertical-align:middle!important;}
+  .bsm-inline-form-host .bsm-purchase-lines th{font-size:11px!important;line-height:1.1!important;white-space:normal!important;}
+  .bsm-inline-form-host .bsm-purchase-lines td input,
+  .bsm-inline-form-host .bsm-purchase-lines td select,
+  .bsm-inline-form-host .bsm-purchase-lines td .bsm-select-control,
+  .bsm-inline-form-host .bsm-purchase-lines td .bsm-display-item_price{height:30px!important;min-height:30px!important;font-size:11px!important;padding-top:4px!important;padding-bottom:4px!important;}
+
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_id{width:24%!important;min-width:0!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-qty{width:8%!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-unit_id{width:7%!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_price{width:9%!important;min-width:0!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-rate{width:8%!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-taxable_amount{width:9%!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-gst_rate{width:7%!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-cgst_amount,
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-sgst_amount,
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-igst_amount{width:7%!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-total_amount{width:9%!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-line-actions{width:68px!important;min-width:68px!important;white-space:nowrap!important;padding-left:3px!important;padding-right:3px!important;}
+
+  /* Make long Item names readable in the selected field without expanding the whole form. */
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_id .bsm-select-control{height:auto!important;min-height:30px!important;align-items:center!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_id .bsm-select-search{
+    height:auto!important;min-height:30px!important;line-height:1.05!important;font-size:11px!important;
+    padding:4px 24px 4px 7px!important;text-overflow:clip!important;white-space:normal!important;overflow:visible!important;
+  }
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_id .bsm-select-option{white-space:normal!important;line-height:1.2!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-add-line-inline,
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-remove-line{width:28px!important;height:28px!important;min-width:28px!important;padding:0!important;}
+}
+@media(max-width:760px){
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_id{min-width:210px!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_id .bsm-select-option{white-space:normal!important;}
+}
+
+
+/* v0.1.288 - Purchase row clarity: no overlap, readable Item and GST controls */
+@media(min-width:761px){
+  .bsm-inline-form-host .bsm-purchase-lines{overflow:visible!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-table-wrap{
+    overflow-x:auto!important;
+    overflow-y:visible!important;
+    max-width:100%!important;
+  }
+  .bsm-inline-form-host .bsm-purchase-lines table{
+    width:100%!important;
+    min-width:1040px!important;
+    table-layout:fixed!important;
+  }
+  .bsm-inline-form-host .bsm-purchase-lines th,
+  .bsm-inline-form-host .bsm-purchase-lines td{
+    box-sizing:border-box!important;
+    overflow:visible!important;
+    padding:3px 4px!important;
+  }
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_id{width:200px!important;min-width:200px!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-qty{width:78px!important;min-width:78px!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-unit_id{width:78px!important;min-width:78px!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_price{width:82px!important;min-width:82px!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-rate{width:82px!important;min-width:82px!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-taxable_amount{width:90px!important;min-width:90px!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-gst_rate{width:84px!important;min-width:84px!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-cgst_amount,
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-sgst_amount,
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-igst_amount{width:78px!important;min-width:78px!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-total_amount{width:86px!important;min-width:86px!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-line-actions{width:72px!important;min-width:72px!important;}
+
+  /* Selected item stays inside its box; dropdown options may wrap. */
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_id .bsm-searchable-select,
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_id .bsm-select-control{width:100%!important;min-width:0!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_id .bsm-select-control{height:32px!important;min-height:32px!important;overflow:hidden!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_id .bsm-select-search{
+    width:100%!important;height:32px!important;min-height:32px!important;
+    white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+    padding:5px 24px 5px 7px!important;box-sizing:border-box!important;
+  }
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_id .bsm-select-option{
+    white-space:normal!important;overflow-wrap:anywhere!important;line-height:1.25!important;
+  }
+
+  /* GST select must remain fully inside its own cell. */
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-gst_rate select,
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-gst_rate select.bsm-native-gst-rate{
+    display:block!important;width:100%!important;min-width:0!important;max-width:100%!important;
+    height:32px!important;min-height:32px!important;box-sizing:border-box!important;
+    padding:4px 22px 4px 6px!important;margin:0!important;
+    border:1px solid #7eb6ff!important;border-radius:6px!important;background-color:#fff!important;
+  }
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-searchable-select.open,
+  .bsm-inline-form-host .bsm-purchase-lines td:has(.bsm-searchable-select.open){z-index:1000!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-select-menu{z-index:1010!important;}
+}
+
+
+/* v0.1.289 - Purchase Item dropdown: fully visible and readable */
+@media(min-width:761px){
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-table-wrap{
+    overflow:visible!important;
+    max-width:100%!important;
+  }
+  .bsm-inline-form-host .bsm-purchase-lines table{
+    width:100%!important;
+    min-width:0!important;
+    table-layout:fixed!important;
+  }
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_id{width:22%!important;min-width:0!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-qty{width:7%!important;min-width:0!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-unit_id{width:7%!important;min-width:0!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_price{width:8%!important;min-width:0!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-rate{width:8%!important;min-width:0!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-taxable_amount{width:9%!important;min-width:0!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-gst_rate{width:7%!important;min-width:0!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-cgst_amount,
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-sgst_amount,
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-igst_amount{width:7%!important;min-width:0!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-total_amount{width:8%!important;min-width:0!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-line-actions{width:10%!important;min-width:76px!important;}
+
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_id .bsm-searchable-select.open{z-index:5000!important;}
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_id .bsm-select-menu{
+    top:calc(100% + 4px)!important;
+    bottom:auto!important;
+    left:0!important;
+    right:auto!important;
+    width:340px!important;
+    min-width:100%!important;
+    max-width:min(420px,calc(100vw - 40px))!important;
+    max-height:160px!important;
+    overflow-y:auto!important;
+    background:#fff!important;
+    z-index:5010!important;
+  }
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_id .bsm-select-option{
+    display:block!important;
+    width:100%!important;
+    padding:8px 10px!important;
+    text-align:left!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+    line-height:1.25!important;
+    background:#fff!important;
+    color:#102746!important;
+  }
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_id .bsm-select-option:hover,
+  .bsm-inline-form-host .bsm-purchase-lines .bsm-col-item_id .bsm-select-option.selected{background:#eef6ff!important;}
+}
+
+
+/* v0.1.290 - compact Purchase summary; supplier invoice beside Total Amount */
+@media (min-width:761px){
+  #bsm-form[data-module="material_inwards"] #bsm-form-fields.bsm-purchase-summary{gap:7px 12px!important;}
+  #bsm-form[data-module="material_inwards"] #bsm-form-fields.bsm-purchase-summary>label{margin:0!important;}
+  #bsm-form[data-module="material_inwards"] #bsm-form-fields.bsm-purchase-summary .bsm-purchase-invoice-field{grid-column:3/5!important;align-self:end!important;min-width:0!important;}
+  #bsm-form[data-module="material_inwards"] .bsm-purchase-invoice-field input[type="file"]{width:100%!important;min-height:38px!important;height:38px!important;padding:5px 8px!important;box-sizing:border-box!important;}
+  #bsm-form[data-module="material_inwards"] #bsm-form-fields.bsm-purchase-summary input,
+  #bsm-form[data-module="material_inwards"] #bsm-form-fields.bsm-purchase-summary select,
+  #bsm-form[data-module="material_inwards"] #bsm-form-fields.bsm-purchase-summary .bsm-select-search{min-height:38px!important;height:38px!important;}
+  #bsm-form[data-module="material_inwards"] #bsm-form-fields.bsm-purchase-summary .bsm-field-label{margin-bottom:4px!important;}
+}
+@media (max-width:760px){
+  #bsm-form[data-module="material_inwards"] .bsm-purchase-invoice-field{grid-column:1/-1!important;}
+}
+
+
+/* v0.1.295 - Edit Purchase modal: match Add Purchase item table layout */
+@media(min-width:761px){
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines{overflow:visible!important;padding:0 12px 14px!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-table-wrap{overflow:visible!important;max-width:100%!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines table{width:100%!important;min-width:0!important;table-layout:fixed!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines th,
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines td{padding:3px 4px!important;min-width:0!important;box-sizing:border-box!important;vertical-align:middle!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines th{font-size:11px!important;line-height:1.1!important;white-space:normal!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines td input,
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines td select,
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines td .bsm-select-control{height:32px!important;min-height:32px!important;font-size:11px!important;box-sizing:border-box!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-item_id{width:22%!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-qty{width:8%!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-unit_id{width:8%!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-item_price{width:9%!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-rate{width:9%!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-taxable_amount{width:10%!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-gst_rate{width:8%!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-cgst_amount,
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-sgst_amount,
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-igst_amount{width:8%!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-total_amount{width:10%!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-line-actions{width:68px!important;min-width:68px!important;white-space:nowrap!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-item_id .bsm-searchable-select,
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-item_id .bsm-select-control{width:100%!important;min-width:0!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-item_id .bsm-select-search{width:100%!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;padding:5px 24px 5px 7px!important;box-sizing:border-box!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-item_id .bsm-select-menu{top:calc(100% + 4px)!important;bottom:auto!important;width:340px!important;min-width:100%!important;max-width:min(420px,calc(100vw - 40px))!important;max-height:180px!important;overflow-y:auto!important;z-index:5010!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-item_id .bsm-select-option{white-space:normal!important;overflow-wrap:anywhere!important;line-height:1.25!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-gst_rate select{width:100%!important;min-width:0!important;max-width:100%!important;height:32px!important;padding:4px 22px 4px 6px!important;box-sizing:border-box!important;}
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-add-line-inline,
+  #bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-remove-line{width:28px!important;height:28px!important;min-width:28px!important;padding:0!important;}
+}
+
+
+/* v0.1.296 - full-screen Edit Purchase modal + clearer GST field */
+@media(min-width:761px){
+  #bsm-modal.bsm-purchase-edit-modal{
+    padding:0!important;
+    align-items:stretch!important;
+    overflow:hidden!important;
+    background:rgba(17,24,39,.38)!important;
+  }
+  #bsm-modal.bsm-purchase-edit-modal .bsm-modal-panel{
+    width:100vw!important;
+    max-width:none!important;
+    min-height:100vh!important;
+    height:100vh!important;
+    border-radius:0!important;
+    border:0!important;
+    display:flex!important;
+    flex-direction:column!important;
+    box-shadow:none!important;
+    overflow:hidden!important;
+  }
+  #bsm-modal.bsm-purchase-edit-modal .bsm-modal-head{
+    flex:0 0 auto!important;
+    border-radius:0!important;
+    padding:12px 20px!important;
+  }
+  #bsm-modal.bsm-purchase-edit-modal #bsm-form{
+    flex:1 1 auto!important;
+    min-height:0!important;
+    overflow:auto!important;
+    display:flex!important;
+    flex-direction:column!important;
+  }
+  #bsm-modal.bsm-purchase-edit-modal #bsm-form-fields{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:8px 12px!important;
+    padding:12px 18px!important;
+  }
+  #bsm-modal.bsm-purchase-edit-modal .bsm-purchase-lines{
+    padding:0 18px 10px!important;
+  }
+  #bsm-modal.bsm-purchase-edit-modal .bsm-form-actions{
+    margin-top:auto!important;
+    flex:0 0 auto!important;
+    padding:10px 18px!important;
+    position:sticky!important;
+    bottom:0!important;
+    background:#fff!important;
+    z-index:20!important;
+  }
+  #bsm-modal.bsm-purchase-edit-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-item_id{width:20%!important;}
+  #bsm-modal.bsm-purchase-edit-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-qty{width:7%!important;}
+  #bsm-modal.bsm-purchase-edit-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-unit_id{width:7%!important;}
+  #bsm-modal.bsm-purchase-edit-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-item_price{width:8%!important;}
+  #bsm-modal.bsm-purchase-edit-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-rate{width:8%!important;}
+  #bsm-modal.bsm-purchase-edit-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-taxable_amount{width:9%!important;}
+  #bsm-modal.bsm-purchase-edit-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-gst_rate{width:10%!important;min-width:118px!important;}
+  #bsm-modal.bsm-purchase-edit-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-cgst_amount,
+  #bsm-modal.bsm-purchase-edit-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-sgst_amount,
+  #bsm-modal.bsm-purchase-edit-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-igst_amount{width:8%!important;}
+  #bsm-modal.bsm-purchase-edit-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-total_amount{width:10%!important;}
+  #bsm-modal.bsm-purchase-edit-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-gst_rate .bsm-select-add{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 32px!important;
+    gap:4px!important;
+    align-items:center!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  #bsm-modal.bsm-purchase-edit-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-gst_rate .bsm-searchable-select,
+  #bsm-modal.bsm-purchase-edit-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-gst_rate .bsm-select-control,
+  #bsm-modal.bsm-purchase-edit-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-gst_rate .bsm-select-search{
+    width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+  #bsm-modal.bsm-purchase-edit-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-gst_rate .bsm-quick-add{
+    width:32px!important;
+    min-width:32px!important;
+    height:32px!important;
+    padding:0!important;
+  }
+}
+
+
+/* v0.1.303 - Vendor Payment workflow */
+.bsm-payment-top-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 12px;align-items:end}.bsm-payment-top-grid label{min-width:0}.bsm-payment-top-grid label.wide{grid-column:1/-1}.bsm-vendor-payment-form{padding:14px}.bsm-payment-allocation-table input[type="number"]{width:110px!important;min-width:95px!important}.bsm-vendor-outstanding-filters{display:grid!important;grid-template-columns:repeat(4,minmax(150px,1fr)) auto;gap:8px;align-items:end}.bsm-section-gap{height:6px}
+@media(max-width:760px){.bsm-payment-top-grid{grid-template-columns:1fr}.bsm-payment-top-grid label.wide{grid-column:auto}.bsm-vendor-outstanding-filters{grid-template-columns:1fr 1fr}.bsm-payment-allocation-table{min-width:760px}}
+
+/* v0.1.311 - Requisition approval: current HO warehouse stock column */
+.bsm-approval-lines .bsm-col-stock{width:120px;}
+.bsm-approval-lines th:nth-child(2),.bsm-approval-lines td:nth-child(2){white-space:nowrap;}
+
+
+/* v0.1.316 - item-wise document upload in Consumption Form */
+.bsm-app .bsm-lines .bsm-col-document{min-width:170px!important;width:170px!important;}
+.bsm-consumption-doc-cell{display:flex;align-items:center;gap:6px;min-width:0;}
+.bsm-consumption-doc-cell input[type="file"]{width:125px!important;min-width:0!important;height:32px!important;padding:3px!important;font-size:11px!important;background:#fff;}
+.bsm-consumption-doc-link{white-space:nowrap;font-size:11px;color:#2563eb;text-decoration:none;font-weight:600;}
+@media(max-width:760px){.bsm-app .bsm-lines .bsm-col-document{min-width:165px!important;}}
+
+
+/* v0.1.320 - Purchase GST % is auto-filled and read-only */
+.bsm-purchase-lines .bsm-col-gst_rate select.bsm-purchase-gst-native{position:absolute!important;opacity:0!important;pointer-events:none!important;width:1px!important;height:1px!important;}
+.bsm-purchase-lines .bsm-col-gst_rate .bsm-purchase-gst-display{display:block!important;width:100%!important;min-width:0!important;height:32px!important;box-sizing:border-box!important;padding:5px 8px!important;border:1px solid #7eb6ff!important;border-radius:6px!important;background:#eef3f9!important;color:#111827!important;font-weight:600!important;text-align:center!important;}
+.bsm-purchase-lines .bsm-col-gst_rate{min-width:82px!important;}
+
+
+/* v0.1.323 - Consumption Items Master: force visible Document header */
+#bsm-consumption-items-list th.bsm-consumption-document-head{background:#0d3765!important;color:#fff!important;min-width:90px!important;width:90px!important;text-align:center!important;white-space:nowrap!important;}
+#bsm-consumption-items-list td:last-child{min-width:90px!important;text-align:center!important;}
+
+/* v0.1.325 - Purchase Requisition / PO workflow */
+@media(min-width:1101px){.bsm-form-grid.bsm-form-grid-4{grid-template-columns:repeat(4,minmax(0,1fr));}}
+.bsm-po-form>label.wide{display:block;padding:0 16px 14px;font-size:12px;color:#4b5563}.bsm-po-form>label.wide textarea{display:block;width:100%;margin-top:5px;min-height:58px}
+.bsm-po-form .bsm-table-wrap{border-top:1px solid var(--line)}
+.bsm-po-create-toolbar{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px}
+.bsm-po-create-toolbar label{font-size:12px;color:#4b5563}.bsm-po-create-toolbar select{display:block;width:100%;margin-top:4px}
+#po_pending_list .po-row-qty{min-width:86px;width:100%}
+#po_pending_list .po-row-vendor{min-width:145px}
+#po_pending_list .po-row-select{width:18px;height:18px}
+#po_manual_lines .po-manual-item{min-width:220px}
+#po_manual_lines input{min-width:90px}
+@media(max-width:760px){.bsm-po-create-toolbar{align-items:stretch}.bsm-po-create-toolbar label{width:100%}.bsm-po-create-toolbar .bsm-btn{width:100%}}
+
+
+/* v0.1.327 - Pending PO vendor dropdown clarity + remove PO Form menu view */
+#po_pending_list{overflow:visible!important;}
+#po_pending_list .bsm-table-wrap{overflow-x:auto!important;overflow-y:visible!important;position:relative!important;}
+#po_pending_list table{overflow:visible!important;}
+#po_pending_list td{overflow:visible!important;}
+#po_pending_list td:has(.po-row-vendor){min-width:230px!important;position:relative!important;z-index:20!important;}
+#po_pending_list .po-row-vendor{display:none!important;}
+#po_pending_list .bsm-searchable-select{width:100%!important;min-width:215px!important;position:relative!important;z-index:30!important;}
+#po_pending_list .bsm-searchable-select.open{z-index:999!important;}
+#po_pending_list .bsm-select-control,#po_pending_list .bsm-select-search{width:100%!important;min-width:0!important;box-sizing:border-box!important;}
+#po_pending_list .bsm-select-menu{z-index:1000!important;min-width:240px!important;max-width:320px!important;max-height:220px!important;overflow-y:auto!important;background:#fff!important;box-shadow:0 10px 28px rgba(0,0,0,.18)!important;}
+#po_pending_list .bsm-select-option{white-space:normal!important;line-height:1.25!important;text-align:left!important;padding:9px 10px!important;}
+
+/* v0.1.328 - Purchase Order consolidated workflow */
+#po_pending_list .bsm-searchable-select{min-width:210px!important;}
+#po_pending_list .bsm-select-menu{z-index:500!important;min-width:260px!important;}
+#bsm-po-receive-modal .bsm-modal-panel{width:min(900px,100%)!important;}
+
+
+/* v0.1.331 - Pending PO vendor dropdown: show full menu without table clipping */
+#po_pending_list{overflow:visible!important;}
+#po_pending_list .bsm-table-wrap{overflow:visible!important;position:relative!important;}
+#po_pending_list table{overflow:visible!important;}
+#po_pending_list tbody,#po_pending_list tr,#po_pending_list td{overflow:visible!important;}
+#po_pending_list tr:has(.bsm-searchable-select.open){position:relative!important;z-index:1200!important;}
+#po_pending_list td:has(.bsm-searchable-select.open){position:relative!important;z-index:1210!important;}
+#po_pending_list .bsm-searchable-select.open{z-index:1220!important;}
+#po_pending_list .bsm-searchable-select.open .bsm-select-menu{z-index:1230!important;min-width:300px!important;width:100%!important;max-width:380px!important;max-height:260px!important;overflow-y:auto!important;background:#fff!important;border:1px solid #7eb6ff!important;box-shadow:0 14px 32px rgba(15,35,65,.24)!important;}
+#po_pending_list .bsm-select-option{min-height:38px!important;padding:9px 12px!important;white-space:normal!important;line-height:1.3!important;}
+@media(max-width:760px){#po_pending_list .bsm-table-wrap{overflow-x:auto!important;overflow-y:visible!important;}#po_pending_list .bsm-searchable-select.open .bsm-select-menu{min-width:240px!important;max-width:calc(100vw - 40px)!important;}}
+
+
+/* v0.1.333 - Purchase Form: place Upload Supplier Invoice immediately after Total Amount */
+@media (min-width:761px){
+  #bsm-form[data-module="material_inwards"] #bsm-form-fields.bsm-purchase-summary .bsm-purchase-invoice-field{
+    grid-column:4/5!important;
+    grid-row:auto!important;
+    align-self:end!important;
+    min-width:0!important;
+  }
+}
+
+/* v0.1.334 PO Master action controls */
+#po_master_list .bsm-actions{display:flex;align-items:center;gap:6px;white-space:nowrap;}
+#po_master_list .bsm-actions .bsm-pdf-link,#po_master_list .bsm-actions .po-edit{display:inline-flex;align-items:center;justify-content:center;}
+
+
+/* v0.1.335 - Daily Attendance image upload beside P/A */
+.bsm-attendance-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.bsm-att-image-btn{width:40px;height:38px;border:1px solid #6ea8ff;border-radius:9px;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s ease;flex:0 0 auto}
+.bsm-att-image-btn:hover,.bsm-att-image-btn.has-file{background:#eef5ff;border-color:#2563eb}
+.bsm-att-camera{font-size:18px;line-height:1}
+.bsm-att-image-view{font-size:12px;font-weight:600;color:#2563eb;text-decoration:none;white-space:nowrap}
+.bsm-att-image-view:hover{text-decoration:underline}
+@media(max-width:760px){.bsm-attendance-actions{gap:7px}.bsm-att-image-btn{width:38px;height:36px}}
+
+
+/* v0.1.336 - PO Master: keep Cancel action clearly visible */
+#po_master_list table th:last-child,#po_master_list table td:last-child{min-width:190px!important;width:190px!important;}
+#po_master_list .bsm-actions{display:flex!important;align-items:center!important;gap:8px!important;white-space:nowrap!important;overflow:visible!important;}
+#po_master_list .bsm-actions .po-cancel{display:inline-flex!important;align-items:center!important;justify-content:center!important;background:#dc2626!important;color:#fff!important;border:1px solid #dc2626!important;border-radius:8px!important;padding:6px 10px!important;line-height:1.2!important;font-size:12px!important;font-weight:700!important;min-width:58px!important;}
+#po_master_list .bsm-actions .po-cancel:hover{background:#b91c1c!important;border-color:#b91c1c!important;}
+
+
+/* v0.1.341 - Office Attendance image thumbnail preview beside P/A */
+.bsm-att-image-preview-wrap{display:inline-flex;align-items:center;justify-content:center;min-width:0}
+.bsm-att-image-preview-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+.bsm-att-image-thumb{width:42px;height:42px;object-fit:cover;border:1px solid #6ea8ff;border-radius:8px;background:#fff;display:block}
+.bsm-att-image-thumb:hover{box-shadow:0 0 0 2px rgba(37,99,235,.15)}
+@media(max-width:760px){.bsm-att-image-thumb{width:38px;height:38px}}
+
+/* v0.1.342 Attendance Master photo thumbnail */
+.bsm-att-master-thumb{width:38px;height:38px;object-fit:cover;border-radius:6px;border:1px solid #8bb7ff;display:block}
+
+/* v0.1.343 - visually mark Daily Attendance rows changed in the current edit session */
+.bsm-office-att-table tbody tr.bsm-att-row-updated>td{background:#e8f7ee!important;}
+.bsm-office-att-table tbody tr.bsm-att-row-updated{box-shadow:inset 4px 0 0 #20a35a;}
+
+
+/* Requisition Pending PO layout fix */
+#po_pending_list{
+  max-width:100%;
+  overflow:hidden;
+}
+#po_pending_list .po-pending-table-wrap{
+  width:100%;
+  max-width:100%;
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+}
+#po_pending_list .po-pending-table{
+  width:100%;
+  min-width:1060px;
+  table-layout:fixed;
+}
+#po_pending_list .po-pending-table th,
+#po_pending_list .po-pending-table td{
+  box-sizing:border-box;
+}
+#po_pending_list .po-pending-table th:nth-child(1),
+#po_pending_list .po-pending-table td:nth-child(1){width:150px;}
+#po_pending_list .po-pending-table th:nth-child(2),
+#po_pending_list .po-pending-table td:nth-child(2){width:70px;}
+#po_pending_list .po-pending-table th:nth-child(3),
+#po_pending_list .po-pending-table td:nth-child(3){width:95px;}
+#po_pending_list .po-pending-table th:nth-child(4),
+#po_pending_list .po-pending-table td:nth-child(4){width:95px;}
+#po_pending_list .po-pending-table th:nth-child(5),
+#po_pending_list .po-pending-table td:nth-child(5){width:105px;}
+#po_pending_list .po-pending-table th:nth-child(6),
+#po_pending_list .po-pending-table td:nth-child(6){width:105px;}
+#po_pending_list .po-pending-table th:nth-child(7),
+#po_pending_list .po-pending-table td:nth-child(7){width:190px;}
+#po_pending_list .po-pending-table th:nth-child(8),
+#po_pending_list .po-pending-table td:nth-child(8){width:90px;}
+#po_pending_list .po-pending-table th:nth-child(9),
+#po_pending_list .po-pending-table td:nth-child(9){width:100px;}
+
+#po_pending_list .po-row-fixed-price,
+#po_pending_list .po-row-qty,
+#po_pending_list .po-row-rate{
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+}
+#po_pending_list .po-row-fixed-price{
+  background:#eef1f5;
+  color:#4b5563;
+  cursor:not-allowed;
+}
+#po_pending_list .po-row-vendor,
+#po_pending_list .bsm-searchable-select{
+  width:100%;
+  min-width:0;
+}
+#po_pending_list .bsm-form-actions{
+  justify-content:flex-end;
+}
+
+/* Keep horizontal overflow inside the table, not the whole page */
+html,body{
+  overflow-x:hidden;
+}
+#bsm-content{
+  min-width:0;
+  max-width:100%;
+  overflow-x:hidden;
+}
+
+
+/* Requisition Pending PO - keep Vendor searchable select inside its own column */
+#po_pending_list .po-pending-table td:nth-child(7){
+  overflow:hidden;
+}
+#po_pending_list .po-pending-table td:nth-child(7) .bsm-searchable-select,
+#po_pending_list .po-pending-table td:nth-child(7) .bsm-searchable-wrap,
+#po_pending_list .po-pending-table td:nth-child(7) .select2-container,
+#po_pending_list .po-pending-table td:nth-child(7) .choices,
+#po_pending_list .po-pending-table td:nth-child(7) .choices__inner{
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  box-sizing:border-box !important;
+}
+#po_pending_list .po-pending-table td:nth-child(7) select,
+#po_pending_list .po-pending-table td:nth-child(7) input,
+#po_pending_list .po-pending-table td:nth-child(7) button{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  box-sizing:border-box;
+}
+#po_pending_list .po-pending-table td:nth-child(7),
+#po_pending_list .po-pending-table td:nth-child(8),
+#po_pending_list .po-pending-table td:nth-child(9){
+  padding-left:8px;
+  padding-right:8px;
+}
+#po_pending_list .po-row-vendor,
+#po_pending_list .po-row-qty,
+#po_pending_list .po-row-rate{
+  height:40px;
+}
+
+
+/* Labour Contractor nested subsections */
+.bsm-nav-subsection{
+  margin:7px 8px 3px 12px;
+  padding:6px 8px 4px;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#94a3b8;
+  border-top:1px solid rgba(148,163,184,.20);
+}
+.bsm-nav-items .bsm-nav-subsection:first-child{
+  border-top:0;
+  margin-top:2px;
+}
+.bsm-nav-subitem{
+  padding-left:18px;
+}
+
+
+/* Contractor Payment live Site + Contractor summary */
+.bsm-contractor-payment-summary{
+  grid-column:1 / -1;
+  margin-top:2px;
+}
+.bsm-contractor-payment-summary .bsm-table-wrap{
+  border:1px solid var(--line);
+  border-radius:8px;
+  overflow:hidden;
+}
+.bsm-contractor-payment-summary-table{
+  width:100%;
+  table-layout:fixed;
+}
+.bsm-contractor-payment-summary-table th,
+.bsm-contractor-payment-summary-table td{
+  text-align:right;
+}
+.bsm-contractor-payment-summary-table th{
+  background:#0f4c81;
+  color:#fff;
+}
+
+
+/* v0.1.420 - Pending Site Return Approval: compact receipt row + readable Unit */
+@media(min-width:761px){
+  #bsm-line-items.bsm-return-inward-lines .bsm-table-wrap{
+    overflow-x:hidden!important;
+  }
+  #bsm-line-items.bsm-return-inward-lines table{
+    width:100%!important;
+    min-width:0!important;
+    table-layout:fixed!important;
+  }
+  #bsm-line-items.bsm-return-inward-lines th,
+  #bsm-line-items.bsm-return-inward-lines td{
+    min-width:0!important;
+    padding:4px 5px!important;
+    vertical-align:middle!important;
+  }
+  #bsm-line-items.bsm-return-inward-lines .bsm-col-item_id{
+    width:42%!important;
+  }
+  #bsm-line-items.bsm-return-inward-lines .bsm-col-return_qty{
+    width:14%!important;
+  }
+  #bsm-line-items.bsm-return-inward-lines .bsm-col-qty{
+    width:14%!important;
+  }
+  #bsm-line-items.bsm-return-inward-lines .bsm-col-unit_id{
+    width:18%!important;
+  }
+  #bsm-line-items.bsm-return-inward-lines .bsm-line-actions{
+    width:0!important;
+    min-width:0!important;
+    padding:0!important;
+    border-left:0!important;
+  }
+  #bsm-line-items.bsm-return-inward-lines .bsm-col-item_id .bsm-select-control,
+  #bsm-line-items.bsm-return-inward-lines .bsm-col-item_id select,
+  #bsm-line-items.bsm-return-inward-lines .bsm-col-return_qty input,
+  #bsm-line-items.bsm-return-inward-lines .bsm-col-qty input,
+  #bsm-line-items.bsm-return-inward-lines .bsm-return-unit-display{
+    height:32px!important;
+    min-height:32px!important;
+    box-sizing:border-box!important;
+    font-size:12px!important;
+  }
+  #bsm-line-items.bsm-return-inward-lines .bsm-return-unit-display{
+    display:block!important;
+    width:100%!important;
+    margin-top:5px!important;
+    padding:6px 8px!important;
+    border:1px solid #7eb6ff!important;
+    border-radius:6px!important;
+    background:#eef2f7!important;
+    color:#334155!important;
+  }
+}
+
+
+/* v0.1.424 - reliable SGST display in Purchase Form */
+.bsm-purchase-lines .bsm-purchase-sgst-display{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  height:30px!important;
+  min-height:30px!important;
+  box-sizing:border-box!important;
+  margin-top:5px!important;
+  padding:4px 7px!important;
+  border:1px solid #7eb6ff!important;
+  border-radius:6px!important;
+  background:#eef2f7!important;
+  color:#334155!important;
+  font-size:11px!important;
+}
+
+
+/* v0.1.425 - Return Receipt Unit is a plain readonly field, not a searchable select */
+#bsm-line-items.bsm-return-inward-lines .bsm-return-unit-label{
+  display:block!important;
+  width:100%!important;
+}
+#bsm-line-items.bsm-return-inward-lines .bsm-return-unit-display{
+  display:block!important;
+  width:100%!important;
+  margin:0!important;
+  height:32px!important;
+  min-height:32px!important;
+  padding:6px 8px!important;
+  box-sizing:border-box!important;
+  border:1px solid #7eb6ff!important;
+  border-radius:6px!important;
+  background:#eef2f7!important;
+  color:#334155!important;
+  font-size:12px!important;
+}
+
+/* Return inward unit: label is displayed directly, independent of dropdown enhancers. */
+#bsm-lines-body .bsm-return-unit-text{display:block;min-width:65px;padding:6px 8px;color:#26364b;font-size:12px;line-height:18px;white-space:nowrap}
+
+/* Return receipt Unit must never inherit a hidden GST/price column state. */
+#bsm-line-items.bsm-return-inward-lines th.bsm-col-unit_id,
+#bsm-line-items.bsm-return-inward-lines td.bsm-col-unit_id { display:table-cell!important; }
+#bsm-line-items.bsm-return-inward-lines input.bsm-return-unit-display {display:block!important;color:#243449!important;opacity:1!important;}
+
+/* v0.1.430 - collapsible Receipt subsection below Material Returns Item Master */
+#bsm-nav .bsm-nav-receipt{margin:5px 0 2px 0;}
+#bsm-nav .bsm-nav-receipt-label{display:flex;align-items:center;justify-content:space-between;cursor:pointer;color:#e0f0ff;background:rgba(255,255,255,.10);border-radius:8px;padding:10px 11px;font-size:13px;font-weight:700;list-style:none;}
+#bsm-nav .bsm-nav-receipt-label::-webkit-details-marker{display:none;}
+#bsm-nav .bsm-nav-receipt-label:hover{background:rgba(255,255,255,.16);}
+#bsm-nav .bsm-nav-receipt-arrow{transition:transform .18s ease;}
+#bsm-nav .bsm-nav-receipt[open] .bsm-nav-receipt-arrow{transform:rotate(180deg);}
+#bsm-nav .bsm-nav-receipt-items{padding:4px 0 2px 9px;}
+#bsm-nav .bsm-nav-receipt-items .bsm-nav-item{font-size:12px;}
+
+/* Currency KPI: retain readability at six-column dashboard width. */
+.bsm-dashboard-kpi-money strong{font-size:clamp(15px,1.45vw,23px);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+
+/* v0.1.439: individual soft backgrounds for six dashboard KPI cards. */
+.bsm-dashboard-kpis>.bsm-dashboard-kpi{transition:filter .15s ease,border-color .15s ease;box-shadow:none;}
+.bsm-dashboard-kpis>.bsm-dashboard-kpi:nth-child(1){background:#e8f1ff;border-color:#91b9ff;}
+.bsm-dashboard-kpis>.bsm-dashboard-kpi:nth-child(2){background:#fff0df;border-color:#f9bd72;}
+.bsm-dashboard-kpis>.bsm-dashboard-kpi:nth-child(3){background:#f0e8ff;border-color:#bba0ef;}
+.bsm-dashboard-kpis>.bsm-dashboard-kpi:nth-child(4){background:#fff0f0;border-color:#f5a0a0;}
+.bsm-dashboard-kpis>.bsm-dashboard-kpi:nth-child(5){background:#e5f7ef;border-color:#87d9ae;}
+.bsm-dashboard-kpis>.bsm-dashboard-kpi:nth-child(6){background:#fff8dc;border-color:#e7c66b;}
+.bsm-dashboard-kpis>.bsm-dashboard-kpi span{color:#344054;}
+.bsm-dashboard-kpis>.bsm-dashboard-kpi strong{color:#101828;}
+.bsm-dashboard-kpis>.bsm-dashboard-kpi:hover{filter:brightness(.975);}
+.bsm-dashboard-kpis>.bsm-dashboard-kpi:focus-visible{outline:3px solid #2563eb;outline-offset:2px;}
+
+/* Contractor Outstanding: live totals across all filtered rows */
+.bsm-contractor-outstanding-totals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 12px;}
+.bsm-outstanding-total{display:flex;flex-direction:column;gap:7px;min-width:0;padding:14px 16px;border:1px solid #95b8ff;border-radius:12px;background:#f5f8ff;}
+.bsm-outstanding-total span{font-size:12px;color:#3b526c;}
+.bsm-outstanding-total strong{font-size:20px;color:#16283f;font-weight:700;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;}
+@media(max-width:600px){.bsm-contractor-outstanding-totals{gap:7px}.bsm-outstanding-total{padding:10px 9px}.bsm-outstanding-total strong{font-size:14px}.bsm-outstanding-total span{font-size:11px}}
+
+/* v0.1.441: Compact contractor totals inside the filter panel */
+.bsm-app .bsm-contractor-filters{align-items:end;column-gap:10px;row-gap:8px;}
+.bsm-contractor-filters #bsm-contractor-filter-totals{flex:0 0 100%;width:100%;min-width:0;box-sizing:border-box;margin:3px 0 0;padding-top:9px;border-top:1px solid #e4edfb;}
+.bsm-contractor-filters .bsm-contractor-outstanding-totals{gap:8px;}
+.bsm-contractor-filters .bsm-outstanding-total{padding:8px 12px;gap:3px;border-radius:8px;}
+.bsm-contractor-filters .bsm-outstanding-total span{font-size:11px;}
+.bsm-contractor-filters .bsm-outstanding-total strong{font-size:17px;line-height:1.25;}
+@media(max-width:760px){.bsm-app .bsm-contractor-filters #bsm-contractor-filter-totals{grid-column:1/-1;} .bsm-contractor-filters .bsm-contractor-outstanding-totals{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;} .bsm-contractor-filters .bsm-outstanding-total{padding:7px 6px;gap:4px;} .bsm-contractor-filters .bsm-outstanding-total span{font-size:10px;} .bsm-contractor-filters .bsm-outstanding-total strong{font-size:clamp(11px,2.9vw,15px);}}
+
+/* v0.1.442: Outer filtered-totals container must not be a 3-column grid itself.
+   v441 applied .bsm-contractor-outstanding-totals to both outer and inner nodes,
+   shrinking the entire group into the first third of its parent. */
+.bsm-app .bsm-contractor-filters #bsm-contractor-filter-totals{display:block!important;width:100%;max-width:100%;}
+.bsm-app .bsm-contractor-filters #bsm-contractor-filter-totals > .bsm-contractor-outstanding-totals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:10px;margin:0;}
+.bsm-app .bsm-contractor-filters #bsm-contractor-filter-totals .bsm-outstanding-total{min-width:0;box-sizing:border-box;padding:9px 12px;}
+.bsm-app .bsm-contractor-filters #bsm-contractor-filter-totals .bsm-outstanding-total strong{white-space:nowrap;overflow-wrap:normal;word-break:normal;font-size:clamp(13px,1.5vw,18px);line-height:1.25;}
+@media(max-width:760px){.bsm-app .bsm-contractor-filters #bsm-contractor-filter-totals > .bsm-contractor-outstanding-totals{gap:5px;}
+.bsm-app .bsm-contractor-filters #bsm-contractor-filter-totals .bsm-outstanding-total{padding:7px 6px;}
+.bsm-app .bsm-contractor-filters #bsm-contractor-filter-totals .bsm-outstanding-total strong{font-size:clamp(10px,2.5vw,14px);}}
+@media(max-width:420px){.bsm-app .bsm-contractor-filters #bsm-contractor-filter-totals > .bsm-contractor-outstanding-totals{grid-template-columns:1fr;gap:5px;}
+.bsm-app .bsm-contractor-filters #bsm-contractor-filter-totals .bsm-outstanding-total{flex-direction:row;align-items:center;justify-content:space-between;gap:8px;}
+.bsm-app .bsm-contractor-filters #bsm-contractor-filter-totals .bsm-outstanding-total strong{font-size:14px;}}
+/* v0.1.444: invoice-specific three-way GST display; preserve other sales forms. */
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines .bsm-table-wrap{overflow-x:auto!important;}
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines table{min-width:1170px!important;}
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines .bsm-col-igst_amount,
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines .bsm-col-cgst_amount,
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines .bsm-col-sgst_amount{min-width:77px;white-space:nowrap;}
+
+/* v445: invoice item-grid minimum widths and visible dropdowns */
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines .bsm-table-wrap{overflow-x:auto!important;overflow-y:visible!important;}
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines table{width:max-content!important;min-width:100%!important;table-layout:auto!important;}
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines th,#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines td{width:auto!important;min-width:0!important;}
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines .bsm-col-item_id{min-width:260px!important;}
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines .bsm-col-description{min-width:180px!important;}
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines .bsm-col-qty,#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines .bsm-col-unit_id,#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines .bsm-col-gst_rate{min-width:90px!important;}
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines .bsm-col-rate{min-width:110px!important;}
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines .bsm-col-igst_amount,#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines .bsm-col-cgst_amount,#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines .bsm-col-sgst_amount{min-width:115px!important;}
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines .bsm-col-amount{min-width:135px!important;}
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines td input{width:100%!important;box-sizing:border-box!important;}
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines td.bsm-col-item_id{overflow:visible!important;position:relative;}
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines td.bsm-col-item_id .bsm-searchable-select{min-width:240px!important;}
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines td.bsm-col-item_id .bsm-select-dropdown{z-index:99999!important;max-height:260px;overflow-y:auto;}
+
+/* v447 Invoice item search: keep full names and dropdown BELOW input, clear of the horizontal-scroll table. */
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines td.bsm-col-item_id .bsm-searchable-select{width:100%!important;min-width:0!important;}
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines td.bsm-col-item_id .bsm-select-control{width:100%!important;box-sizing:border-box!important;}
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines td.bsm-col-item_id .bsm-select-search{width:100%!important;min-width:0!important;text-overflow:ellipsis;box-sizing:border-box!important;}
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines td.bsm-col-item_id .bsm-searchable-select.invoice-item-open .bsm-select-menu{position:fixed!important;right:auto!important;bottom:auto!important;min-width:0!important;max-width:none!important;display:block!important;z-index:2147483000!important;overflow-y:auto!important;overflow-x:hidden!important;background:#fff!important;box-shadow:0 12px 28px rgba(15,35,65,.22)!important;}
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines td.bsm-col-item_id .bsm-select-option{white-space:normal!important;overflow-wrap:anywhere!important;line-height:1.4!important;min-height:36px!important;}
+
+/* v448: requisition approval other-site stock breakdown */
+.bsm-approval-lines .bsm-col-other-site{width:120px}
+.bsm-approval-lines .bsm-site-stock-details{border:0;background:transparent;color:#1261d6;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px 8px;white-space:nowrap;border-radius:5px}
+.bsm-approval-lines .bsm-site-stock-details:hover,.bsm-approval-lines .bsm-site-stock-details:focus{background:#eaf3ff;outline:2px solid #80b6ff;outline-offset:1px}
+.bsm-site-stock-popup{position:fixed;inset:0;z-index:10000;background:rgba(7,20,39,.58);display:flex;justify-content:center;align-items:center;padding:16px}
+.bsm-site-stock-popup-panel{width:min(520px,100%);max-height:calc(100vh - 32px);background:#fff;border:1px solid #80aff5;box-shadow:0 20px 65px #0003;border-radius:12px;display:flex;flex-direction:column;overflow:hidden}
+.bsm-site-stock-popup-head{padding:14px 16px;border-bottom:1px solid #dae6f7;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.bsm-site-stock-popup-head strong{font-size:16px;overflow-wrap:anywhere}
+.bsm-site-stock-close{border:1px solid #d6e0ef;border-radius:7px;background:#fff;cursor:pointer;font-size:22px;width:36px;height:36px;flex-shrink:0}
+.bsm-site-stock-popup-body{padding:14px;min-height:0;overflow-y:auto}
+.bsm-site-stock-popup-body table{width:100%;table-layout:auto}
+.bsm-site-stock-popup-body th,.bsm-site-stock-popup-body td{border:1px solid #d4e4fb;padding:10px;font-size:13px}
+.bsm-site-stock-popup-body thead th{background:#103b69;color:#fff}
+.bsm-site-stock-popup-body tfoot th{background:#edf4ff}
+
+/* v450: consistent visible Item pickers in every transaction form */
+.bsm-app .bsm-searchable-select.bsm-item-dropdown-open .bsm-select-menu,
+#bsm-form.bsm-quotation-style .bsm-quotation-lines .bsm-searchable-select.bsm-item-dropdown-open .bsm-select-menu,
+#bsm-form[data-module="tax_invoices"] .bsm-quotation-lines td.bsm-col-item_id .bsm-searchable-select.bsm-item-dropdown-open .bsm-select-menu {
+  position:fixed!important;bottom:auto!important;right:auto!important;
+  min-width:0!important;max-width:calc(100vw - 16px)!important;
+  display:block!important;overflow-x:hidden!important;overflow-y:auto!important;
+  z-index:2147483000!important;background:#fff!important;
+  border:1px solid #7eb6ff!important;box-shadow:0 14px 30px rgba(15,35,65,.23)!important;
+}
+.bsm-app .bsm-searchable-select.bsm-item-dropdown-open .bsm-select-option {
+  white-space:normal!important;overflow-wrap:anywhere!important;line-height:1.4!important;
+  text-align:left!important;min-height:36px!important;
+}
+
+/* v0.1.452 – Today's Activity: interactive pastel tiles */
+.bsm-dashboard-activity{gap:11px;grid-template-columns:repeat(2,minmax(0,1fr));padding:4px 3px 7px}
+.bsm-dashboard-activity button{--tile-bg:#f4f8ff;--tile-stroke:#a7c8ff;--tile-color:#245ec0;min-width:0;min-height:78px;padding:14px 11px;gap:9px;background:var(--tile-bg);border:1px solid var(--tile-stroke);border-radius:13px;color:#0e1c38;box-shadow:0 2px 6px rgba(22,40,85,.035);transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.bsm-dashboard-activity button:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(22,40,85,.12);border-color:var(--tile-color)}
+.bsm-dashboard-activity button:focus-visible{outline:3px solid var(--tile-color);outline-offset:2px}
+.bsm-dashboard-activity .bsm-activity-symbol{display:flex;flex:0 0 34px;width:34px;height:34px;align-items:center;justify-content:center;border-radius:10px;background:color-mix(in srgb,var(--tile-color) 12%,white);color:var(--tile-color)}
+.bsm-dashboard-activity .bsm-activity-symbol svg{width:21px;height:21px}
+.bsm-dashboard-activity .bsm-activity-label{color:#1b2b46;font-size:13px;font-weight:500;line-height:1.25;flex:1;min-width:0}
+.bsm-dashboard-activity strong{color:#0e1c38;font-size:19px;font-weight:750;white-space:nowrap;font-variant-numeric:tabular-nums}
+.bsm-dashboard-activity .bsm-activity-purchases{--tile-bg:#f2f7ff;--tile-stroke:#91baff;--tile-color:#2869c7}
+.bsm-dashboard-activity .bsm-activity-dispatches{--tile-bg:#f0fbf4;--tile-stroke:#b4e7c5;--tile-color:#17854a}
+.bsm-dashboard-activity .bsm-activity-receipts{--tile-bg:#fff9f1;--tile-stroke:#ffdab2;--tile-color:#df7315}
+.bsm-dashboard-activity .bsm-activity-consumptions{--tile-bg:#f7f3ff;--tile-stroke:#d8c7ff;--tile-color:#7048bf}
+.bsm-dashboard-activity .bsm-activity-expense{--tile-bg:#fff3f5;--tile-stroke:#ffc7d2;--tile-color:#c83e53}
+.bsm-dashboard-activity .bsm-activity-office{--tile-bg:#f0fbff;--tile-stroke:#b8e9f8;--tile-color:#1687aa}
+@media(max-width:1150px){.bsm-dashboard-activity button{padding:11px 8px;gap:7px}.bsm-dashboard-activity .bsm-activity-symbol{flex-basis:29px;width:29px;height:29px}.bsm-dashboard-activity .bsm-activity-label{font-size:12px}.bsm-dashboard-activity strong{font-size:17px}}
+@media(max-width:760px){.bsm-dashboard-activity{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.bsm-dashboard-activity button{min-height:74px}}
+@media(max-width:390px){.bsm-dashboard-activity{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.bsm-dashboard-activity button{transition:none}.bsm-dashboard-activity button:hover{transform:none}}
+
+/* v0.1.453: Purchase form table - prioritize readable controls over forced compression. */
+#bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-table-wrap,
+.bsm-inline-form-host #bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-table-wrap {
+  overflow-x:auto!important; overflow-y:visible!important; width:100%!important; max-width:100%!important;
+}
+#bsm-modal #bsm-form[data-module="material_inwards"] .bsm-purchase-lines table,
+.bsm-inline-form-host #bsm-form[data-module="material_inwards"] .bsm-purchase-lines table {
+  table-layout:fixed!important; width:max-content!important; min-width:1250px!important;
+}
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines th,
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines td {box-sizing:border-box!important; min-width:0!important; overflow:visible!important; padding:5px!important; vertical-align:middle!important;}
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-item_id {width:245px!important;min-width:245px!important;}
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-qty {width:88px!important;min-width:88px!important;}
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-unit_id {width:95px!important;min-width:95px!important;}
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-item_price {width:100px!important;min-width:100px!important;}
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-rate {width:100px!important;min-width:100px!important;}
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-taxable_amount {width:110px!important;min-width:110px!important;}
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-gst_rate {width:100px!important;min-width:100px!important;}
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-cgst_amount,
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-sgst_amount,
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-igst_amount {width:105px!important;min-width:105px!important;}
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-total_amount {width:115px!important;min-width:115px!important;}
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-line-actions {width:76px!important;min-width:76px!important;white-space:nowrap!important;}
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines td input,
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines td select,
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines td .bsm-select-control,
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines td .bsm-purchase-gst-display,
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines td .bsm-purchase-sgst-display { box-sizing:border-box!important; width:100%!important; max-width:100%!important; min-width:0!important; }
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-gst_rate .bsm-searchable-select {display:none!important;}
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-gst_rate .bsm-purchase-gst-display {display:block!important; height:34px!important; margin:0!important;}
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-unit_id .bsm-searchable-select {display:none!important;}
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-item_id .bsm-select-menu {z-index:10000!important;}
+
+/* v0.1.454: Receipt is a permanent, non-interactive subsection heading. */
+#bsm-nav .bsm-nav-receipt-label{cursor:default;}
+#bsm-nav .bsm-nav-receipt-label:hover{background:rgba(255,255,255,.10);}
+
+/* v0.1.455: Show the Item Master's Unit name in Purchase Form without changing saved Unit ID. */
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-unit_id .bsm-purchase-unit-display {display:block!important;width:100%!important;min-width:0!important;box-sizing:border-box!important;height:34px!important;margin:0!important;background:#e9edf3!important;color:#334155!important;text-overflow:ellipsis!important;}
+#bsm-form[data-module="material_inwards"] .bsm-purchase-lines .bsm-col-unit_id select[name="unit_id"] {display:none!important;}
+
+/* v456: PO Vendor dropdowns float above scrolling tables and show complete names. */
+.bsm-app .bsm-searchable-select.bsm-po-vendor-dropdown-open .bsm-select-menu,
+#po_pending_list .bsm-searchable-select.bsm-po-vendor-dropdown-open .bsm-select-menu {
+  position:fixed!important;
+  bottom:auto!important;
+  right:auto!important;
+  min-width:0!important;
+  max-width:calc(100vw - 16px)!important;
+  display:block!important;
+  z-index:2147483000!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  background:#fff!important;
+  box-shadow:0 14px 32px rgba(15,35,65,.24)!important;
+}
+.bsm-app .bsm-searchable-select.bsm-po-vendor-dropdown-open .bsm-select-option {
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  text-align:left!important;
+  min-height:38px!important;
+}
+
+
+/* v0.1.459: global readability — dark labels and actual field values. */
+.bsm-main,.bsm-modal,.bsm-app>.bsm-login-card {--text:#111111;--muted:#111111;}
+.bsm-main :is(.bsm-muted,.bsm-card span,.bsm-filters label,.bsm-form-grid label,.bsm-empty,.bsm-loading),
+.bsm-modal :is(.bsm-muted,.bsm-form-grid label,.bsm-empty,.bsm-loading),
+.bsm-main :is(label,td,caption,.bsm-panel-head,.bsm-pagination),
+.bsm-modal :is(label,td,caption,.bsm-panel-head),
+.bsm-main :is(input,textarea,select):not([type=button]):not([type=submit]):not([type=reset]),
+.bsm-modal :is(input,textarea,select):not([type=button]):not([type=submit]):not([type=reset]) {
+  color:#111111;
+}
+.bsm-main :is(input,textarea,select):disabled,
+.bsm-main :is(input,textarea,select)[readonly],
+.bsm-modal :is(input,textarea,select):disabled,
+.bsm-modal :is(input,textarea,select)[readonly] {color:#111111;-webkit-text-fill-color:#111111;opacity:1;}
+/* Placeholders remain visibly distinct from actual data. */
+.bsm-main :is(input,textarea)::placeholder,
+.bsm-modal :is(input,textarea)::placeholder {color:#7b8798;-webkit-text-fill-color:#7b8798;opacity:1;}
+/* Colored status indicators and action buttons retain their semantic colors. */
+
+/* v0.1.461 – explicit black text for readable content across all modules.
+   Keep semantic colors on action controls, badges, links, dark sidebar and table headings. */
+.bsm-app {--text:#000000;--muted:#000000;}
+.bsm-main,.bsm-modal,.bsm-inline-form-host,.bsm-login-card {--text:#000000;--muted:#000000;}
+.bsm-main :is(.bsm-muted,.bsm-empty,.bsm-loading,.bsm-panel-head,.bsm-pagination,.bsm-filters label,.bsm-form-grid label,.bsm-card span,.bsm-card strong,.bsm-dashboard-activity .bsm-activity-label,.bsm-dashboard-activity strong),
+.bsm-modal :is(.bsm-muted,.bsm-empty,.bsm-loading,.bsm-form-grid label),
+.bsm-inline-form-host :is(.bsm-muted,.bsm-form-grid label),
+.bsm-main :is(td,caption,label,small),
+.bsm-modal :is(td,caption,label,small),
+.bsm-inline-form-host :is(td,caption,label,small),
+.bsm-main :is(input,textarea,select):not([type=button]):not([type=submit]):not([type=reset]),
+.bsm-modal :is(input,textarea,select):not([type=button]):not([type=submit]):not([type=reset]),
+.bsm-inline-form-host :is(input,textarea,select):not([type=button]):not([type=submit]):not([type=reset]),
+.bsm-app .bsm-purchase-unit-display,
+.bsm-app .bsm-select-control,
+.bsm-app .bsm-select-option {color:#000000!important;}
+.bsm-app :is(input,textarea,select):is(:disabled,[readonly]) {color:#000000!important;-webkit-text-fill-color:#000000!important;opacity:1;}
+.bsm-app :is(input,textarea)::placeholder {color:#000000!important;-webkit-text-fill-color:#000000!important;opacity:1;}
+/* Text inside table headings and dark navigation continues to use its original white text. */
+.bsm-main thead th,.bsm-modal thead th,.bsm-inline-form-host thead th,
+.bsm-main .bsm-table th,.bsm-modal .bsm-table th {color:#fff;}
+/* Do not recolor semantic badges, primary buttons, links or alert messaging. */
+
+/* v0.1.462: High contrast on all light content surfaces.
+   Explicitly cover selectors with earlier per-component gray rules. */
+.bsm-main, .bsm-modal, .bsm-inline-form-host { --text:#000; --muted:#000; }
+.bsm-main :is(.bsm-dashboard-date,.bsm-dashboard-note,.bsm-muted,.bsm-summary-title small,.bsm-summary-lines span,.bsm-summary-lines small,.bsm-dashboard-activity .bsm-activity-label,.bsm-dashboard-kpi span,.bsm-filters label,.bsm-form-grid label,.bsm-panel-head small,.bsm-card span,.bsm-toolbar label,.bsm-pagination,.bsm-empty,.bsm-loading),
+.bsm-main .bsm-dashboard-summary-card .bsm-summary-lines span,
+.bsm-main .bsm-dashboard-summary-card .bsm-summary-title small,
+.bsm-main .bsm-dashboard-summary-card .bsm-summary-lines small,
+.bsm-modal :is(.bsm-muted,.bsm-form-grid label,.bsm-empty,.bsm-loading),
+.bsm-inline-form-host :is(.bsm-muted,.bsm-form-grid label),
+.bsm-main :is(td,caption,label,small),
+.bsm-modal :is(td,caption,label,small),
+.bsm-inline-form-host :is(td,caption,label,small) {color:#000!important;}
+.bsm-main .bsm-table tbody td,
+.bsm-main .bsm-table-wrap tbody td,
+.bsm-modal .bsm-table-wrap tbody td,
+.bsm-main .bsm-dashboard-site-work tbody td,
+.bsm-main .bsm-dashboard-two-col tbody td {color:#000!important;font-weight:500;}
+.bsm-main :is(input,select,textarea):not([type=button]):not([type=submit]):not([type=reset]),
+.bsm-modal :is(input,select,textarea):not([type=button]):not([type=submit]):not([type=reset]),
+.bsm-inline-form-host :is(input,select,textarea):not([type=button]):not([type=submit]):not([type=reset]),
+.bsm-app .bsm-searchable-select .bsm-select-control,
+.bsm-app .bsm-searchable-select .bsm-select-option {color:#000!important;}
+.bsm-app :is(input,textarea,select):is(:disabled,[readonly]) {color:#000!important;-webkit-text-fill-color:#000!important;opacity:1;}
+.bsm-app :is(input,textarea)::placeholder{color:#000!important;-webkit-text-fill-color:#000!important;opacity:1;}
+/* Keep sidebar legible on navy backgrounds, including its nested Masters/Receipt links. */
+.bsm-sidebar :is(.bsm-nav-item,.bsm-nav-label,.bsm-nav-item-icon,.bsm-nav-section-icon,.bsm-nav-chevron,.bsm-nav-receipt-label){color:#fff!important;}
+.bsm-sidebar :is(.bsm-nav-item,.bsm-nav-label){font-weight:600;}
+.bsm-main :is(.bsm-btn-primary,.bsm-dashboard-quick-actions .bsm-btn-primary),
+.bsm-modal .bsm-btn-primary {color:#fff!important;}
+.bsm-main :is(thead th,.bsm-table th),
+.bsm-modal :is(thead th,.bsm-table th),
+.bsm-inline-form-host :is(thead th,.bsm-table th){color:#fff!important;}
+
+/* v0.1.466 — Pending Invoice Copy compact upload and readable Bill Type.
+   Scoped to this view; do not alter the other upload workflows. */
+#bsm-pending-invoice-list .bsm-pending-invoice-table{min-width:1130px;width:100%;table-layout:fixed;}
+#bsm-pending-invoice-list .bsm-pending-invoice-table th:nth-child(1){width:38px;}
+#bsm-pending-invoice-list .bsm-pending-invoice-table th:nth-child(2){width:112px;}
+#bsm-pending-invoice-list .bsm-pending-invoice-table th:nth-child(3){width:94px;}
+#bsm-pending-invoice-list .bsm-pending-invoice-table th:nth-child(4){width:151px;}
+#bsm-pending-invoice-list .bsm-pending-invoice-table th:nth-child(5){width:103px;}
+#bsm-pending-invoice-list .bsm-pending-invoice-table th:nth-child(6){width:140px;}
+#bsm-pending-invoice-list .bsm-pending-invoice-table th:nth-child(7){width:136px;}
+#bsm-pending-invoice-list .bsm-pending-invoice-table th:nth-child(8){width:118px;}
+#bsm-pending-invoice-list .bsm-pending-invoice-table th:nth-child(9){width:238px;}
+#bsm-pending-invoice-list .bsm-pending-invoice-table th,
+#bsm-pending-invoice-list .bsm-pending-invoice-table td{box-sizing:border-box;padding:7px 8px;vertical-align:middle;}
+#bsm-pending-invoice-list .bsm-pending-bill-type{width:100%;min-width:0;box-sizing:border-box;padding:8px 5px;font-size:12px;}
+#bsm-pending-invoice-list .bsm-pending-invoice-upload{display:flex;flex-direction:row;align-items:center;gap:5px;min-width:0;width:100%;} 
+#bsm-pending-invoice-list .bsm-pending-invoice-file{display:block;flex:1 1 0;width:0;min-width:0;max-width:100%;box-sizing:border-box;padding:4px;font-size:11px;overflow:hidden;white-space:nowrap;}
+#bsm-pending-invoice-list .bsm-pending-invoice-file::file-selector-button{margin-right:3px;padding:4px 5px;font-size:11px;}
+#bsm-pending-invoice-list .bsm-upload-pending-invoice{flex:0 0 auto;padding:7px 9px;white-space:nowrap;font-size:12px;}
+@media(max-width:720px){#bsm-pending-invoice-list .bsm-pending-invoice-upload{flex-direction:row;align-items:center;}}
+
+
+/* v0.1.468: Uniform high-contrast typography on LIGHT content surfaces.
+   Exclude dark headers, action controls, semantic statuses and sidebar. */
+.bsm-app .bsm-main,
+.bsm-app .bsm-modal,
+.bsm-app .bsm-inline-form-host { --text:#000000; --muted:#000000; }
+.bsm-app :is(.bsm-main,.bsm-modal,.bsm-inline-form-host) :is(.bsm-form-grid,.bsm-filters,.bsm-toolbar,.bsm-form-row,.bsm-field) label,
+.bsm-app :is(.bsm-main,.bsm-modal,.bsm-inline-form-host) :is(.bsm-form-grid,.bsm-filters,.bsm-toolbar,.bsm-form-row,.bsm-field) .bsm-label,
+.bsm-app :is(.bsm-main,.bsm-modal,.bsm-inline-form-host) :is(.bsm-form-grid,.bsm-filters,.bsm-toolbar,.bsm-form-row,.bsm-field) small,
+.bsm-app :is(.bsm-main,.bsm-modal,.bsm-inline-form-host) :is(.bsm-muted,.bsm-help-text,.bsm-field-hint,.bsm-dashboard-date,.bsm-summary-lines span) {
+  color:#000000!important;
+  font-weight:600;
+}
+.bsm-app :is(.bsm-main,.bsm-modal,.bsm-inline-form-host) :is(input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=reset]),textarea,select,.bsm-select-control,.bsm-select-option,.bsm-purchase-unit-display) {
+  color:#000000!important;
+  -webkit-text-fill-color:#000000!important;
+  font-weight:500;
+}
+.bsm-app :is(.bsm-main,.bsm-modal,.bsm-inline-form-host) :is(input,textarea,select):is([readonly],:disabled) {
+  color:#000000!important;
+  -webkit-text-fill-color:#000000!important;
+  opacity:1;
+}
+.bsm-app :is(.bsm-main,.bsm-modal,.bsm-inline-form-host) :is(input,textarea)::placeholder {
+  color:#000000!important;
+  -webkit-text-fill-color:#000000!important;
+  opacity:1;
+}
+.bsm-app :is(.bsm-main,.bsm-modal,.bsm-inline-form-host) :is(table,.bsm-table,.bsm-table-wrap) tbody td {
+  color:#000000!important;
+  font-weight:500;
+}
+/* Keep essential inverse and semantic colors unchanged. */
+.bsm-app :is(.bsm-main,.bsm-modal,.bsm-inline-form-host) :is(thead th,.bsm-table th) {color:#ffffff!important;}
+.bsm-app .bsm-sidebar :is(.bsm-nav-item,.bsm-nav-label,.bsm-nav-receipt-label){color:#ffffff!important;}
+
+/* v0.1.469: Group user view permissions by navigation section. */
+.bsm-permissions-heading{font-size:15px;font-weight:700;color:#111827;margin:14px 0 9px}
+.bsm-access-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+.bsm-access-section{border:1px solid #c8d9f4;border-radius:9px;overflow:hidden;background:#fff;min-width:0}
+.bsm-access-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#e6f0ff;color:#102e5a;font-weight:700;padding:9px 12px;font-size:12px}
+.bsm-access-section-items{display:flex;flex-direction:column}
+.bsm-access-view{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;border-top:1px solid #e7edf6;font-size:12px;color:#101828;cursor:pointer}
+.bsm-access-view span{min-width:0;overflow-wrap:anywhere}
+.bsm-access-groups input[type=checkbox]{width:17px!important;height:17px!important;min-height:0!important;accent-color:#1769ed;flex:0 0 auto;cursor:pointer}
+.bsm-access-group-toggle{display:flex;align-items:center;cursor:pointer;margin:0}
+@media(max-width:720px){.bsm-access-groups{grid-template-columns:minmax(0,1fr)}}
+
+/* Profitability Tracker */
+.bsm-profit-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px}.bsm-profit-summary>div{border:1px solid #8db3ff;border-radius:8px;padding:10px;font-size:12px;color:#111}.bsm-profit-summary strong{display:block;margin-top:5px;font-size:17px;color:#071b38;white-space:nowrap}.bsm-profitability-note{flex-basis:100%;font-size:12px;color:#1b2b43;padding:6px 0}@media(max-width:850px){.bsm-profit-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Profitability tracker: negative receipts-based margins / surplus */
+#bsm-report-table .bsm-profit-negative, .bsm-profit-summary strong.bsm-profit-negative{color:#c1121f !important;font-weight:700 !important;}
+.bsm-profit-summary{grid-template-columns:repeat(5,minmax(0,1fr));}
+@media(max-width:1000px){.bsm-profit-summary{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+/* v0.1.477: search hint should be subdued; actual values stay black. */
+.bsm-app input.bsm-search::placeholder,
+.bsm-app input[id$="_search"]::placeholder,
+.bsm-app input[id$="-search"]::placeholder,
+.bsm-app input[type="search"]::placeholder {color:#888!important;-webkit-text-fill-color:#888!important;font-weight:400!important;opacity:1!important;}
+
+/* v0.1.481: Consistent administrator dependency validation dialog */
+.bsm-admin-dependency-overlay{position:fixed;inset:0;background:rgba(7,19,38,.62);z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:16px}
+.bsm-admin-dependency-box{width:min(540px,100%);max-height:85vh;overflow:auto;background:#fff;color:#101827;border:1px solid #bad0f8;border-radius:12px;box-shadow:0 18px 54px rgba(0,0,0,.22);padding:20px;font-size:14px}
+.bsm-admin-dependency-box h3{margin:0 0 14px;font-size:19px;color:#b42318}
+.bsm-admin-dependency-box p{line-height:1.5}
+.bsm-admin-dependency-details{background:#f5f8fd;border:1px solid #d8e3f5;padding:12px;border-radius:7px;margin:12px 0}
+.bsm-admin-dependency-row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #d8e3f5}
+.bsm-admin-dependency-details strong{display:block;margin:12px 0 5px}
+.bsm-admin-dependency-details ul{margin:4px 0;padding-left:22px;overflow-wrap:anywhere}
+.bsm-admin-dependency-footer{display:flex;justify-content:flex-end;margin-top:14px}
+
+/* Pending PO GST amount fields */
+#po_pending_list .po-pending-table{min-width:1450px}
+#po_pending_list .po-pending-table td:nth-child(n+10) input{min-width:76px;width:100%;box-sizing:border-box;height:40px}
+#po_pending_list .po-pending-table input:disabled{background:#edf1f7;color:#555}
+
+
+/* v0.1.486 – Compact Pending PO columns; one scroll area, fixed column alignment. */
+#po_pending_list{max-width:100%;min-width:0;overflow:visible!important}
+#po_pending_list .po-pending-table-wrap{display:block!important;max-width:100%!important;width:100%!important;overflow-x:auto!important;overflow-y:auto!important;position:relative;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#94a3b8 #eaf1ff}
+#po_pending_list .po-pending-table{width:1145px!important;min-width:1145px!important;max-width:none!important;table-layout:fixed!important;border-collapse:collapse!important}
+#po_pending_list .po-pending-table th,#po_pending_list .po-pending-table td{box-sizing:border-box!important;padding:5px 4px!important;vertical-align:middle!important;overflow:visible!important;font-size:12px!important;line-height:1.3!important}
+#po_pending_list .po-pending-table th:nth-child(1),#po_pending_list .po-pending-table td:nth-child(1){width:160px!important;min-width:0!important;}
+#po_pending_list .po-pending-table th:nth-child(2),#po_pending_list .po-pending-table td:nth-child(2){width:55px!important;min-width:0!important;}
+#po_pending_list .po-pending-table th:nth-child(3),#po_pending_list .po-pending-table td:nth-child(3){width:85px!important;min-width:0!important;}
+#po_pending_list .po-pending-table th:nth-child(4),#po_pending_list .po-pending-table td:nth-child(4){width:85px!important;min-width:0!important;}
+#po_pending_list .po-pending-table th:nth-child(5),#po_pending_list .po-pending-table td:nth-child(5){width:95px!important;min-width:0!important;}
+#po_pending_list .po-pending-table th:nth-child(6),#po_pending_list .po-pending-table td:nth-child(6){width:85px!important;min-width:0!important;}
+#po_pending_list .po-pending-table th:nth-child(7),#po_pending_list .po-pending-table td:nth-child(7){width:185px!important;min-width:0!important;}
+#po_pending_list .po-pending-table th:nth-child(8),#po_pending_list .po-pending-table td:nth-child(8){width:85px!important;min-width:0!important;}
+#po_pending_list .po-pending-table th:nth-child(9),#po_pending_list .po-pending-table td:nth-child(9){width:85px!important;min-width:0!important;}
+#po_pending_list .po-pending-table th:nth-child(10),#po_pending_list .po-pending-table td:nth-child(10){width:75px!important;min-width:0!important;}
+#po_pending_list .po-pending-table th:nth-child(11),#po_pending_list .po-pending-table td:nth-child(11){width:75px!important;min-width:0!important;}
+#po_pending_list .po-pending-table th:nth-child(12),#po_pending_list .po-pending-table td:nth-child(12){width:75px!important;min-width:0!important;}
+#po_pending_list .po-pending-table th{white-space:normal!important;overflow-wrap:normal!important;font-size:11px!important}
+#po_pending_list .po-pending-table td input[type=number],#po_pending_list .po-pending-table td input[type=text],#po_pending_list .po-pending-table td .bsm-searchable-select{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;font-size:12px!important}
+#po_pending_list .po-pending-table td input{padding:5px 4px!important;height:34px!important;min-height:34px!important}
+#po_pending_list .po-pending-table td .bsm-select-control{width:100%!important;max-width:100%!important;min-width:0!important;padding:5px!important;min-height:34px!important}
+#po_pending_list .po-pending-table td:nth-child(7){overflow:visible!important}
+#po_pending_list .bsm-form-actions{position:relative;z-index:1;display:flex;justify-content:flex-end!important;overflow:visible!important}
+
+/* v0.1.487: exact Vendor menu width, overriding older 100% !important rules. */
+#po_pending_list .po-pending-table td:nth-child(7) .bsm-searchable-select.bsm-po-vendor-dropdown-open .bsm-select-menu,
+#po_pending_list .bsm-searchable-select.open.bsm-po-vendor-dropdown-open .bsm-select-menu {
+  position:fixed!important; width:min(240px,calc(100vw - 16px))!important;
+  min-width:0!important; max-width:min(240px,calc(100vw - 16px))!important;
+  max-height:220px!important; overflow-y:auto!important; overflow-x:hidden!important;
+  white-space:normal!important; box-sizing:border-box!important;
+  z-index:2147483000!important;
+}
+#po_pending_list .po-pending-table td:nth-child(7) .bsm-select-option {
+  display:block!important; width:100%!important; max-width:100%!important;
+  white-space:normal!important; overflow-wrap:anywhere!important; text-align:left!important;
+  min-height:34px!important; padding:7px 10px!important;
+}
+#po_pending_list .po-pending-table td:nth-child(n+10) input:disabled::placeholder{color:transparent!important;-webkit-text-fill-color:transparent!important;}
+#po_pending_list .po-pending-table td:nth-child(n+10) input:disabled{background:#edf1f7!important;}
+#po_pending_list .bsm-form-actions{clear:both!important;position:relative!important;z-index:2!important;min-height:58px;align-items:center;}
+
+/* v0.1.489: GST rate column directly after Rate */
+#po_pending_list .po-pending-table th:nth-child(10),#po_pending_list .po-pending-table td:nth-child(10){width:84px!important;}
+#po_pending_list .po-pending-table th:nth-child(11),#po_pending_list .po-pending-table td:nth-child(11),#po_pending_list .po-pending-table th:nth-child(12),#po_pending_list .po-pending-table td:nth-child(12),#po_pending_list .po-pending-table th:nth-child(13),#po_pending_list .po-pending-table td:nth-child(13){width:75px!important;}
+#po_pending_list .po-row-gst-rate{width:100%;min-width:0;font-size:12px;padding:5px 2px;box-sizing:border-box;}
+#po_pending_list .po-pending-table{min-width:1250px;}
+
+/* v0.1.490 Direct PO form compact tax columns */
+.bsm-direct-po-panel .bsm-table-wrap{overflow-x:auto;max-width:100%;}
+.bsm-direct-po-panel .po-direct-table{min-width:1230px;width:100%;table-layout:fixed;}
+.bsm-direct-po-panel .po-direct-table th,.bsm-direct-po-panel .po-direct-table td{padding:5px 4px;box-sizing:border-box;}
+.bsm-direct-po-panel .po-direct-table th:nth-child(1){width:205px;}
+.bsm-direct-po-panel .po-direct-table th:nth-child(2){width:70px;}
+.bsm-direct-po-panel .po-direct-table th:nth-child(3),.bsm-direct-po-panel .po-direct-table th:nth-child(4),.bsm-direct-po-panel .po-direct-table th:nth-child(5){width:105px;}
+.bsm-direct-po-panel .po-direct-table th:nth-child(6){width:84px;}
+.bsm-direct-po-panel .po-direct-table th:nth-child(7),.bsm-direct-po-panel .po-direct-table th:nth-child(8),.bsm-direct-po-panel .po-direct-table th:nth-child(9){width:90px;}
+.bsm-direct-po-panel .po-direct-table th:nth-child(10){width:110px;}
+.bsm-direct-po-panel .po-direct-table th:nth-child(11){width:86px;}
+.bsm-direct-po-panel .po-direct-table input,.bsm-direct-po-panel .po-direct-table select{width:100%;min-width:0;box-sizing:border-box;}
+
+/* v0.1.491 Direct PO: GST dropdown stays within its own cell. */
+.bsm-direct-po-panel .po-direct-table td:nth-child(6){position:relative;overflow:hidden!important;}
+.bsm-direct-po-panel .po-direct-table select.po-direct-gst-rate.bsm-native-gst-rate{
+ display:block!important;position:static!important;opacity:1!important;pointer-events:auto!important;
+ appearance:auto!important;-webkit-appearance:menulist!important;
+ width:100%!important;min-width:0!important;max-width:100%!important;
+ height:34px!important;min-height:34px!important;box-sizing:border-box!important;
+ padding:4px 18px 4px 5px!important;border:1px solid #7eb6ff!important;border-radius:6px!important;
+ background:#fff!important;color:#000!important;font-size:12px!important;font-weight:500!important;
+}
+.bsm-direct-po-panel .po-direct-table th:nth-child(6),.bsm-direct-po-panel .po-direct-table td:nth-child(6){width:92px!important;}
+.bsm-direct-po-panel .po-direct-table th:nth-child(7),.bsm-direct-po-panel .po-direct-table td:nth-child(7),
+.bsm-direct-po-panel .po-direct-table th:nth-child(8),.bsm-direct-po-panel .po-direct-table td:nth-child(8),
+.bsm-direct-po-panel .po-direct-table th:nth-child(9),.bsm-direct-po-panel .po-direct-table td:nth-child(9){width:90px!important;}
+.bsm-direct-po-panel .po-direct-table td:nth-child(n+7):nth-child(-n+9) input{
+ width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;
+}
+
+/* Quotation item images - compact upload + preview controls */
+#bsm-form.bsm-quotation-style .bsm-quotation-lines table{min-width:1110px!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines .bsm-col-image_attachment_id{width:92px!important;max-width:92px!important}
+.bsm-quote-image{display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:72px}
+.bsm-quote-choose{border:1px solid #cbd5e1;border-radius:5px;background:#f8fafc;color:#334155;cursor:pointer;font-size:11px;min-width:28px;padding:5px}
+.bsm-quote-preview img{width:34px;height:34px;object-fit:contain;border:1px solid #d8e2ea;border-radius:4px;background:white}
+.bsm-quote-remove{border:0;background:none;color:#9b1c1c;cursor:pointer;font-size:16px}
+.bsm-quote-preview[hidden],.bsm-quote-remove[hidden]{display:none!important}
+
+/* v0.1.510 compact quotation image cell: upload icon + thumbnail only */
+#bsm-form.bsm-quotation-style .bsm-quotation-lines table{min-width:1000px!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(1),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(1){width:21%!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(2),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(2){width:6%!important;max-width:none!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(3),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(3){width:14%!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(4),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4){width:7%!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(5),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(5){width:8%!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(6),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(6){width:9%!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(7),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(7){width:8%!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(8),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(8){width:10%!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(9),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(9){width:12%!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(10),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(10){width:5%!important}
+#bsm-form.bsm-quotation-style .bsm-quote-image{min-width:0!important;display:flex;flex-wrap:nowrap;gap:3px;justify-content:center;align-items:center}
+#bsm-form.bsm-quotation-style .bsm-quote-file{display:none!important}
+#bsm-form.bsm-quotation-style .bsm-quote-choose{width:23px!important;min-width:23px!important;height:26px!important;padding:0!important;font-size:15px!important;line-height:24px!important;flex:none}
+#bsm-form.bsm-quotation-style .bsm-quote-preview img{width:25px!important;height:25px!important}
+#bsm-form.bsm-quotation-style .bsm-quote-remove{padding:0!important;font-size:13px!important;line-height:1!important}
+
+/* Quotation Image column: half-width icon-only UI, no textual Replace / arrow */
+#bsm-form.bsm-quotation-style .bsm-quotation-lines{overflow-x:auto}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines table{table-layout:fixed;min-width:1000px!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(2),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(2),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines .bsm-col-image_attachment_id{width:3%!important;max-width:3%!important;min-width:0!important;padding:3px 1px!important;box-sizing:border-box!important}
+#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(3),
+#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(3){width:17%!important}
+#bsm-form.bsm-quotation-style .bsm-quote-image{display:flex!important;flex-direction:column!important;gap:2px!important;align-items:center!important;justify-content:center!important;min-width:0!important}
+#bsm-form.bsm-quotation-style .bsm-quote-choose{width:22px!important;height:22px!important;min-width:0!important;font-size:12px!important;line-height:20px!important}
+#bsm-form.bsm-quotation-style .bsm-quote-preview img{width:21px!important;height:21px!important}
+#bsm-form.bsm-quotation-style .bsm-quote-remove{font-size:12px!important}
+
+/* Hide upload/replace control once an item image is selected. To change it, remove then upload. */
+#bsm-form.bsm-quotation-style .bsm-quote-image:has(.bsm-quote-preview:not([hidden])) .bsm-quote-choose{display:none!important}
+
+/* v0.1.512: compact thumbnails in expanded Quotation Master item details */
+.bsm-sales-item-detail-table .bsm-sales-image-heading,
+.bsm-sales-item-detail-table .bsm-sales-image-cell{width:52px;min-width:52px;max-width:52px;text-align:center;padding:3px!important;box-sizing:border-box}
+.bsm-sales-item-detail-table .bsm-sales-image-cell img{display:inline-block;width:32px;height:32px;max-width:100%;object-fit:contain;border-radius:3px;vertical-align:middle;cursor:zoom-in}

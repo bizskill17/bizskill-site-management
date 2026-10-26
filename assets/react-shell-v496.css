@@ -1,0 +1,7 @@
+/* Opt-in React header only: legacy screens, permissions and business flows unchanged */
+.bsm-react-phase1 #bsm-page-title {position:absolute!important;width:1px!important;height:1px!important;padding:0!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;}
+#bsm-react-header:not(.bsm-react-mounted){display:none}
+.bsm-react-header-inner{display:flex;flex-direction:column;gap:3px;min-width:0}
+.bsm-react-breadcrumb{font-size:11px;font-weight:500;color:#4b5563;line-height:1.25}
+.bsm-react-heading{margin:0!important;font-size:22px!important;line-height:1.25;color:#174bcb!important;font-weight:700!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:760px){.bsm-react-heading{font-size:18px!important}.bsm-react-breadcrumb{font-size:10px}}
