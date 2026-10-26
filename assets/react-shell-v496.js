@@ -5,11 +5,11 @@
   if (!element || !element.createElement || !element.useState) return;
   const h = element.createElement;
   function Header() {
-    const [title, setTitle] = element.useState('Dashboard');
+    const [title, setTitle] = element.useState('Site Dashboard');
     element.useEffect(function () {
       const oldTitle = document.getElementById('bsm-page-title');
       if (!oldTitle) return;
-      const update = () => setTitle(oldTitle.textContent.trim() || 'Dashboard');
+      const update = () => setTitle(oldTitle.textContent.trim() || 'Site Dashboard');
       update();
       const observer = new MutationObserver(update);
       observer.observe(oldTitle, {childList:true, characterData:true, subtree:true});

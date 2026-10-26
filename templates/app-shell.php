@@ -45,7 +45,7 @@ if ($bsm_company_name === '') {
                 <button id="bsm-sidebar-toggle" class="bsm-icon-btn bsm-desktop-sidebar-toggle" type="button" title="Collapse Menu" aria-label="Collapse Menu">☰</button>
                 <button id="bsm-menu-open" class="bsm-icon-btn mobile-only">☰</button>
                 <div>
-                    <h1 id="bsm-page-title">Dashboard</h1>
+                    <h1 id="bsm-page-title">Site Dashboard</h1>
                     <div id="bsm-react-header" aria-live="polite"></div>
                 </div>
                 <div class="bsm-topbar-spacer"></div>

@@ -4,7 +4,7 @@
 const App = {
   current: 'dashboard', page: 1, search: '', editId: 0, options: {},
   nav: [
-    {group:'Main', items:[['dashboard','Dashboard']]},
+    {group:'Main', items:[['dashboard','Site Dashboard']]},
     {group:'Masters', items:[['bank_accounts','Bank Master'],['customers','Customers'],['designations','Designations'],['expense_categories','Expense Categories'],['gst_rates','GST Rates'],['item_categories','Item Categories'],['items','Items'],['labour_contractors','Labour Contractors'],['sites','Site Master'],['states','States'],['units','Units'],['users','Users'],['vendors','Vendors'],['warehouses','Warehouses']]},
     {group:'Site Requisition', items:[['requisition_form','Requisition Form'],['material_requisitions','Requisitions Master'],['material_requisition_item','Requisition Item Master'],['pending_requisition_approval','Requisitions Pending Approval']]},
     {group:'Purchase Order', items:[['pending_po_items','Approved Requisition Pending PO'],['purchase_order_form','PO Form'],['purchase_order_master','PO Master'],['purchase_order_items_master','PO Items Master'],['purchase_order_pending_receipt','Ordered but Not Received']]},
@@ -1133,7 +1133,7 @@ async function openSalaryPayment(id){
 }
 
 async function renderDashboard(siteId=''){
-  setTitle('Dashboard','HO control panel');
+  setTitle('Site Dashboard','HO control panel');
   $('#bsm-content').html('<div class="bsm-loading">Loading…</div>');
   const r=await ajax('bsm_dashboard',{site_id:siteId||''});
   if(!r.success){$('#bsm-content').html('<div class="bsm-empty">Unable to load Dashboard.</div>');return;}

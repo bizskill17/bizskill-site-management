@@ -2,14 +2,14 @@
 /**
  * Plugin Name: BizSkill Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.1.514
+ * Version: 0.1.515
  * Author: BizSkill
  */
 
 if (!defined('ABSPATH')) exit;
 
 final class BSM_Site_Management {
-    const VERSION = '0.1.514';
+    const VERSION = '0.1.515';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -176,7 +176,7 @@ final class BSM_Site_Management {
 
     private function app_pages() {
         return [
-            'dashboard' => ['Dashboard', ''],
+            'dashboard' => ['Site Dashboard', ''],
             'users' => ['Users', 'users'],
             'designations' => ['Designations', 'designations'],
             'bank_accounts' => ['Bank Master', 'bank-master'],
