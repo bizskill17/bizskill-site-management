@@ -509,14 +509,11 @@ $(document).on('click','.tracker-edit-add',function(){
  rows.children().last().find('input').trigger('focus');
 });
 $(document).on('click','.tracker-edit-remove',function(){$(this).closest('.tracker-edit-row').remove();});
-// Enter saves the active Site Tracker form, just like clicking its Save button.
-// Exclude textareas, composition events and non-input controls.
+// Enter must NOT save the Site Tracker forms. Only the Save button saves.
+// Block both this handler's old behaviour and the browser's default Enter-to-submit.
 $(document).on('keydown','#tracker-entry-form input,#tracker-entry-form select,#tracker-edit-form input,#tracker-edit-form select',function(e){
- if(e.key!=='Enter'||e.isComposing||e.originalEvent?.isComposing||e.repeat||e.ctrlKey||e.altKey||e.metaKey||e.shiftKey)return;
- const form=this.form;if(!form)return;
- const submit=form.querySelector('button[type="submit"]');if(!submit||submit.disabled)return;
+ if(e.key!=='Enter'||e.isComposing||e.originalEvent?.isComposing)return;
  e.preventDefault();
- if(typeof form.requestSubmit==='function')form.requestSubmit(submit);else submit.click();
 });
 
 $(document).on('click','.tracker-edit-cancel',()=>$('#tracker-edit-overlay').remove());
