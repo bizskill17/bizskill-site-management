@@ -2,14 +2,14 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.056
+ * Version: 0.0.057
  * Author: BizSkill
  */
 
 if (!defined('ABSPATH')) exit;
 
 final class BSM_Site_Management {
-    const VERSION = '0.0.056';
+    const VERSION = '0.0.057';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -6209,7 +6209,7 @@ final class BSM_Site_Management {
             }
             foreach($cleanNew as $name){
                 if($ok===false)break;
-                $ok=$wpdb->insert($subs,['task_id'=>$id,'subtask_name'=>$name,'completion'=>0,'sort_order'=>0,'created_at'=>current_time('mysql'),'updated_at'=>current_time('mysql'),'updated_by'=>get_current_user_id()]);
+                $ok=$wpdb->insert($subs,['task_id'=>$id,'subtask_name'=>$name,'completion'=>0,'sort_order'=>0,'updated_at'=>current_time('mysql'),'updated_by'=>get_current_user_id()],['%d','%s','%f','%d','%s','%d']);
             }
             if($ok===false){$wpdb->query('ROLLBACK');wp_send_json_error(['message'=>'Unable to save Task and Sub-tasks']);}
             $wpdb->query('COMMIT');wp_send_json_success(['message'=>'Saved']);
