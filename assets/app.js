@@ -4,7 +4,7 @@
 const App = {
   current: 'dashboard', page: 1, search: '', editId: 0, options: {},
   nav: [
-    {group:'Main', items:[['dashboard','Dashboard']]},
+    {group:'Main', items:[['dashboard','Site Dashboard']]},
     {group:'Masters', items:[['bank_accounts','Bank Master'],['customers','Customers'],['designations','Designations'],['expense_categories','Expense Categories'],['gst_rates','GST Rates'],['item_categories','Item Categories'],['items','Items'],['labour_contractors','Labour Contractors'],['sections','Section'],['sites','Site Master'],['states','States'],['units','Units'],['users','Users'],['vendors','Vendors'],['warehouses','Warehouses']]},
     {group:'Sites', items:[['project_tracker','Site Tracker'],['report_customer_outstanding','Site Balance'],['customer_receipts','Site Payment Receipts']]},
     {group:'BOQ', items:[['boq_form','BOQ Form'],['boq_master','BOQ Master'],['boq_items','BOQ Items Master'],['boq_monitoring','BOQ Monitoring']]},
@@ -1319,7 +1319,7 @@ async function openSalaryPayment(id){
 }
 
 async function renderDashboard(siteId=''){
-  setTitle('Dashboard','HO control panel');
+  setTitle('Site Dashboard','HO control panel');
   $('#bsm-content').html('<div class="bsm-loading">Loading…</div>');
   const r=await ajax('bsm_dashboard',{site_id:siteId||''});
   if(!r.success){$('#bsm-content').html('<div class="bsm-empty">Unable to load Dashboard.</div>');return;}
