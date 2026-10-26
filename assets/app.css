@@ -2712,3 +2712,6 @@ html,body{
 .tracker-flat-table tbody tr.tracker-task-band-4 td{background:#fff0f3}
 .tracker-flat-table tbody tr.tracker-task-band-5 td{background:#e9fbfb}
 .tracker-flat-table tbody tr[class*="tracker-task-band-"]:hover td{filter:brightness(.97)}
+/* Site Tracker: keep Progress % column narrow; free space goes to Task / Sub-task */
+.tracker-flat-table th:nth-child(4),.tracker-flat-table td:nth-child(4){width:1%;white-space:nowrap}
+.tracker-flat-table .tracker-edit input{width:72px}
