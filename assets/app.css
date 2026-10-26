@@ -2481,208 +2481,225 @@ html,body{
 #bsm-pending-invoice-list .bsm-upload-pending-invoice{flex:0 0 auto;padding:7px 9px;white-space:nowrap;font-size:12px;}
 @media(max-width:720px){#bsm-pending-invoice-list .bsm-pending-invoice-upload{flex-direction:row;align-items:center;}}
 
+/* BOQ form: searchable item menu must not be clipped by table/panel scrolling. */
+.bsm-app .bsm-boq-form-panel{overflow:visible!important;}
+.bsm-app .bsm-boq-table-wrap{overflow:visible!important;position:relative;}
+.bsm-app .bsm-boq-table-wrap .bsm-boq-row td:first-child{min-width:220px;position:relative;}
+.bsm-app .bsm-boq-table-wrap .bsm-boq-row:has(.bsm-searchable-select.open){position:relative;z-index:500;}
+.bsm-app .bsm-boq-table-wrap .bsm-boq-row .bsm-searchable-select.open{z-index:510;}
+.bsm-app .bsm-boq-table-wrap .bsm-select-menu{z-index:520;min-width:100%;max-height:260px;overflow-y:auto;box-shadow:0 14px 32px rgba(15,35,65,.2);}
+@media(max-width:760px){.bsm-app .bsm-boq-table-wrap{overflow-x:auto!important;overflow-y:visible!important;}.bsm-app .bsm-boq-table-wrap .bsm-select-menu{min-width:220px;max-height:200px;}}
 
-/* v0.1.468: Uniform high-contrast typography on LIGHT content surfaces.
-   Exclude dark headers, action controls, semantic statuses and sidebar. */
-.bsm-app .bsm-main,
-.bsm-app .bsm-modal,
-.bsm-app .bsm-inline-form-host { --text:#000000; --muted:#000000; }
-.bsm-app :is(.bsm-main,.bsm-modal,.bsm-inline-form-host) :is(.bsm-form-grid,.bsm-filters,.bsm-toolbar,.bsm-form-row,.bsm-field) label,
-.bsm-app :is(.bsm-main,.bsm-modal,.bsm-inline-form-host) :is(.bsm-form-grid,.bsm-filters,.bsm-toolbar,.bsm-form-row,.bsm-field) .bsm-label,
-.bsm-app :is(.bsm-main,.bsm-modal,.bsm-inline-form-host) :is(.bsm-form-grid,.bsm-filters,.bsm-toolbar,.bsm-form-row,.bsm-field) small,
-.bsm-app :is(.bsm-main,.bsm-modal,.bsm-inline-form-host) :is(.bsm-muted,.bsm-help-text,.bsm-field-hint,.bsm-dashboard-date,.bsm-summary-lines span) {
-  color:#000000!important;
-  font-weight:600;
+/* v0.0.005: BOQ actions next to Site, individual colours and responsive layout. */
+.bsm-app .bsm-boq-header-row{display:flex;align-items:flex-end;flex-wrap:wrap;gap:12px;margin-bottom:15px;}
+.bsm-app .bsm-boq-header-row .bsm-boq-date-field{flex:1 1 190px;min-width:180px;}
+.bsm-app .bsm-boq-header-row .bsm-boq-site-field{flex:1 1 200px;min-width:180px;}
+.bsm-app .bsm-boq-header-tools{display:flex;align-items:center;gap:8px;flex:0 1 auto;flex-wrap:wrap;}
+.bsm-app .bsm-boq-header-tools .bsm-btn{white-space:nowrap;border-radius:8px;font-weight:600;padding:11px 12px;color:#fff!important;line-height:1.3;}
+.bsm-app .bsm-boq-header-tools .bsm-boq-btn-template{background:#1565c0!important;border-color:#1565c0!important;}
+.bsm-app .bsm-boq-header-tools .bsm-boq-btn-upload{background:#16803c!important;border-color:#16803c!important;}
+.bsm-app .bsm-boq-header-tools .bsm-boq-btn-add{background:#c45a0b!important;border-color:#c45a0b!important;}
+.bsm-app .bsm-boq-header-tools .bsm-btn:hover{filter:brightness(.92);}
+@media(max-width:800px){.bsm-app .bsm-boq-header-row .bsm-boq-date-field,.bsm-app .bsm-boq-header-row .bsm-boq-site-field{flex:1 1 180px;}.bsm-app .bsm-boq-header-tools{width:100%;}.bsm-app .bsm-boq-header-tools .bsm-btn{flex:1 1 auto;}}
+
+/* v0.0.006: compact BOQ form only; leave all other views unaffected. */
+.bsm-app .bsm-boq-form-panel{border-radius:10px;}
+.bsm-app .bsm-boq-header-row{display:grid;grid-template-columns:minmax(160px,210px) minmax(200px,310px) minmax(0,1fr);align-items:end;gap:10px;padding:12px 14px 10px;margin:0;}
+.bsm-app .bsm-boq-header-row .bsm-boq-date-field,.bsm-app .bsm-boq-header-row .bsm-boq-site-field{min-width:0;width:100%;margin:0;font-size:12px;font-weight:500;line-height:1.35;}
+.bsm-app .bsm-boq-header-row .bsm-boq-date-field input,.bsm-app .bsm-boq-header-row .bsm-boq-site-field select{display:block;width:100%;height:36px;min-height:36px;box-sizing:border-box;margin-top:4px;padding:5px 10px;font-size:13px;border-radius:7px;}
+.bsm-app .bsm-boq-header-tools{display:flex;min-width:0;justify-content:flex-end;flex-wrap:wrap;gap:6px;align-items:center;}
+.bsm-app .bsm-boq-header-tools .bsm-btn{padding:8px 10px;min-height:36px;font-size:12px;line-height:1.15;border-radius:7px;white-space:nowrap;flex:0 0 auto;}
+.bsm-app .bsm-boq-table-wrap .bsm-table{width:100%;table-layout:fixed;}
+.bsm-app .bsm-boq-table-wrap .bsm-table th:nth-child(1){width:52%;}
+.bsm-app .bsm-boq-table-wrap .bsm-table th:nth-child(2){width:9%;}
+.bsm-app .bsm-boq-table-wrap .bsm-table th:nth-child(3){width:27%;}
+.bsm-app .bsm-boq-table-wrap .bsm-table th:nth-child(4){width:12%;}
+.bsm-app .bsm-boq-table-wrap .bsm-table th,.bsm-app .bsm-boq-table-wrap .bsm-table td{padding:5px 9px;vertical-align:middle;box-sizing:border-box;}
+.bsm-app .bsm-boq-table-wrap .bsm-table th{font-size:12px;line-height:1.2;padding-top:7px;padding-bottom:7px;}
+.bsm-app .bsm-boq-table-wrap .bsm-boq-row td:first-child{min-width:0;}
+.bsm-app .bsm-boq-table-wrap .bsm-boq-row select,.bsm-app .bsm-boq-table-wrap .bsm-boq-row input{min-height:35px;height:35px;max-width:100%;padding:6px 9px;font-size:13px;box-sizing:border-box;margin:0;}
+.bsm-app .bsm-boq-table-wrap .bsm-boq-row .bsm-searchable-select{width:100%;min-width:0;}
+.bsm-app .bsm-boq-table-wrap .bsm-boq-row .bsm-boq-qty{width:165px;max-width:100%;}
+.bsm-app .bsm-boq-table-wrap .bsm-boq-row .bsm-boq-remove{padding:7px 10px;min-height:33px;font-size:12px;}
+.bsm-app .bsm-boq-form-panel .bsm-form-actions{gap:7px;padding:9px 14px;}
+.bsm-app .bsm-boq-form-panel .bsm-form-actions .bsm-btn{padding:8px 12px;font-size:12px;min-height:35px;}
+@media(max-width:1050px){.bsm-app .bsm-boq-header-row{grid-template-columns:minmax(150px,210px) minmax(180px,1fr);}.bsm-app .bsm-boq-header-tools{grid-column:1/-1;justify-content:flex-start;}}
+@media(max-width:650px){.bsm-app .bsm-boq-header-row{grid-template-columns:1fr 1fr;gap:8px;padding:10px;}.bsm-app .bsm-boq-header-tools{grid-column:1/-1;justify-content:flex-start;}.bsm-app .bsm-boq-header-tools .bsm-btn{padding:8px;font-size:11px;}.bsm-app .bsm-boq-table-wrap .bsm-table{min-width:520px;}.bsm-app .bsm-boq-table-wrap .bsm-boq-row td:first-child{min-width:200px;}.bsm-app .bsm-boq-table-wrap{overflow-x:auto!important;}}
+
+/* v0.0.008 BOQ Section field */
+.bsm-boq-header-row .bsm-boq-section-field{min-width:160px;flex:1 1 170px;display:flex;flex-direction:column;gap:3px;font-size:12px;color:#132b4b}
+.bsm-boq-section-field input{box-sizing:border-box;width:100%;height:36px;border:1px solid #8fb3ff;border-radius:8px;padding:6px 10px;background:#fff;color:#101827}
+@media(max-width:750px){.bsm-boq-header-row .bsm-boq-section-field{flex:1 1 100%}}
+
+/* v0.0.009: Section Master selection matches compact BOQ header controls */
+.bsm-boq-header-row .bsm-boq-section-field select{box-sizing:border-box;width:100%;height:36px;border:1px solid #8fb3ff;border-radius:8px;padding:6px 10px;background:#fff;color:#101827}
+
+/* Site Master: compact searchable multi-section control */
+.bsm-site-section-field{min-width:0;position:relative}.bsm-site-section-multi{position:relative}.bsm-site-section-toggle{width:100%;min-height:42px;background:#fff;border:1px solid #8cb9ff;border-radius:9px;padding:9px 12px;text-align:left;color:#132f51;display:flex;justify-content:space-between;gap:8px;align-items:center;cursor:pointer}.bsm-site-section-toggle span{flex-shrink:0}.bsm-site-section-menu{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;min-width:240px;max-height:245px;overflow:auto;z-index:99999;background:#fff;border:1px solid #8cb9ff;border-radius:9px;box-shadow:0 8px 22px #102b5030;padding:8px}.bsm-site-section-multi.open .bsm-site-section-menu{display:block}.bsm-site-section-search{width:100%;margin-bottom:6px!important;padding:7px!important;box-sizing:border-box}.bsm-site-section-option{display:flex!important;flex-direction:row!important;align-items:center;gap:9px;padding:7px!important;cursor:pointer}.bsm-site-section-option:hover{background:#eef5ff}.bsm-site-section-option input{width:16px!important;height:16px!important;margin:0!important;flex-shrink:0}.bsm-site-section-empty{padding:10px;font-size:12px;color:#64748b}
+
+/* v0.0.012 BOQ compact header and toolbar */
+.bsm-app .bsm-boq-header-row{display:grid!important;grid-template-columns:minmax(150px,220px) minmax(180px,1fr) minmax(180px,1fr)!important;gap:10px!important;align-items:end!important;padding:12px 14px 4px!important;margin:0!important}
+.bsm-app .bsm-boq-header-row>label{min-width:0!important;width:100%!important;margin:0!important;flex:none!important;grid-column:auto!important;font-size:12px!important}
+.bsm-app .bsm-boq-header-row input,.bsm-app .bsm-boq-header-row select{box-sizing:border-box!important;width:100%!important;height:36px!important;min-height:36px!important;margin-top:4px!important}
+.bsm-app .bsm-boq-header-tools{display:flex!important;justify-content:flex-end!important;align-items:center!important;flex-direction:row!important;flex-wrap:wrap!important;gap:7px!important;width:100%!important;box-sizing:border-box;padding:4px 14px 9px!important;margin:0!important;grid-column:auto!important}
+.bsm-app .bsm-boq-header-tools .bsm-btn{width:auto!important;flex:0 0 auto!important;min-height:34px!important;padding:7px 11px!important;margin:0!important;font-size:12px!important;white-space:nowrap!important}
+@media(max-width:720px){.bsm-app .bsm-boq-header-row{grid-template-columns:1fr 1fr!important}.bsm-app .bsm-boq-header-row .bsm-boq-section-field{grid-column:1/-1!important}.bsm-app .bsm-boq-header-tools{justify-content:flex-start!important;padding:5px 10px 9px!important}}
+@media(max-width:420px){.bsm-app .bsm-boq-header-tools .bsm-btn{font-size:11px!important;padding:7px 8px!important}}
+
+/* v0.0.015 - compact Site Requisition form */
+.bsm-requisition-lines table{table-layout:fixed!important;width:100%!important;min-width:970px!important}
+.bsm-requisition-lines th:nth-child(1),.bsm-requisition-lines td:nth-child(1){width:30%!important}
+.bsm-requisition-lines th:nth-child(2),.bsm-requisition-lines td:nth-child(2){width:11%!important}
+.bsm-requisition-lines th:nth-child(3),.bsm-requisition-lines td:nth-child(3){width:13%!important}
+.bsm-requisition-lines th:nth-child(4),.bsm-requisition-lines td:nth-child(4){width:11%!important}
+.bsm-requisition-lines th:nth-child(5),.bsm-requisition-lines td:nth-child(5){width:11%!important}
+.bsm-requisition-lines th:nth-child(6),.bsm-requisition-lines td:nth-child(6){width:17%!important}
+.bsm-requisition-lines th:nth-child(7),.bsm-requisition-lines td:nth-child(7){width:7%!important}
+.bsm-requisition-lines th,.bsm-requisition-lines td{padding:5px 6px!important;font-size:13px!important;vertical-align:middle}
+.bsm-requisition-lines td input,.bsm-requisition-lines td select{width:100%!important;min-width:0!important;box-sizing:border-box!important;height:36px!important;min-height:36px!important;font-size:13px!important}
+.bsm-requisition-lines td .bsm-select-control,.bsm-requisition-lines td .bsm-select-search{height:36px!important;min-height:36px!important;font-size:13px!important}
+.bsm-requisition-lines .bsm-col-boq_qty_display input,.bsm-requisition-lines .bsm-col-already_req_qty_display input,.bsm-requisition-lines .bsm-col-requested_qty input{text-align:right!important}
+.bsm-requisition-lines .bsm-line-actions-head{min-width:0!important}
+@media(max-width:760px){.bsm-requisition-lines table{min-width:970px!important}}
+
+/* v0.0.017 — prevent readonly Unit field from overflowing into Remarks in the Requisition Form. */
+.bsm-requisition-lines td.bsm-col-unit_id {overflow:hidden!important;min-width:0!important;}
+.bsm-requisition-lines td.bsm-col-unit_id .bsm-searchable-select,
+.bsm-requisition-lines td.bsm-col-unit_id .bsm-select-control,
+.bsm-requisition-lines td.bsm-col-unit_id .bsm-select-search,
+.bsm-requisition-lines td.bsm-col-unit_id select,
+.bsm-requisition-lines td.bsm-col-unit_id input {
+  width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;
 }
-.bsm-app :is(.bsm-main,.bsm-modal,.bsm-inline-form-host) :is(input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=reset]),textarea,select,.bsm-select-control,.bsm-select-option,.bsm-purchase-unit-display) {
-  color:#000000!important;
-  -webkit-text-fill-color:#000000!important;
-  font-weight:500;
+.bsm-requisition-lines td.bsm-col-unit_id .bsm-select-search {overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;padding-right:20px!important;}
+.bsm-requisition-lines td.bsm-col-unit_id .bsm-select-arrow {right:4px!important;}
+.bsm-requisition-lines td.bsm-col-remarks {min-width:0!important;}
+
+/* v0.0.018: keep complete unit names readable within the Unit column. */
+.bsm-requisition-lines td.bsm-col-unit_id .bsm-select-search{font-size:12px!important;padding-left:6px!important;padding-right:16px!important;text-overflow:clip!important;}
+.bsm-requisition-lines td.bsm-col-unit_id .bsm-select-arrow{right:2px!important;}
+
+/* v0.0.019: auto-expand Requisition Remarks downward, without obscuring adjacent cells. */
+.bsm-requisition-lines td.bsm-col-remarks textarea[name="remarks"]{
+ display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;
+ box-sizing:border-box!important;height:36px;min-height:36px!important;max-height:220px;
+ padding:7px 8px!important;resize:none!important;overflow-y:auto!important;
+ white-space:pre-wrap;overflow-wrap:anywhere;line-height:20px;font-size:13px!important;
 }
-.bsm-app :is(.bsm-main,.bsm-modal,.bsm-inline-form-host) :is(input,textarea,select):is([readonly],:disabled) {
-  color:#000000!important;
-  -webkit-text-fill-color:#000000!important;
-  opacity:1;
+.bsm-requisition-lines td{vertical-align:top!important;}
+
+/* v0.0.023: keep the BOQ Master Add icon left of its label */
+.bsm-app #bsm-boq-new{display:inline-flex!important;align-items:center;justify-content:center;flex-direction:row!important;gap:6px;white-space:nowrap;width:auto!important;min-width:78px;flex:0 0 auto;}
+.bsm-app #bsm-boq-new .bsm-add-icon{display:inline-block;font-size:16px;font-weight:700;line-height:1;}
+
+/* BOQ Master: distinctive action button colours */
+#bsm-boq-list .bsm-boq-pdf,
+#bsm-boq-list .bsm-boq-edit,
+#bsm-boq-list .bsm-boq-delete {
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:7px 12px; min-height:34px; border-radius:7px;
+  color:#fff !important; border:1px solid transparent !important;
+  font-weight:600; white-space:nowrap; line-height:1.25;
 }
-.bsm-app :is(.bsm-main,.bsm-modal,.bsm-inline-form-host) :is(input,textarea)::placeholder {
-  color:#000000!important;
-  -webkit-text-fill-color:#000000!important;
-  opacity:1;
-}
-.bsm-app :is(.bsm-main,.bsm-modal,.bsm-inline-form-host) :is(table,.bsm-table,.bsm-table-wrap) tbody td {
-  color:#000000!important;
-  font-weight:500;
-}
-/* Keep essential inverse and semantic colors unchanged. */
-.bsm-app :is(.bsm-main,.bsm-modal,.bsm-inline-form-host) :is(thead th,.bsm-table th) {color:#ffffff!important;}
-.bsm-app .bsm-sidebar :is(.bsm-nav-item,.bsm-nav-label,.bsm-nav-receipt-label){color:#ffffff!important;}
+#bsm-boq-list .bsm-boq-pdf {background:#1769e9 !important; border-color:#1769e9 !important;}
+#bsm-boq-list .bsm-boq-edit {background:#d97706 !important; border-color:#d97706 !important;}
+#bsm-boq-list .bsm-boq-delete {background:#d62828 !important; border-color:#d62828 !important;}
+#bsm-boq-list .bsm-boq-pdf:hover {background:#1154bd !important;}
+#bsm-boq-list .bsm-boq-edit:hover {background:#b85e04 !important;}
+#bsm-boq-list .bsm-boq-delete:hover {background:#b91c1c !important;}
+#bsm-boq-list .bsm-boq-pdf:focus-visible,
+#bsm-boq-list .bsm-boq-edit:focus-visible,
+#bsm-boq-list .bsm-boq-delete:focus-visible {outline:2px solid #111827;outline-offset:2px;}
 
-/* v0.1.469: Group user view permissions by navigation section. */
-.bsm-permissions-heading{font-size:15px;font-weight:700;color:#111827;margin:14px 0 9px}
-.bsm-access-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
-.bsm-access-section{border:1px solid #c8d9f4;border-radius:9px;overflow:hidden;background:#fff;min-width:0}
-.bsm-access-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#e6f0ff;color:#102e5a;font-weight:700;padding:9px 12px;font-size:12px}
-.bsm-access-section-items{display:flex;flex-direction:column}
-.bsm-access-view{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;border-top:1px solid #e7edf6;font-size:12px;color:#101828;cursor:pointer}
-.bsm-access-view span{min-width:0;overflow-wrap:anywhere}
-.bsm-access-groups input[type=checkbox]{width:17px!important;height:17px!important;min-height:0!important;accent-color:#1769ed;flex:0 0 auto;cursor:pointer}
-.bsm-access-group-toggle{display:flex;align-items:center;cursor:pointer;margin:0}
-@media(max-width:720px){.bsm-access-groups{grid-template-columns:minmax(0,1fr)}}
+/* v0.0.028 – Section selected per BOQ item */
+.bsm-app .bsm-boq-header-row{grid-template-columns:minmax(170px,220px) minmax(250px,400px)!important;}
+.bsm-app .bsm-boq-table-wrap .bsm-table th:nth-child(1){width:22%} .bsm-app .bsm-boq-table-wrap .bsm-table th:nth-child(2){width:38%} .bsm-app .bsm-boq-table-wrap .bsm-table th:nth-child(3){width:9%} .bsm-app .bsm-boq-table-wrap .bsm-table th:nth-child(4){width:21%} .bsm-app .bsm-boq-table-wrap .bsm-table th:nth-child(5){width:10%}
+.bsm-app .bsm-boq-row-section{width:100%;min-width:0}
+@media(max-width:700px){.bsm-app .bsm-boq-table-wrap .bsm-table{min-width:760px}.bsm-app .bsm-boq-header-row{grid-template-columns:1fr 1fr!important}}
 
-/* Profitability Tracker */
-.bsm-profit-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px}.bsm-profit-summary>div{border:1px solid #8db3ff;border-radius:8px;padding:10px;font-size:12px;color:#111}.bsm-profit-summary strong{display:block;margin-top:5px;font-size:17px;color:#071b38;white-space:nowrap}.bsm-profitability-note{flex-basis:100%;font-size:12px;color:#1b2b43;padding:6px 0}@media(max-width:850px){.bsm-profit-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Project Tracker */
+.tracker-head{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px}.tracker-head h3{margin:0;flex:1;font-size:19px}.tracker-head small{font-size:14px;color:#2354a0}.tracker-section{border:1px solid #a7c7ff;border-radius:10px;margin:12px 0;overflow:hidden}.tracker-section-head{display:flex;align-items:center;gap:12px;padding:12px;background:#eaf3ff}.tracker-section-head strong{flex:1;color:#133c6c}.tracker-progress{margin-top:5px;height:7px;background:#e0e7ef;border-radius:6px;min-width:100px;overflow:hidden}.tracker-progress span{display:block;height:100%;background:#2563eb}.tracker-site-row{cursor:pointer}.tracker-inline{border:none;background:#e7f0ff;color:#185cd2;border-radius:6px;cursor:pointer;padding:3px 7px}.tracker-edit{display:flex;align-items:center;gap:3px}.tracker-edit input{width:85px;max-width:100%;padding:6px;border:1px solid #9fc0ff;border-radius:6px;text-align:right}.tracker-total{font-weight:700;color:#13447a}.tracker-section td{vertical-align:middle}.tracker-section .bsm-table-wrap{border:0}@media(max-width:650px){.tracker-head h3{flex-basis:100%}.tracker-section-head{flex-wrap:wrap}}
 
-/* Profitability tracker: negative receipts-based margins / surplus */
-#bsm-report-table .bsm-profit-negative, .bsm-profit-summary strong.bsm-profit-negative{color:#c1121f !important;font-weight:700 !important;}
-.bsm-profit-summary{grid-template-columns:repeat(5,minmax(0,1fr));}
-@media(max-width:1000px){.bsm-profit-summary{grid-template-columns:repeat(2,minmax(0,1fr));}}
+/* Project Tracker v0.0.033 – flat Excel-style detail table */
+.tracker-flat-head{margin-bottom:12px;justify-content:flex-end}.tracker-flat-head .bsm-spacer{flex:1}.tracker-flat-wrap{overflow-x:auto;border:1px solid #b4cdf6;border-radius:10px}.tracker-flat-table{width:100%;min-width:900px;border-collapse:collapse}.tracker-flat-table thead th{background:#123b68;color:#fff;text-align:left;white-space:nowrap;padding:10px 12px}.tracker-flat-table tbody td{vertical-align:middle;padding:7px 10px;border-bottom:1px solid #dce5f4}.tracker-flat-table tbody tr:nth-child(even){background:#f7faff}.tracker-flat-table .tracker-edit input{height:34px}.tracker-flat-table .tracker-total{white-space:nowrap}.tracker-status{display:inline-block;border-radius:16px;padding:5px 10px;white-space:nowrap;font-size:12px;font-weight:600}.tracker-status.in-progress{background:#dcecff;color:#1259c2}.tracker-status.completed{background:#dcfce7;color:#15803d}.tracker-status.not-started{background:#edf0f5;color:#536277}.tracker-flat-table td:last-child,.tracker-flat-table th:last-child{text-align:center;width:70px}.tracker-flat-table .tracker-inline{white-space:nowrap}.tracker-flat-head .tracker-add-task{white-space:nowrap;background:#1763ef;color:#fff}
 
-/* v0.1.477: search hint should be subdued; actual values stay black. */
-.bsm-app input.bsm-search::placeholder,
-.bsm-app input[id$="_search"]::placeholder,
-.bsm-app input[id$="-search"]::placeholder,
-.bsm-app input[type="search"]::placeholder {color:#888!important;-webkit-text-fill-color:#888!important;font-weight:400!important;opacity:1!important;}
+/* Site Tracker v0.0.034 – in-app task and sub-task forms */
+.tracker-modal-overlay{position:fixed;inset:0;z-index:999999;background:rgba(10,24,46,.48);display:flex;align-items:center;justify-content:center;padding:16px}
+.tracker-modal{width:100%;max-width:440px;max-height:calc(100vh - 32px);overflow-y:auto;background:#fff;border-radius:14px;box-shadow:0 22px 60px rgba(0,0,0,.25);padding:24px;color:#172b4d}
+.tracker-modal-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.tracker-modal-title h3{font-size:21px;margin:0;color:#122f58}.tracker-modal-close{background:none;border:0;font-size:28px;color:#475569;cursor:pointer;line-height:1}
+.tracker-modal form{display:flex;flex-direction:column;gap:14px}.tracker-modal form>label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600}.tracker-modal input,.tracker-modal select{box-sizing:border-box;width:100%;height:40px;border:1px solid #bfcee2;border-radius:7px;background:#fff;padding:8px 11px;font-size:14px;color:#172b4d}.tracker-modal input[readonly]{background:#f1f5f9}.tracker-required{color:#dc2626}.tracker-modal-number{display:flex;align-items:center;gap:8px}.tracker-modal-number input{flex:1}.tracker-modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}.tracker-modal-actions button{min-width:85px}.tracker-modal-actions button:disabled{opacity:.65;cursor:wait}
+@media(max-width:480px){.tracker-modal{padding:18px;max-width:360px}}
 
-/* v0.1.481: Consistent administrator dependency validation dialog */
-.bsm-admin-dependency-overlay{position:fixed;inset:0;background:rgba(7,19,38,.62);z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:16px}
-.bsm-admin-dependency-box{width:min(540px,100%);max-height:85vh;overflow:auto;background:#fff;color:#101827;border:1px solid #bad0f8;border-radius:12px;box-shadow:0 18px 54px rgba(0,0,0,.22);padding:20px;font-size:14px}
-.bsm-admin-dependency-box h3{margin:0 0 14px;font-size:19px;color:#b42318}
-.bsm-admin-dependency-box p{line-height:1.5}
-.bsm-admin-dependency-details{background:#f5f8fd;border:1px solid #d8e3f5;padding:12px;border-radius:7px;margin:12px 0}
-.bsm-admin-dependency-row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #d8e3f5}
-.bsm-admin-dependency-details strong{display:block;margin:12px 0 5px}
-.bsm-admin-dependency-details ul{margin:4px 0;padding-left:22px;overflow-wrap:anywhere}
-.bsm-admin-dependency-footer{display:flex;justify-content:flex-end;margin-top:14px}
+/* v0.0.035: Inline required asterisks on compact task/subtask modal labels */
+.tracker-modal .tracker-field-label{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;}
+.tracker-modal .tracker-required{display:inline;position:static;margin:0;line-height:1;}
 
-/* Pending PO GST amount fields */
-#po_pending_list .po-pending-table{min-width:1450px}
-#po_pending_list .po-pending-table td:nth-child(n+10) input{min-width:76px;width:100%;box-sizing:border-box;height:40px}
-#po_pending_list .po-pending-table input:disabled{background:#edf1f7;color:#555}
+/* Project Tracker filters — v0.0.036 */
+.tracker-filterbar{display:flex;align-items:end;gap:18px;margin:0 0 16px;padding:14px 18px;background:#f5f8ff;border:1px solid #b4cfff;border-radius:10px}
+.tracker-filterbar>label{display:flex;flex:1 1 240px;min-width:150px;align-items:center;gap:15px;font-size:14px;font-weight:600;color:#153152}
+.tracker-filterbar>label select{flex:1;min-width:0;max-width:100%;height:42px;border:1px solid #b6cae6;border-radius:8px;background:#fff;color:#173052;padding:0 12px;font-size:14px}
+.tracker-filter-actions{display:flex;gap:10px;margin-left:auto;white-space:nowrap}
+.tracker-filter-actions .bsm-btn{min-height:41px;padding:8px 17px}
+.tracker-filter-actions .tracker-reset{border:1px solid #3479f4;background:white;color:#1756ca}
+.tracker-filter-actions .tracker-apply{background:#1763ef;color:white}
+@media(max-width:900px){.tracker-filterbar{flex-wrap:wrap}.tracker-filterbar>label{flex:1 1 40%}.tracker-filter-actions{width:100%;justify-content:flex-end}}
+@media(max-width:540px){.tracker-filterbar>label{flex:1 1 100%}.tracker-filter-actions{justify-content:stretch}.tracker-filter-actions button{flex:1}}
 
+/* v0.0.037 – one compact toolbar, automatic Section/Task filters */
+.tracker-single-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:nowrap;margin-bottom:12px;padding:0;border:none;background:transparent;min-width:0}
+.tracker-single-toolbar .tracker-toolbar-label{display:flex;align-items:center;gap:7px;flex:1 1 175px;min-width:0;margin:0;font-size:13px;font-weight:600;color:#153152;white-space:nowrap}
+.tracker-single-toolbar .tracker-toolbar-label select{width:100%;min-width:0;max-width:100%;height:36px;padding:4px 26px 4px 9px;border:1px solid #b6cae6;border-radius:7px;background:#fff;color:#173052;font-size:13px}
+.tracker-single-toolbar>.bsm-btn{flex:none;white-space:nowrap;padding:7px 11px;min-height:36px}
+.tracker-single-toolbar>.bsm-spacer{flex:0 0 3px}
+.tracker-single-toolbar .tracker-detail-search{flex:1 1 220px;min-width:180px;max-width:300px;width:auto;height:36px}
+.tracker-single-toolbar .tracker-add-task-icon{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;padding:0;font-size:24px;line-height:1.1}
+.tracker-single-toolbar .bsm-excel-btn{width:40px;height:40px}
+@media(max-width:1050px){.tracker-single-toolbar{flex-wrap:wrap}.tracker-single-toolbar .tracker-toolbar-label{flex:1 1 220px}.tracker-single-toolbar>.bsm-spacer{flex:1 1 auto}}
+@media(max-width:600px){.tracker-single-toolbar .tracker-toolbar-label{flex:1 1 100%}.tracker-single-toolbar>.bsm-spacer{display:none}}
 
-/* v0.1.486 – Compact Pending PO columns; one scroll area, fixed column alignment. */
-#po_pending_list{max-width:100%;min-width:0;overflow:visible!important}
-#po_pending_list .po-pending-table-wrap{display:block!important;max-width:100%!important;width:100%!important;overflow-x:auto!important;overflow-y:auto!important;position:relative;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#94a3b8 #eaf1ff}
-#po_pending_list .po-pending-table{width:1145px!important;min-width:1145px!important;max-width:none!important;table-layout:fixed!important;border-collapse:collapse!important}
-#po_pending_list .po-pending-table th,#po_pending_list .po-pending-table td{box-sizing:border-box!important;padding:5px 4px!important;vertical-align:middle!important;overflow:visible!important;font-size:12px!important;line-height:1.3!important}
-#po_pending_list .po-pending-table th:nth-child(1),#po_pending_list .po-pending-table td:nth-child(1){width:160px!important;min-width:0!important;}
-#po_pending_list .po-pending-table th:nth-child(2),#po_pending_list .po-pending-table td:nth-child(2){width:55px!important;min-width:0!important;}
-#po_pending_list .po-pending-table th:nth-child(3),#po_pending_list .po-pending-table td:nth-child(3){width:85px!important;min-width:0!important;}
-#po_pending_list .po-pending-table th:nth-child(4),#po_pending_list .po-pending-table td:nth-child(4){width:85px!important;min-width:0!important;}
-#po_pending_list .po-pending-table th:nth-child(5),#po_pending_list .po-pending-table td:nth-child(5){width:95px!important;min-width:0!important;}
-#po_pending_list .po-pending-table th:nth-child(6),#po_pending_list .po-pending-table td:nth-child(6){width:85px!important;min-width:0!important;}
-#po_pending_list .po-pending-table th:nth-child(7),#po_pending_list .po-pending-table td:nth-child(7){width:185px!important;min-width:0!important;}
-#po_pending_list .po-pending-table th:nth-child(8),#po_pending_list .po-pending-table td:nth-child(8){width:85px!important;min-width:0!important;}
-#po_pending_list .po-pending-table th:nth-child(9),#po_pending_list .po-pending-table td:nth-child(9){width:85px!important;min-width:0!important;}
-#po_pending_list .po-pending-table th:nth-child(10),#po_pending_list .po-pending-table td:nth-child(10){width:75px!important;min-width:0!important;}
-#po_pending_list .po-pending-table th:nth-child(11),#po_pending_list .po-pending-table td:nth-child(11){width:75px!important;min-width:0!important;}
-#po_pending_list .po-pending-table th:nth-child(12),#po_pending_list .po-pending-table td:nth-child(12){width:75px!important;min-width:0!important;}
-#po_pending_list .po-pending-table th{white-space:normal!important;overflow-wrap:normal!important;font-size:11px!important}
-#po_pending_list .po-pending-table td input[type=number],#po_pending_list .po-pending-table td input[type=text],#po_pending_list .po-pending-table td .bsm-searchable-select{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;font-size:12px!important}
-#po_pending_list .po-pending-table td input{padding:5px 4px!important;height:34px!important;min-height:34px!important}
-#po_pending_list .po-pending-table td .bsm-select-control{width:100%!important;max-width:100%!important;min-width:0!important;padding:5px!important;min-height:34px!important}
-#po_pending_list .po-pending-table td:nth-child(7){overflow:visible!important}
-#po_pending_list .bsm-form-actions{position:relative;z-index:1;display:flex;justify-content:flex-end!important;overflow:visible!important}
+/* v0.0.038 – Site Tracker: remove the outer outlined container only.
+   Keep table gridlines, filter/input outlines and action buttons. */
+.bsm-app #bsm-tracker.bsm-panel{border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;overflow:visible!important;}
+.bsm-app #bsm-tracker .tracker-flat-wrap{border:0!important;border-radius:0!important;box-shadow:none!important;}
 
-/* v0.1.487: exact Vendor menu width, overriding older 100% !important rules. */
-#po_pending_list .po-pending-table td:nth-child(7) .bsm-searchable-select.bsm-po-vendor-dropdown-open .bsm-select-menu,
-#po_pending_list .bsm-searchable-select.open.bsm-po-vendor-dropdown-open .bsm-select-menu {
-  position:fixed!important; width:min(240px,calc(100vw - 16px))!important;
-  min-width:0!important; max-width:min(240px,calc(100vw - 16px))!important;
-  max-height:220px!important; overflow-y:auto!important; overflow-x:hidden!important;
-  white-space:normal!important; box-sizing:border-box!important;
-  z-index:2147483000!important;
-}
-#po_pending_list .po-pending-table td:nth-child(7) .bsm-select-option {
-  display:block!important; width:100%!important; max-width:100%!important;
-  white-space:normal!important; overflow-wrap:anywhere!important; text-align:left!important;
-  min-height:34px!important; padding:7px 10px!important;
-}
-#po_pending_list .po-pending-table td:nth-child(n+10) input:disabled::placeholder{color:transparent!important;-webkit-text-fill-color:transparent!important;}
-#po_pending_list .po-pending-table td:nth-child(n+10) input:disabled{background:#edf1f7!important;}
-#po_pending_list .bsm-form-actions{clear:both!important;position:relative!important;z-index:2!important;min-height:58px;align-items:center;}
+/* v0.0.039 – inline clear icons on active Section and Task filters */
+.tracker-single-toolbar .tracker-select-wrap{position:relative;display:block;flex:1;min-width:0}
+.tracker-single-toolbar .tracker-select-wrap select{display:block;width:100%;padding-right:57px}
+.tracker-single-toolbar .tracker-clear-filter{position:absolute;right:27px;top:50%;transform:translateY(-50%);width:20px;height:20px;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:#e7edf6;color:#38506f;font-size:15px;line-height:1;cursor:pointer;padding:0;z-index:1}
+.tracker-single-toolbar .tracker-clear-filter:hover,.tracker-single-toolbar .tracker-clear-filter:focus-visible{background:#cddcf3;color:#123b68}
 
-/* v0.1.489: GST rate column directly after Rate */
-#po_pending_list .po-pending-table th:nth-child(10),#po_pending_list .po-pending-table td:nth-child(10){width:84px!important;}
-#po_pending_list .po-pending-table th:nth-child(11),#po_pending_list .po-pending-table td:nth-child(11),#po_pending_list .po-pending-table th:nth-child(12),#po_pending_list .po-pending-table td:nth-child(12),#po_pending_list .po-pending-table th:nth-child(13),#po_pending_list .po-pending-table td:nth-child(13){width:75px!important;}
-#po_pending_list .po-row-gst-rate{width:100%;min-width:0;font-size:12px;padding:5px 2px;box-sizing:border-box;}
-#po_pending_list .po-pending-table{min-width:1250px;}
+/* v0.0.040: repeatable Sub-task rows */
+.tracker-subtask-group{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:600}
+.tracker-subtask-rows{display:flex;flex-direction:column;gap:8px}
+.tracker-subtask-row{display:flex;align-items:center;gap:8px}
+.tracker-modal .tracker-subtask-row input{flex:1;min-width:0;width:auto}
+.tracker-subtask-add,.tracker-subtask-remove{height:40px;width:40px;flex:0 0 40px;display:flex;align-items:center;justify-content:center;border:1px solid #2563eb;border-radius:8px;background:#eff6ff;color:#1459c8;font-size:25px;line-height:1;cursor:pointer}
+.tracker-subtask-remove{border-color:#fecaca;background:#fff1f2;color:#b91c1c}
 
-/* v0.1.490 Direct PO form compact tax columns */
-.bsm-direct-po-panel .bsm-table-wrap{overflow-x:auto;max-width:100%;}
-.bsm-direct-po-panel .po-direct-table{min-width:1230px;width:100%;table-layout:fixed;}
-.bsm-direct-po-panel .po-direct-table th,.bsm-direct-po-panel .po-direct-table td{padding:5px 4px;box-sizing:border-box;}
-.bsm-direct-po-panel .po-direct-table th:nth-child(1){width:205px;}
-.bsm-direct-po-panel .po-direct-table th:nth-child(2){width:70px;}
-.bsm-direct-po-panel .po-direct-table th:nth-child(3),.bsm-direct-po-panel .po-direct-table th:nth-child(4),.bsm-direct-po-panel .po-direct-table th:nth-child(5){width:105px;}
-.bsm-direct-po-panel .po-direct-table th:nth-child(6){width:84px;}
-.bsm-direct-po-panel .po-direct-table th:nth-child(7),.bsm-direct-po-panel .po-direct-table th:nth-child(8),.bsm-direct-po-panel .po-direct-table th:nth-child(9){width:90px;}
-.bsm-direct-po-panel .po-direct-table th:nth-child(10){width:110px;}
-.bsm-direct-po-panel .po-direct-table th:nth-child(11){width:86px;}
-.bsm-direct-po-panel .po-direct-table input,.bsm-direct-po-panel .po-direct-table select{width:100%;min-width:0;box-sizing:border-box;}
+/* Project Tracker row action buttons */
+.tracker-actions{display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.tracker-action-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:0;border-radius:6px;background:#eaf1ff;color:#1c59bd;cursor:pointer;padding:4px}
+.tracker-action-btn:hover{background:#d6e5ff}.tracker-action-delete{color:#ed1010;background:#fff0f0}.tracker-action-delete:hover{background:#ffe0e0}
+.tracker-action-btn:disabled{opacity:.5;cursor:wait}.tracker-flat-table th:last-child,.tracker-flat-table td:last-child{min-width:122px;text-align:center}
+#tracker-edit-overlay .tracker-modal form{display:flex;flex-direction:column;gap:14px}
+#tracker-edit-overlay .tracker-modal form label{display:flex;flex-direction:column;gap:6px}
+#tracker-edit-overlay .tracker-modal form input,#tracker-edit-overlay .tracker-modal form select{width:100%;min-height:40px;border:1px solid #a7c7ff;border-radius:6px;padding:8px;color:#111}
+#tracker-edit-overlay .tracker-edit-cancel[aria-label="Close"]{border:0;background:none;font-size:24px;cursor:pointer}
 
-/* v0.1.491 Direct PO: GST dropdown stays within its own cell. */
-.bsm-direct-po-panel .po-direct-table td:nth-child(6){position:relative;overflow:hidden!important;}
-.bsm-direct-po-panel .po-direct-table select.po-direct-gst-rate.bsm-native-gst-rate{
- display:block!important;position:static!important;opacity:1!important;pointer-events:auto!important;
- appearance:auto!important;-webkit-appearance:menulist!important;
- width:100%!important;min-width:0!important;max-width:100%!important;
- height:34px!important;min-height:34px!important;box-sizing:border-box!important;
- padding:4px 18px 4px 5px!important;border:1px solid #7eb6ff!important;border-radius:6px!important;
- background:#fff!important;color:#000!important;font-size:12px!important;font-weight:500!important;
-}
-.bsm-direct-po-panel .po-direct-table th:nth-child(6),.bsm-direct-po-panel .po-direct-table td:nth-child(6){width:92px!important;}
-.bsm-direct-po-panel .po-direct-table th:nth-child(7),.bsm-direct-po-panel .po-direct-table td:nth-child(7),
-.bsm-direct-po-panel .po-direct-table th:nth-child(8),.bsm-direct-po-panel .po-direct-table td:nth-child(8),
-.bsm-direct-po-panel .po-direct-table th:nth-child(9),.bsm-direct-po-panel .po-direct-table td:nth-child(9){width:90px!important;}
-.bsm-direct-po-panel .po-direct-table td:nth-child(n+7):nth-child(-n+9) input{
- width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;
-}
+/* Task-wide editor */
+#tracker-edit-overlay .tracker-modal{max-width:540px}
+#tracker-edit-overlay .tracker-edit-subtitle{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;font-size:13px;font-weight:700}
+#tracker-edit-overlay .tracker-subtask-rows{max-height:300px;overflow-y:auto;padding:2px}
+#tracker-edit-overlay .tracker-edit-add{border:0;border-radius:7px;background:#e9f1ff;color:#1559dc;font-size:22px;line-height:1;cursor:pointer;width:34px;height:34px}
+#tracker-edit-overlay .tracker-edit-remove{border:0;border-radius:7px;background:#fee2e2;color:#b91c1c;cursor:pointer;width:32px;height:34px;flex-shrink:0;font-size:20px}
+#tracker-edit-overlay .tracker-edit-row input{flex:1;min-width:0}
 
-/* Quotation item images - compact upload + preview controls */
-#bsm-form.bsm-quotation-style .bsm-quotation-lines table{min-width:1110px!important}
-#bsm-form.bsm-quotation-style .bsm-quotation-lines .bsm-col-image_attachment_id{width:92px!important;max-width:92px!important}
-.bsm-quote-image{display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:72px}
-.bsm-quote-choose{border:1px solid #cbd5e1;border-radius:5px;background:#f8fafc;color:#334155;cursor:pointer;font-size:11px;min-width:28px;padding:5px}
-.bsm-quote-preview img{width:34px;height:34px;object-fit:contain;border:1px solid #d8e2ea;border-radius:4px;background:white}
-.bsm-quote-remove{border:0;background:none;color:#9b1c1c;cursor:pointer;font-size:16px}
-.bsm-quote-preview[hidden],.bsm-quote-remove[hidden]{display:none!important}
+/* Compact, accessible back action for Site Tracker */
+#tracker-back.tracker-back-icon{display:inline-flex;align-items:center;justify-content:center;min-width:38px;width:38px;padding:8px;font-size:19px;line-height:1;flex:0 0 38px}
 
-/* v0.1.510 compact quotation image cell: upload icon + thumbnail only */
-#bsm-form.bsm-quotation-style .bsm-quotation-lines table{min-width:1000px!important}
-#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(1),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(1){width:21%!important}
-#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(2),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(2){width:6%!important;max-width:none!important}
-#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(3),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(3){width:14%!important}
-#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(4),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(4){width:7%!important}
-#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(5),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(5){width:8%!important}
-#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(6),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(6){width:9%!important}
-#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(7),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(7){width:8%!important}
-#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(8),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(8){width:10%!important}
-#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(9),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(9){width:12%!important}
-#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(10),#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(10){width:5%!important}
-#bsm-form.bsm-quotation-style .bsm-quote-image{min-width:0!important;display:flex;flex-wrap:nowrap;gap:3px;justify-content:center;align-items:center}
-#bsm-form.bsm-quotation-style .bsm-quote-file{display:none!important}
-#bsm-form.bsm-quotation-style .bsm-quote-choose{width:23px!important;min-width:23px!important;height:26px!important;padding:0!important;font-size:15px!important;line-height:24px!important;flex:none}
-#bsm-form.bsm-quotation-style .bsm-quote-preview img{width:25px!important;height:25px!important}
-#bsm-form.bsm-quotation-style .bsm-quote-remove{padding:0!important;font-size:13px!important;line-height:1!important}
+/* Site Tracker toolbar: search precedes Section and Task filters. */
+.tracker-single-toolbar .tracker-detail-search{flex:1 1 180px;min-width:140px;max-width:260px}
 
-/* Quotation Image column: half-width icon-only UI, no textual Replace / arrow */
-#bsm-form.bsm-quotation-style .bsm-quotation-lines{overflow-x:auto}
-#bsm-form.bsm-quotation-style .bsm-quotation-lines table{table-layout:fixed;min-width:1000px!important}
-#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(2),
-#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(2),
-#bsm-form.bsm-quotation-style .bsm-quotation-lines .bsm-col-image_attachment_id{width:3%!important;max-width:3%!important;min-width:0!important;padding:3px 1px!important;box-sizing:border-box!important}
-#bsm-form.bsm-quotation-style .bsm-quotation-lines th:nth-child(3),
-#bsm-form.bsm-quotation-style .bsm-quotation-lines td:nth-child(3){width:17%!important}
-#bsm-form.bsm-quotation-style .bsm-quote-image{display:flex!important;flex-direction:column!important;gap:2px!important;align-items:center!important;justify-content:center!important;min-width:0!important}
-#bsm-form.bsm-quotation-style .bsm-quote-choose{width:22px!important;height:22px!important;min-width:0!important;font-size:12px!important;line-height:20px!important}
-#bsm-form.bsm-quotation-style .bsm-quote-preview img{width:21px!important;height:21px!important}
-#bsm-form.bsm-quotation-style .bsm-quote-remove{font-size:12px!important}
-
-/* Hide upload/replace control once an item image is selected. To change it, remove then upload. */
-#bsm-form.bsm-quotation-style .bsm-quote-image:has(.bsm-quote-preview:not([hidden])) .bsm-quote-choose{display:none!important}
-
-/* v0.1.512: compact thumbnails in expanded Quotation Master item details */
-.bsm-sales-item-detail-table .bsm-sales-image-heading,
-.bsm-sales-item-detail-table .bsm-sales-image-cell{width:52px;min-width:52px;max-width:52px;text-align:center;padding:3px!important;box-sizing:border-box}
-.bsm-sales-item-detail-table .bsm-sales-image-cell img{display:inline-block;width:32px;height:32px;max-width:100%;object-fit:contain;border-radius:3px;vertical-align:middle;cursor:zoom-in}
+/* Site Tracker: align Search text and hint typography with filter dropdowns. */
+.tracker-single-toolbar input#tracker-detail-search{font-size:13px!important;font-weight:400!important;line-height:normal;color:#173052!important;}
+.tracker-single-toolbar input#tracker-detail-search::placeholder{font-size:13px!important;font-weight:400!important;color:#173052!important;opacity:1;}

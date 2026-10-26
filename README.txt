@@ -1,9 +1,9 @@
-BizSkill Site Management - Phase 1
-Version 0.1.22
+Site Management
+Version 0.0.054
 
 INSTALLATION
 1. Upload the ZIP from WordPress > Plugins > Add New > Upload Plugin.
-2. Activate "BizSkill Site Management".
+2. Activate "Site Management".
 3. Activation creates a front-end page named "Site Management" at /site-management/.
 4. Open the page and log in with a WordPress user.
 5. Administrators/Owner users can create application users from Users.
@@ -46,7 +46,7 @@ IMPORTANT DESIGN RULE
 Head Office payments on behalf of a site increase Site Cost but do not reduce Site Fund Balance. Site-paid expenses/payments reduce the Site Fund Balance.
 
 
-Version 0.1.22
+Version 0.0.054
 - Creates a separate published WordPress Page for every application view/report.
 - All generated pages use the plugin Blank Template - Site Management.
 - Site Management is the parent/dashboard page; all other views are child pages.
@@ -87,3 +87,5 @@ Version 0.1.443: Customer Master GST Type (Intra-State, Inter-State, No GST) in 
 0.1.464: Global black text contrast for labels, values, placeholders, read-only inputs and muted dashboard/table text; preserve dark headers, sidebar, actions, statuses.
 
 0.1.465: Bill Type on purchase and pending invoice upload; validation, table display, exports, and conditional non-GST calculations.
+
+Version 0.0.043: Cache-busted frontend assets to display Project Tracker actions, and linked Sub-task Edit/Delete to the correct record.

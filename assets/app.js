@@ -4,11 +4,13 @@
 const App = {
   current: 'dashboard', page: 1, search: '', editId: 0, options: {},
   nav: [
-    {group:'Main', items:[['dashboard','Site Dashboard']]},
-    {group:'Masters', items:[['bank_accounts','Bank Master'],['customers','Customers'],['designations','Designations'],['expense_categories','Expense Categories'],['gst_rates','GST Rates'],['item_categories','Item Categories'],['items','Items'],['labour_contractors','Labour Contractors'],['sites','Site Master'],['states','States'],['units','Units'],['users','Users'],['vendors','Vendors'],['warehouses','Warehouses']]},
+    {group:'Main', items:[['dashboard','Dashboard']]},
+    {group:'Masters', items:[['bank_accounts','Bank Master'],['customers','Customers'],['designations','Designations'],['expense_categories','Expense Categories'],['gst_rates','GST Rates'],['item_categories','Item Categories'],['items','Items'],['labour_contractors','Labour Contractors'],['sections','Section'],['sites','Site Master'],['states','States'],['units','Units'],['users','Users'],['vendors','Vendors'],['warehouses','Warehouses']]},
+    {group:'Sites', items:[['project_tracker','Site Tracker'],['report_customer_outstanding','Site Balance'],['customer_receipts','Site Payment Receipts']]},
+    {group:'BOQ', items:[['boq_form','BOQ Form'],['boq_master','BOQ Master'],['boq_items','BOQ Items Master'],['boq_monitoring','BOQ Monitoring']]},
     {group:'Site Requisition', items:[['requisition_form','Requisition Form'],['material_requisitions','Requisitions Master'],['material_requisition_item','Requisition Item Master'],['pending_requisition_approval','Requisitions Pending Approval']]},
     {group:'Purchase Order', items:[['pending_po_items','Approved Requisition Pending PO'],['purchase_order_form','PO Form'],['purchase_order_master','PO Master'],['purchase_order_items_master','PO Items Master'],['purchase_order_pending_receipt','Ordered but Not Received']]},
-    {group:'Purchase', items:[['purchase_pending_approval','Purchase Pending Approval'],['purchase_register','Purchase Master'],['purchase_items_register','Purchase Items Master'],['pending_invoice_copy','Pending Invoice Copy']]},
+    {group:'Purchase', items:[['purchase_form','Purchase Form'],['purchase_pending_approval','Pending Approval'],['purchase_register','Purchase Master'],['purchase_items_register','Purchase Items Master'],['pending_invoice_copy','Pending Invoice Copy']]},
     {group:'Dispatch', items:[['pending_material_dispatch','Pending Dispatch'],['material_dispatches','Dispatch Master'],['dispatch_items_register','Dispatch Items Master']]},
     {group:'Site Material Receipt', items:[['pending_site_receipt','Pending Site Material Receipt'],['site_receipts','Material Receipts Master'],['site_material_item_receipt','Material Receipts Item Master'],['pending_site_receive_challans','Pending Site Receive Challans']]},
     {group:'Consumption', items:[['consumption_form','Consumption Form'],['site_consumptions','Consumption Master'],['consumption_items_register','Consumption Items Master']]},
@@ -23,7 +25,6 @@ const App = {
     {group:'Payment', items:[['report_vendor_outstanding','Vendor Outstanding'],['pending_allowance_payment','Pending Allowance Payment'],['report_contractor_outstanding','Contractor Outstanding'],['pending_salary_payment','Pending Salary Payment'],['vendor_payments','Payment Master']]},
     {group:'Quotation', items:[['quotation_form','Quotation Form'],['quotation_master','Quotation Master'],['quotation_items','Quotation Items Master']]},
     {group:'Tax Invoice', items:[['invoice_form','Invoice Form'],['invoice_master','Invoice Master'],['invoice_items','Invoice Items Master']]},
-    {group:'Sites', items:[['report_customer_outstanding','Site Balance'],['customer_receipts','Site Payment Receipts'],['report_profitability','Profitability Tracker']]},
     {group:'Settings', items:[['company_settings','Company Settings']]}
   ],
   configs: {}
@@ -43,25 +44,26 @@ function C(key,label,type='text'){ return {key,label,type}; }
 App.configs = {
   bank_accounts:{title:'Bank Master', fields:[F('bank_name','Bank Name',{required:true}),F('account_holder_name','Account Holder Name',{required:true}),F('account_number','Account Number',{required:true}),F('ifsc_code','IFSC Code'),F('branch_name','Branch'),F('account_type','Account Type',{type:'select',options:[['Current','Current'],['Savings','Savings'],['OD','OD'],['CC','CC'],['Other','Other']]}),F('upi_id','UPI ID'),F('status','Status',status())], columns:[C('bank_name','Bank Name'),C('account_holder_name','Account Holder'),C('account_number','Account Number'),C('ifsc_code','IFSC'),C('branch_name','Branch'),C('account_type','Account Type'),C('upi_id','UPI ID'),C('status','Status')]},
   company_settings:{title:'Company Settings', singleton:true, fields:[F('company_name','Company Name'),F('address','Address',textarea),F('city','City'),F('state_id','State',Object.assign({addMaster:'states'},ref('states'))),F('pin_code','PIN Code'),F('gstin','GSTIN'),F('pan','PAN'),F('phone','Phone'),F('email','Email',{type:'email'}),F('bank_account_holder','Account Holder'),F('bank_name','Bank Name'),F('bank_branch','Branch'),F('bank_ifsc','IFSC Code'),F('bank_account_no','Account No.'),F('pdf_theme_color','PDF Theme Color',{type:'color'})], columns:[C('company_name','Company'),C('gstin','GSTIN'),C('state_id','State','ref:states')]},
+  sections:{title:'Section',fields:[F('section_name','Section Name',{required:true}),F('status','Status',status())],columns:[C('section_name','Section Name'),C('status','Status')]},
   designations:{title:'Designations', fields:[F('designation_name','Designation Name',{required:true}),F('status','Status',status())], columns:[C('designation_name','Designation'),C('status','Status')]},
   states:{title:'States', fields:[F('state_name','State Name',{required:true}),F('status','Status',status())], columns:[C('state_name','State'),C('status','Status')]},
   customers:{title:'Customers', fields:[F('customer_name','Customer Name',{required:true}),F('contact_person','Contact Person'),F('mobile','Mobile'),F('email','Email',{type:'email'}),F('address','Address',textarea),F('city','City'),F('state_id','State',Object.assign({addMaster:'states'},ref('states'))),F('pin_code','PIN Code'),F('gstin','GSTIN'),F('pan','PAN'),F('gst_type','GST Type',{type:'select',options:[['','Select'],['intra_state','Intra-State'],['inter_state','Inter-State'],['no_gst','No GST']]}),F('status','Status',status())], columns:[C('customer_name','Customer'),C('contact_person','Contact'),C('mobile','Mobile'),C('address','Address'),C('state_id','State','ref:states'),C('city','City'),C('gstin','GSTIN'),C('gst_type','GST Type'),C('status','Status')]},
-  sites:{title:'Sites', fields:[F('site_name','Site Name', {required:true}),F('customer_id','Customer',Object.assign({required:true},ref('customers'))),F('site_location','Site Location',{required:true}),F('site_manager_user_id','Site Manager',Object.assign({required:true},ref('users'))),F('site_supervisor_user_id','Site Supervisor',Object.assign({required:true},ref('users'))),F('start_date','Start Date',Object.assign({required:true},date)),F('expected_end_date','Expected Completion Date',Object.assign({required:true},date)),F('work_order_value','Work Order Value',Object.assign({required:true},money)),F('status','Status',status(['active','on_hold','completed'])),F('remarks','Remarks',textarea)], columns:[C('site_code','Site Code'),C('site_name','Site'),C('customer_id','Customer','ref:customers'),C('site_location','Site Location'),C('site_manager_user_id','Site Manager','ref:users'),C('start_date','Start Date','date'),C('work_order_value','Work Order Value','money'),C('status','Status')]},
+  sites:{title:'Sites', fields:[F('site_name','Site Name', {required:true}),F('customer_id','Customer',Object.assign({required:true},ref('customers'))),F('site_location','Site Location',{required:true}),F('site_sections','Section',{type:'site_sections'}),F('site_manager_user_id','Site Manager',Object.assign({required:true},ref('users'))),F('site_supervisor_user_id','Site Supervisor',Object.assign({required:true},ref('users'))),F('start_date','Start Date',Object.assign({required:true},date)),F('expected_end_date','Expected Completion Date',Object.assign({required:true},date)),F('work_order_value','Work Order Value',Object.assign({required:true},money)),F('status','Status',status(['active','on_hold','completed'])),F('remarks','Remarks',textarea)], columns:[C('site_code','Site Code'),C('site_name','Site'),C('customer_id','Customer','ref:customers'),C('site_location','Site Location'),C('site_sections','Section'),C('site_manager_user_id','Site Manager','ref:users'),C('start_date','Start Date','date'),C('work_order_value','Work Order Value','money'),C('status','Status')]},
   vendors:{title:'Vendors', fields:[F('vendor_name','Vendor Name',{required:true}),F('contact_person','Contact Person',{required:true}),F('mobile','Mobile',{required:true}),F('email','Email',{type:'email'}),F('address','Address',Object.assign({required:true},textarea)),F('city','City',{required:true}),F('state_id','State',Object.assign({required:true,addMaster:'states'},ref('states'))),F('gstin','GSTIN'),F('gst_type','GST Type',{type:'select',required:true,options:[['intra_state','Intra-State'],['inter_state','Inter-State'],['no_gst','No GST']]}),F('pan','PAN'),F('bank_name','Bank Name'),F('bank_account','Bank Account'),F('ifsc','IFSC'),F('status','Status',status())], columns:[C('vendor_name','Vendor'),C('contact_person','Contact'),C('mobile','Mobile'),C('gstin','GSTIN'),C('gst_type','GST Type'),C('status','Status')]},
   labour_contractors:{title:'Labour Contractors', fields:[F('contractor_name','Contractor Name',{required:true}),F('contact_person','Contact Person',{required:true}),F('mobile','Mobile',{required:true}),F('email','Email',{type:'email'}),F('address','Address',Object.assign({required:true},textarea)),F('city','City',{required:true}),F('state_id','State',Object.assign({required:true,addMaster:'states'},ref('states'))),F('gstin','GSTIN'),F('pan','PAN'),F('bank_name','Bank Name'),F('bank_account','Bank Account'),F('ifsc','IFSC'),F('status','Status',status())], columns:[C('contractor_name','Contractor'),C('contact_person','Contact'),C('mobile','Mobile'),C('gstin','GSTIN'),C('status','Status')]},
   labour_attendance:{title:'Daily Labour Attendance', attendanceTable:true, fields:[F('site_id','Site',Object.assign({required:true},ref('sites'))),F('attendance_date','Date',Object.assign({required:true},date))], items:[F('contractor_id','Labour Contractor',Object.assign({required:true},ref('contractors'))),F('no_of_labour','Attend',{type:'number',min:1,step:'1',required:true})], columns:[C('attendance_date','Date','date'),C('site_id','Site','ref:sites'),C('contractor_id','Contractor','ref:contractors'),C('no_of_labour','Attend','number')]},
   item_categories:{title:'Item Categories', fields:[F('category_name','Category Name',{required:true}),F('status','Status',status())], columns:[C('category_name','Category'),C('status','Status')]},
   units:{title:'Units', fields:[F('unit_name','Unit Name',{required:true}),F('status','Status',status())], columns:[C('unit_name','Unit'),C('status','Status')]},
   gst_rates:{title:'GST Rates', fields:[F('gst_rate','GST Rate %',Object.assign({required:true},money)),F('status','Status',status())], columns:[C('gst_rate','GST Rate %','number'),C('status','Status')]},
-  items:{title:'Items', fields:[F('item_name','Item Name',{required:true}),F('category_id','Category',Object.assign({required:true},ref('categories'))),F('unit_id','Unit',Object.assign({required:true},ref('units'))),F('hsn_code','HSN Code'),F('gst_rate','GST Rate %',Object.assign({addMaster:'gst_rates'},ref('gst_rates'))),F('opening_qty','Opening Qty',qty),F('opening_rate','Price',money),F('minimum_stock','Minimum Stock',qty),F('status','Status',status())], columns:[C('item_name','Item'),C('category_id','Category','ref:categories'),C('unit_id','Unit','ref:units'),C('hsn_code','HSN'),C('opening_qty','Opening Qty','number'),C('opening_rate','Price','money'),C('gst_rate','GST %','number'),C('status','Status')]},
+  items:{title:'Items', fields:[F('item_name','Item Name',{required:true}),F('category_id','Category',ref('categories')),F('unit_id','Unit',ref('units')),F('hsn_code','HSN Code'),F('gst_rate','GST Rate %',Object.assign({addMaster:'gst_rates'},ref('gst_rates'))),F('opening_qty','Opening Qty',qty),F('opening_rate','Price',money),F('minimum_stock','Minimum Stock',qty),F('status','Status',status())], columns:[C('item_name','Item'),C('category_id','Category','ref:categories'),C('unit_id','Unit','ref:units'),C('hsn_code','HSN'),C('opening_qty','Opening Qty','number'),C('opening_rate','Price','money'),C('gst_rate','GST %','number'),C('status','Status')]},
   site_opening_stock:{title:'Site Opening Stock', fields:[F('site_id','Site',Object.assign({required:true},ref('sites'))),F('opening_date','Opening Date',Object.assign({required:true},date)),F('item_id','Item',Object.assign({required:true},ref('items'))),F('opening_qty','Opening Qty',Object.assign({required:true},qty)),F('opening_rate','Opening Rate',money),F('unit_id','Unit',Object.assign({readonly:true},ref('units'))),F('remarks','Remarks')], columns:[C('site_id','Site','ref:sites'),C('opening_date','Opening Date','date'),C('item_id','Item','ref:items'),C('opening_qty','Opening Qty','number'),C('opening_rate','Opening Rate','money'),C('unit_id','Unit','ref:units')]},
   warehouses:{title:'Warehouses', fields:[F('warehouse_name','Warehouse Name',{required:true}),F('address','Address',textarea),F('manager_user_id','Manager',ref('users')),F('status','Status',status())], columns:[C('warehouse_name','Warehouse'),C('manager_user_id','Manager','ref:users'),C('status','Status')]},
   expense_categories:{title:'Expense Categories', fields:[F('category_name','Category Name',{required:true}),F('status','Status',status())], columns:[C('category_name','Category'),C('status','Status')]},
   allowance_types:{title:'Allowance Types', fields:[F('allowance_type_name','Allowance Type',{required:true}),F('status','Status',status())], columns:[C('allowance_type_name','Allowance Type'),C('status','Status')]},
   employee_allowance_limits:{title:'Employee Allowance Limit', fields:[F('employee_id','Employee',Object.assign({required:true},ref('users'))),F('allowance_type_id','Allowance Type',Object.assign({required:true},ref('allowance_types'))),F('limit_amount','Limit Amount',Object.assign({required:true},money)),F('status','Status',status())], columns:[C('employee_id','Employee','ref:users'),C('allowance_type_id','Allowance Type','ref:allowance_types'),C('limit_amount','Limit Amount','money'),C('status','Status')]},
 
-  material_requisitions:{title:'Requisitions Master', fields:[F('site_id','Site',Object.assign({required:true},ref('sites'))),F('requisition_date','Requisition Date',Object.assign({required:true},date)),F('required_date','Required Date',Object.assign({required:true},date)),F('requested_by','Requested By',Object.assign({required:true},ref('users')))], columns:[C('requisition_no','Requisition'),C('requisition_date','Date','date'),C('required_date','Required Date','date'),C('site_id','Site','ref:sites'),C('requested_by','Requested By','ref:users'),C('status','Status')], items:[F('item_id','Item',Object.assign({required:true,addMaster:'items'},ref('items'))),F('requested_qty','Requested Qty',Object.assign({required:true},qty)),F('unit_id','Unit',Object.assign({required:true,readonly:true},ref('units'))),F('remarks','Remarks'),F('document_url','',{type:'hidden'}),F('document_name','',{type:'hidden'})]},
-  quotations:{title:'Quotation', fields:[F('quotation_no','Quotation No.',{type:'hidden'}),F('quotation_date','Date',Object.assign({required:true},date)),F('customer_id','Customer Name',Object.assign({required:true},ref('customers'))),F('site_id','Site',Object.assign({required:true},ref('sites'))),F('billing_address','Billing Address',{type:'hidden'}),F('customer_gstin','GSTIN',{type:'hidden'}),F('billing_state_id','State',{type:'hidden'}),F('place_of_supply_state_id','Place of Supply',{type:'hidden'}),F('valid_till','Valid Till',date),F('taxable_amount','Amount',{type:'hidden'}),F('cgst_amount','CGST',{type:'hidden'}),F('sgst_amount','SGST',{type:'hidden'}),F('igst_amount','GST',{type:'hidden'}),F('other_charges','Other Charge',money),F('gst_on_other_charge','GST on Other Charge',money),F('round_off','Round Off',money),F('grand_total','Total Amount',{type:'hidden'}),F('terms','Terms & Conditions',textarea),F('remarks','Notes',{type:'hidden'})], columns:[C('quotation_no','Quotation No.'),C('quotation_date','Date','date'),C('customer_id','Customer','ref:customers'),C('taxable_amount','Amount','money'),C('grand_total','Total','money'),C('pdf_url','PDF','document')], items:[F('item_id','Item',Object.assign({required:true},ref('items'))),F('image_attachment_id','Image',{type:'quotation_image'}),F('description','Description'),F('hsn_sac','HSN / SAC',{type:'hidden'}),F('qty','Qty',Object.assign({required:true},qty)),F('unit_id','Unit',Object.assign({required:true},ref('units'))),F('rate','Rate',Object.assign({required:true},money)),F('gst_rate','GST %',ref('gst_rates')),F('cgst_amount','CGST',{type:'hidden'}),F('sgst_amount','SGST',{type:'hidden'}),F('igst_amount','GST',Object.assign({readonly:true},money)),F('amount','Amount',Object.assign({readonly:true},money)),F('total_amount','Total',{type:'hidden'})]},
+  material_requisitions:{title:'Requisitions Master', fields:[F('site_id','Site',Object.assign({required:true},ref('sites'))),F('requisition_date','Requisition Date',Object.assign({required:true},date)),F('required_date','Required Date',Object.assign({required:true},date)),F('requested_by','Requested By',Object.assign({required:true},ref('users')))], columns:[C('requisition_no','Requisition'),C('requisition_date','Date','date'),C('required_date','Required Date','date'),C('site_id','Site','ref:sites'),C('requested_by','Requested By','ref:users'),C('status','Status')], items:[F('item_id','Item',Object.assign({required:true,addMaster:'items'},ref('items'))),F('boq_qty_display','BOQ Qty',{type:'display'}),F('already_req_qty_display','Already Req. Qty',{type:'display'}),F('requested_qty','Req. Qty',Object.assign({required:true},qty)),F('unit_id','Unit',Object.assign({required:true,readonly:true},ref('units'))),F('remarks','Remarks',{type:'textarea'}),F('document_url','',{type:'hidden'}),F('document_name','',{type:'hidden'})]},
+  quotations:{title:'Quotation', fields:[F('quotation_no','Quotation No.',{type:'hidden'}),F('quotation_date','Date',Object.assign({required:true},date)),F('customer_id','Customer Name',Object.assign({required:true},ref('customers'))),F('site_id','Site',Object.assign({required:true},ref('sites'))),F('billing_address','Billing Address',{type:'hidden'}),F('customer_gstin','GSTIN',{type:'hidden'}),F('billing_state_id','State',{type:'hidden'}),F('place_of_supply_state_id','Place of Supply',{type:'hidden'}),F('valid_till','Valid Till',date),F('taxable_amount','Amount',{type:'hidden'}),F('cgst_amount','CGST',{type:'hidden'}),F('sgst_amount','SGST',{type:'hidden'}),F('igst_amount','GST',{type:'hidden'}),F('other_charges','Other Charge',money),F('gst_on_other_charge','GST on Other Charge',money),F('round_off','Round Off',money),F('grand_total','Total Amount',{type:'hidden'}),F('terms','Terms & Conditions',textarea),F('remarks','Notes',{type:'hidden'})], columns:[C('quotation_no','Quotation No.'),C('quotation_date','Date','date'),C('customer_id','Customer','ref:customers'),C('taxable_amount','Amount','money'),C('grand_total','Total','money'),C('pdf_url','PDF','document')], items:[F('item_id','Item',Object.assign({required:true},ref('items'))),F('description','Description'),F('hsn_sac','HSN / SAC',{type:'hidden'}),F('qty','Qty',Object.assign({required:true},qty)),F('unit_id','Unit',Object.assign({required:true},ref('units'))),F('rate','Rate',Object.assign({required:true},money)),F('gst_rate','GST %',ref('gst_rates')),F('cgst_amount','CGST',{type:'hidden'}),F('sgst_amount','SGST',{type:'hidden'}),F('igst_amount','GST',Object.assign({readonly:true},money)),F('amount','Amount',Object.assign({readonly:true},money)),F('total_amount','Total',{type:'hidden'})]},
   tax_invoices:{title:'Tax Invoice', fields:[F('invoice_no','Invoice No.',{type:'hidden'}),F('invoice_date','Date',Object.assign({required:true},date)),F('customer_id','Customer Name',Object.assign({required:true},ref('customers'))),F('site_id','Site',Object.assign({required:true},ref('sites'))),F('billing_address','Billing Address',{type:'hidden'}),F('customer_gstin','GSTIN',{type:'hidden'}),F('billing_state_id','State',{type:'hidden'}),F('place_of_supply_state_id','Place of Supply',{type:'hidden'}),F('taxable_amount','Amount',{type:'hidden'}),F('cgst_amount','CGST',{type:'hidden'}),F('sgst_amount','SGST',{type:'hidden'}),F('igst_amount','GST',{type:'hidden'}),F('other_charges','Other Charge',money),F('gst_on_other_charge','GST on Other Charge',money),F('round_off','Round Off',money),F('invoice_total','Total Amount',{type:'hidden'}),F('terms','Terms & Conditions',textarea),F('remarks','Notes',{type:'hidden'})], columns:[C('invoice_no','Invoice No.'),C('invoice_date','Date','date'),C('customer_id','Customer','ref:customers'),C('site_id','Site','ref:sites'),C('taxable_amount','Taxable','money'),C('invoice_total','Total','money'),C('pdf_url','PDF','document')], items:[F('item_id','Item',Object.assign({required:true},ref('items'))),F('description','Description'),F('hsn_sac','HSN / SAC',{type:'hidden'}),F('qty','Qty',Object.assign({required:true},qty)),F('unit_id','Unit',Object.assign({required:true},ref('units'))),F('rate','Rate',Object.assign({required:true},money)),F('gst_rate','GST %',ref('gst_rates')),F('igst_amount','IGST',Object.assign({readonly:true},money)),F('cgst_amount','CGST',Object.assign({readonly:true},money)),F('sgst_amount','SGST',Object.assign({readonly:true},money)),F('amount','Amount',Object.assign({readonly:true},money)),F('total_amount','Total',{type:'hidden'})]},
 
   material_inwards:{title:'Material Inward', fields:[F('purchase_order_id','',{type:'hidden'}),F('inward_type','Inward Type',{type:'select',required:true,options:[['return','Return'],['purchase','Purchase']]}),F('return_id','Return No.',ref('returns')),F('site_id','Site',Object.assign({readonly:true},ref('sites'))),F('warehouse_id','Warehouse',Object.assign({required:true,readonly:true},ref('warehouses'))),F('received_by','Received By',Object.assign({readonly:true},ref('users'))),F('vendor_id','Vendor',ref('vendors')),F('inward_date','Inward Date',Object.assign({required:true},date)),F('supplier_invoice_no','Supplier Invoice No.'),F('supplier_invoice_date','Supplier Invoice Date',date),F('bill_type','Bill Type',{type:'select',options:[['','Select Bill Type'],['gst_bill','GST Bill'],['non_gst_bill','Non GST Bill']]}),F('taxable_amount','Taxable Amount',Object.assign({readonly:true},money)),F('other_expenses','Other Expenses',money),F('other_expense_gst','GST on Other Expense',money),F('round_off','Round Off',Object.assign({step:'0.01'},money)),F('total_amount','Total Amount',Object.assign({readonly:true},money))], columns:[C('inward_no','Inward'),C('inward_date','Date','date'),C('vendor_id','Vendor','ref:vendors'),C('total_amount','Total','money'),C('status','Status')], items:[F('purchase_order_item_id','',{type:'hidden'}),F('item_id','Item',ref('items')),F('return_qty','Return Qty',Object.assign({readonly:true},qty)),F('qty','Qty',qty),F('unit_id','Unit',Object.assign({readonly:true},ref('units'))),F('item_price','Fixed Price',{type:'number',readonly:true,step:'0.01'}),F('rate','Rate',money),F('remarks','Remark'),F('taxable_amount','Taxable',Object.assign({readonly:true},money)),F('gst_rate','GST %',Object.assign({addMaster:'gst_rates'},ref('gst_rates'))),F('cgst_amount','CGST',Object.assign({readonly:true},money)),F('sgst_amount','SGST',Object.assign({readonly:true},money)),F('igst_amount','IGST',Object.assign({readonly:true},money)),F('total_amount','Total',Object.assign({readonly:true},money))]},
@@ -72,7 +74,7 @@ App.configs = {
 
   site_fund_allocations:{title:'Site Opening', fields:[F('site_id','Site',Object.assign({required:true},ref('sites'))),F('fund_date','Opening Date',Object.assign({required:true},date)),F('amount','Opening Petty Cash',Object.assign({required:true},money))], columns:[C('site_id','Site','ref:sites'),C('fund_date','Opening Date','date'),C('amount','Opening Petty Cash','money')]},
   site_expenses:{title:'Site Expenses', fields:[F('site_id','Site',Object.assign({required:true},ref('sites'))),F('expense_date','Date',Object.assign({required:true},date)),F('category_id','Expense Category',ref('expense_categories')),F('vendor_id','Vendor',ref('vendors')),F('paid_to','Paid To'),F('particulars','Particulars',textarea),F('amount','Amount',Object.assign({required:true},money)),F('payment_mode','Payment Mode',{type:'select',options:[['Cash','Cash'],['Bank','Bank'],['UPI','UPI'],['Cheque','Cheque'],['Other','Other']]}),F('transaction_reference','Transaction Reference'),F('remarks','Remarks',textarea)], columns:[C('expense_date','Date','date'),C('site_id','Site','ref:sites'),C('category_id','Expense Category','ref:expense_categories'),C('vendor_id','Vendor','ref:vendors'),C('paid_to','Paid To'),C('particulars','Particulars'),C('amount','Amount','money')]},
-  customer_receipts:{title:'Site Payment Receipts', fields:[F('site_id','Site',Object.assign({required:true},ref('sites'))),F('customer_id','Customer',{type:'display',readonly:true}),F('receipt_date','Date',Object.assign({required:true},date)),F('amount','Amount',Object.assign({required:true},money)),F('payment_mode','Payment Mode',{type:'select',options:[['Cash','Cash'],['Bank','Bank'],['UPI','UPI'],['Cheque','Cheque'],['Other','Other']]}),F('bank_account_id','Bank',ref('banks')),F('transaction_reference','Transaction Reference'),F('remarks','Remarks',textarea)], columns:[C('receipt_no','Receipt'),C('receipt_date','Date','date'),C('site_id','Site','ref:sites'),C('customer_id','Customer','ref:customers'),C('bank_account_id','Received In Account','ref:banks'),C('amount','Amount','money'),C('remarks','Remarks')]},
+  customer_receipts:{title:'Site Payment Receipts', fields:[F('site_id','Site',Object.assign({required:true},ref('sites'))),F('receipt_date','Date',Object.assign({required:true},date)),F('amount','Amount',Object.assign({required:true},money)),F('payment_mode','Payment Mode',{type:'select',options:[['Cash','Cash'],['Bank','Bank'],['UPI','UPI'],['Cheque','Cheque'],['Other','Other']]}),F('bank_account_id','Bank',ref('banks')),F('transaction_reference','Transaction Reference'),F('remarks','Remarks',textarea)], columns:[C('receipt_no','Receipt'),C('receipt_date','Date','date'),C('site_id','Site','ref:sites'),C('bank_account_id','Received In Account','ref:banks'),C('amount','Amount','money')]},
   vendor_payments:{title:'Payment Master', fields:[F('payment_type','Payment Type',{type:'select',required:true,options:[['head_office_vendor','Head Office Vendor Payment'],['site_vendor','Vendor Payment for Site'],['site_fund','Site Petty Cash Transfer'],['employee_allowance','Employee Allowance'],['salary','Salary']]}),F('vendor_id','Vendor',ref('vendors')),F('material_inward_id','Material Inward / Bill',ref('inwards')),F('site_id','Site',ref('sites')),F('employee_id','Employee',ref('users')),F('allowance_id','',{type:'hidden'}),F('allowance_type_id','',{type:'hidden'}),F('salary_slip_id','',{type:'hidden'}),F('payment_date','Payment Date',Object.assign({required:true},date)),F('amount','Amount',Object.assign({required:true},money)),F('payment_mode','Payment Mode',{type:'select',options:[['Cash','Cash'],['Bank','Bank'],['UPI','UPI'],['Cheque','Cheque'],['Other','Other']]}),F('bank_account_id','Bank',ref('banks')),F('transaction_reference','Transaction Reference'),F('remarks','Remarks',textarea)], columns:[C('payment_date','Date','date'),C('payment_type','Payment Type'),C('party_name','Party'),C('site_name','Site'),C('amount','Amount','money'),C('document_url','Payment Document','document')]},
   contractor_bills:{title:'Labour Contractor Bills', fields:[F('contractor_id','Labour Contractor',Object.assign({required:true},ref('contractors'))),F('site_id','Site',Object.assign({required:true},ref('sites'))),F('bill_no','Bill No.',{required:true}),F('bill_date','Bill Date',Object.assign({required:true},date)),F('from_date','From Date',Object.assign({required:true},date)),F('to_date','To Date',Object.assign({required:true},date)),F('bill_reference','Contractor Bill Reference'),F('taxable_amount','Amount',Object.assign({required:true},money)),F('gst_amount','GST Amount',money),F('total_amount','Total Amount',Object.assign({readonly:true},money)),F('remarks','Remarks',textarea)], columns:[C('bill_no','Bill'),C('bill_date','Date','date'),C('contractor_id','Contractor','ref:contractors'),C('site_id','Site','ref:sites'),C('total_amount','Total','money'),C('document_url','Bill','document')]},
   contractor_payments:{title:'Contractor Payments', fields:[F('payment_no','Payment No.',{readonly:true}),F('contractor_id','Labour Contractor',Object.assign({required:true},ref('contractors'))),F('contractor_bill_id','Contractor Bill',ref('contractor_bills')),F('site_id','Site',ref('sites')),F('payment_date','Payment Date',Object.assign({required:true},date)),F('amount','Amount',Object.assign({required:true},money)),F('paid_by','Paid By',{type:'select',options:[['HEAD_OFFICE','Head Office'],['SITE','Site']]}),F('payment_mode','Payment Mode',{type:'select',options:[['Cash','Cash'],['Bank','Bank'],['UPI','UPI'],['Cheque','Cheque'],['Other','Other']]}),F('bank_account_id','Bank',ref('banks')),F('transaction_reference','Transaction Reference'),F('status','Status',status(['paid','cancelled'])),F('remarks','Remarks',textarea)], columns:[C('payment_no','Payment'),C('payment_date','Date','date'),C('contractor_id','Contractor','ref:contractors'),C('site_id','Site','ref:sites'),C('amount','Amount','money'),C('paid_by','Paid By')]},
@@ -81,7 +83,7 @@ App.configs = {
 };
 
 
-const masterModules = ['users','designations','customers','sites','vendors','labour_contractors','states','item_categories','units','gst_rates','items','warehouses','expense_categories','allowance_types'];
+const masterModules = ['users','designations','customers','sites','vendors','labour_contractors','states','item_categories','sections','units','gst_rates','items','warehouses','expense_categories','allowance_types'];
 function excelIcon(){return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h9l5 5v13H5z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M14 3v5h5M8 10l4 7m0-7-4 7m6-6h3m-3 3h3m-3 3h3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>`;}
 function excelButton(id='bsm-export-excel'){return `<button id="${id}" class="bsm-icon-btn bsm-excel-btn" title="Download Excel" aria-label="Download Excel">${excelIcon()}</button>`;}
 function plainCell(row,col){let v=row[col.key];if(col.key==='payment_type') return row.payment_type_label||({head_office_vendor:'Head Office Vendor Payment',site_vendor:'Vendor Payment for Site',site_fund:'Site Petty Cash Transfer',contractor_payment:'Labour Contractor Payment',contractor_advance:'Labour Contractor Advance',employee_allowance:'Employee Allowance',salary:'Salary'}[v]||String(v||'').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase()));if(col.key==='gst_type') return gstTypeLabel(v);if(col.key==='bill_type') return billTypeLabel(v);if(col.type==='money') return Number(v||0).toFixed(2);if(col.type==='date') return dateFmt(v);if(col.type==='number') return String(Number(v||0));if(col.type==='percent') return Number(v||0).toFixed(2)+'%';if(col.type&&col.type.startsWith('ref:')){const lbl=labelFor(col.type.split(':')[1],v);if(col.key==='state_id'&&!lbl&&row.state)return row.state;return lbl;}if(col.key==='status'||col.key==='paid_by') return String(v||'').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase());return v==null?'':String(v);}
@@ -96,7 +98,6 @@ function downloadExcelFile(filename,headers,rows){
 const reportConfigs = {
   report_stock:{title:'Stock Report', report:'stock', columns:[C('location_type','Type'),C('location','Location'),C('item_name','Item'),C('unit','Unit'),C('stock','Stock','number')], filters:['site']},
   report_site_fund:{title:'Site Balance', report:'site_fund', columns:[C('site_name','Site'),C('opening_amount','Opening','money'),C('funds_received','Funds Received','money'),C('site_expenses','Expenses','money'),C('balance','Balance','money')], filters:['site']},
-  report_profitability:{title:'Profitability Tracker',report:'profitability',columns:[C('site_name','Site'),C('work_order_value','Work Order Value','money'),C('received','Customer Receipts','money'),C('material_cost','Material Cost (Est.)','money'),C('labour_cost','Contractor Bills','money'),C('other_expenses','Other Expenses','money'),C('total_cost','Total Cost','money'),C('estimated_profit','Estimated Profit / Loss','money'),C('profit_margin','Margin %','percent')],filters:['site']},
   report_site_cost:{title:'Site Cost Report', report:'site_cost', columns:[C('site_name','Site'),C('direct_expenses','Direct Expenses','money'),C('contractor_cost','Contractor Cost','money'),C('ho_paid_expenses','HO Paid Expenses','money'),C('total_site_cost','Total Site Cost','money')], filters:['site']},
   report_labour:{title:'Daily Labour Report', report:'labour', columns:[C('attendance_date','Date','date'),C('site_name','Site'),C('contractor_name','Labour Contractor'),C('no_of_labour','No. of Labour','number')], filters:['date','site','contractor']},
   report_labour_summary:{title:'Labour Summary', report:'labour_summary', columns:[C('site_name','Site'),C('contractor_name','Labour Contractor'),C('labour_days','Labour-Days','number'),C('avg_labour','Avg. Labour/Day','number'),C('max_labour','Maximum Labour','number'),C('days_reported','Days Reported','number')], filters:['date','site','contractor']},
@@ -129,6 +130,7 @@ function renderCell(row,col){ let v=row[col.key]; if(col.key==='payment_type') r
 
 function optionTypesForView(key){
   const needed=new Set();
+  if(key==='sites') needed.add('sections');
   if(key==='purchase_pending_approval') return ['vendors','warehouses','items','units'];
   if(key==='pending_requisition_approval') return ['sites','users','items','units'];
   if(key==='pending_material_dispatch') return ['sites','warehouses','items','units'];
@@ -143,7 +145,6 @@ function optionTypesForView(key){
   }
   if(['labour_attendance','material_requisitions','material_dispatches','site_receipts','site_consumptions','material_returns','site_opening_stock','site_fund_allocations','site_expenses','customer_receipts','vendor_payments','contractor_bills','contractor_payments','contractor_advances','gst_invoices','quotations','tax_invoices'].includes(key)) needed.add('sites');
   if(['customer_receipts','vendor_payments','contractor_payments','contractor_advances'].includes(key)) needed.add('banks');
-  if(key==='customer_receipts'){needed.add('customers');needed.add('receipt_banks');}
   if(['quotations','tax_invoices'].includes(key)){needed.add('customers');needed.add('states');needed.add('items');needed.add('units');needed.add('gst_rates');}
   if(['material_inwards','vendor_payments'].includes(key)) needed.add('vendors');
   if(key==='vendor_payments'){needed.add('users');needed.add('allowance_types');}
@@ -188,8 +189,8 @@ function restoreNavScroll(){
 }
 
 function buildNav(){
-  const groupIcons={Main:'⌂',Masters:'▦',Purchase:'↓','Site Requisition':'≡',Dispatch:'→','Site Material Receipt':'✓',Consumption:'−','Material Return':'↩','Labour Attendance':'♟',Contractor:'▤','HO Receipts and Payments':'₹','Employee Allowance':'₹',Salary:'₹',Inventory:'▥','Contractor Outstanding':'₹',Sites:'▥',Settings:'⚙'};
-  const itemIcons={dashboard:'⌂',bank_accounts:'₹',users:'●',designations:'◆',customers:'▤',sites:'⌖',vendors:'▣',labour_contractors:'♟',states:'⌖',item_categories:'▦',units:'◢',items:'◇',warehouses:'⌂',expense_categories:'▤',purchase_form:'+',payment_form:'₹',purchase_pending_approval:'✓',purchase_register:'▤',purchase_items_register:'▥',pending_invoice_copy:'▧',purchase_order_form:'+',pending_po_items:'✓',purchase_order_pending_receipt:'↓',purchase_order_master:'▤',purchase_order_items_master:'▥',pending_contractor_bill_copy:'▧',requisition_form:'+',material_requisitions:'≡',material_requisition_item:'▥',pending_requisition_approval:'✓',pending_material_receipt:'✓',material_inwards:'↓',material_dispatches:'→',pending_material_dispatch:'⇢',dispatch_items_register:'▥',pending_site_receipt:'✓',site_receipts:'✓',site_material_item_receipt:'▥',pending_site_receive_challans:'▧',ho_inventory:'▥',site_inventory:'▥',site_opening_stock:'+',daily_outward_summary:'→',consumption_form:'+',site_consumptions:'−',consumption_items_register:'▥',return_form:'+',material_returns:'↩',material_returns_item_master:'▥',material_stock:'▥',labour_attendance:'♟',office_daily_attendance:'✓',office_attendance_master:'▤',office_monthly_salary:'₹',allowance_form:'+',pending_allowance_approval:'✓',pending_allowance_payment:'₹',allowance_master:'▤',employee_allowance_limits:'▥',allowance_types:'▤',monthly_salary_upload:'↑',salary_slips:'▤',pending_salary_payment:'₹',my_salary_slips:'▤',site_fund_allocations:'₹',site_expenses:'₹',daily_expense_summary:'▤',customer_receipts:'↓',vendor_payments:'↑',contractor_form:'+',contractor_advance:'₹',contractor_advance_register:'▤',pending_contractor_payment:'₹',contractor_bills:'▤',contractor_payments:'↑',gst_invoices:'▤',report_stock:'▥',report_site_fund:'▥',report_site_cost:'▥',report_labour:'▥',report_labour_summary:'▥',report_profitability:'▥',report_customer_outstanding:'▥',report_vendor_outstanding:'▥',report_contractor_outstanding:'▥',quotation_form:'+',quotation_master:'▤',quotation_items:'▥',invoice_form:'+',invoice_master:'▤',invoice_items:'▥',company_settings:'⚙'};
+  const groupIcons={'Project Tracker':'▥',BOQ:'▤',Main:'⌂',Masters:'▦',Purchase:'↓','Site Requisition':'≡',Dispatch:'→','Site Material Receipt':'✓',Consumption:'−','Material Return':'↩','Labour Attendance':'♟',Contractor:'▤','HO Receipts and Payments':'₹','Employee Allowance':'₹',Salary:'₹',Inventory:'▥','Contractor Outstanding':'₹',Sites:'▥',Settings:'⚙'};
+  const itemIcons={project_tracker:'▤',boq_form:'+',boq_master:'▤',boq_items:'▥',boq_monitoring:'◫',dashboard:'⌂',bank_accounts:'₹',users:'●',designations:'◆',customers:'▤',sites:'⌖',vendors:'▣',labour_contractors:'♟',states:'⌖',item_categories:'▦',units:'◢',items:'◇',warehouses:'⌂',expense_categories:'▤',purchase_form:'+',payment_form:'₹',purchase_pending_approval:'✓',purchase_register:'▤',purchase_items_register:'▥',pending_invoice_copy:'▧',purchase_order_form:'+',pending_po_items:'✓',purchase_order_pending_receipt:'↓',purchase_order_master:'▤',purchase_order_items_master:'▥',pending_contractor_bill_copy:'▧',requisition_form:'+',material_requisitions:'≡',material_requisition_item:'▥',pending_requisition_approval:'✓',pending_material_receipt:'✓',material_inwards:'↓',material_dispatches:'→',pending_material_dispatch:'⇢',dispatch_items_register:'▥',pending_site_receipt:'✓',site_receipts:'✓',site_material_item_receipt:'▥',pending_site_receive_challans:'▧',ho_inventory:'▥',site_inventory:'▥',site_opening_stock:'+',daily_outward_summary:'→',consumption_form:'+',site_consumptions:'−',consumption_items_register:'▥',return_form:'+',material_returns:'↩',material_returns_item_master:'▥',material_stock:'▥',labour_attendance:'♟',office_daily_attendance:'✓',office_attendance_master:'▤',office_monthly_salary:'₹',allowance_form:'+',pending_allowance_approval:'✓',pending_allowance_payment:'₹',allowance_master:'▤',employee_allowance_limits:'▥',allowance_types:'▤',monthly_salary_upload:'↑',salary_slips:'▤',pending_salary_payment:'₹',my_salary_slips:'▤',site_fund_allocations:'₹',site_expenses:'₹',daily_expense_summary:'▤',customer_receipts:'↓',vendor_payments:'↑',contractor_form:'+',contractor_advance:'₹',contractor_advance_register:'▤',pending_contractor_payment:'₹',contractor_bills:'▤',contractor_payments:'↑',gst_invoices:'▤',report_stock:'▥',report_site_fund:'▥',report_site_cost:'▥',report_labour:'▥',report_labour_summary:'▥',report_customer_outstanding:'▥',report_vendor_outstanding:'▥',report_contractor_outstanding:'▥',quotation_form:'+',quotation_master:'▤',quotation_items:'▥',invoice_form:'+',invoice_master:'▤',invoice_items:'▥',company_settings:'⚙'};
   let h='';
   const allowed=(BSM.currentUser&&BSM.currentUser.is_admin)?null:new Set((BSM.currentUser&&BSM.currentUser.allowed_views)||[]);
   App.nav.forEach((g,idx)=>{
@@ -290,6 +291,7 @@ async function openDirectForm(viewKey,moduleKey,title,mode=''){
   $('#bsm-form-save').prop('disabled',false);
   $('#bsm-content').html('<div id="bsm-inline-form-host" class="bsm-inline-form-host"></div>');
   await openForm(moduleKey,0);
+  if(viewKey==='requisition_form') await refreshRequisitionBoqItems();
   if(viewKey==='contractor_form'||viewKey==='consumption_form'||viewKey==='quotation_form'||viewKey==='invoice_form'||viewKey==='purchase_form'||viewKey==='requisition_form'||viewKey==='return_form'){
     $('.bsm-modal-head').hide();
   } else {
@@ -308,7 +310,7 @@ async function openDirectForm(viewKey,moduleKey,title,mode=''){
       const $po=$('#bsm-form-fields input[name="purchase_order_id"]');if($po.length)$po.val(p.purchase_order_id||'');
       const $v=$('#bsm-form-fields select[name="vendor_id"]');if($v.length){$v.val(String(p.vendor_id||'')).prop('disabled',true);bsmRefreshSearchableSelect($v[0]);}
       const $w=$('#bsm-form-fields select[name="warehouse_id"]');if($w.length){$w.val(String(p.warehouse_id||'')).prop('disabled',true);bsmRefreshSearchableSelect($w[0]);}
-      const cfg=App.configs.material_inwards;const lines=(p.items||[]).filter(it=>Number(it.pending_qty||0)>0.009).map(it=>({purchase_order_item_id:it.po_item_id,item_id:it.item_id,qty:Number(it.pending_qty||0),unit_id:it.unit_id,item_price:Number(it.fixed_price||0),rate:Number(it.rate||0),gst_rate:(it.gst_rate===null||it.gst_rate===undefined||it.gst_rate==='')?'':Number(it.gst_rate)}));renderItems(cfg,lines);
+      const cfg=App.configs.material_inwards;const lines=(p.items||[]).filter(it=>Number(it.pending_qty||0)>0.009).map(it=>({purchase_order_item_id:it.po_item_id,item_id:it.item_id,qty:Number(it.pending_qty||0),unit_id:it.unit_id,item_price:Number(it.fixed_price||0),rate:Number(it.rate||0),gst_rate:Number(it.gst_rate||0)}));renderItems(cfg,lines);
       hidePurchaseItemUnusedColumns();
       $('#bsm-lines-body .bsm-line').each(function(){const $tr=$(this);const $item=$tr.find('select[name="item_id"]');if($item.length){$item.prop('disabled',true);bsmRefreshSearchableSelect($item[0]);}autoSelectUnitFromItem($tr);syncPurchaseUnitDisplay($tr);syncPurchaseItemPrice($tr);});
       $('#bsm-lines-body .bsm-add-line-inline').hide();
@@ -321,12 +323,244 @@ async function openDirectForm(viewKey,moduleKey,title,mode=''){
   enterInlineFormMode();
 }
 
+// BOQ is quantity-only: values in requisitions/receipts/consumption/returns are live site/item aggregates.
+const boqColumns=[['site_name','Site'],['section','Section'],['boq_no','BOQ No.'],['boq_date','Date'],['item_name','Item'],['unit_name','Unit'],['boq_qty','BOQ Qty'],['requisition_qty','Requisition Qty'],['site_qty','Site Qty'],['consumption_qty','Consumption Qty'],['return_qty','Return Qty']];
+function boqOptions(type,selected=''){return '<option value="">Select '+(type==='sites'?'Site':'Item')+'</option>'+(App.options[type]||[]).map(o=>`<option value="${esc(o.id)}" ${String(o.id)===String(selected)?'selected':''}>${esc(o.label)}</option>`).join('');}
+function boqNum(v){return Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:2});}
+function boqItemRow(item={}){return `<tr class="bsm-boq-row"><td><select class="bsm-boq-row-section" required><option value="">Select Section</option>${(App.boqSiteSections||[]).map(x=>`<option value="${esc(x.label)}" ${String(item.section||'')===String(x.label)?'selected':''}>${esc(x.label)}</option>`).join('')}</select></td><td><select class="bsm-boq-item" required>${boqOptions('items',item.item_id)}</select></td><td class="bsm-boq-unit">${esc(labelFor('units',(App.options.items||[]).find(x=>String(x.id)===String(item.item_id))?.unit_id)||'-')}</td><td><input class="bsm-boq-qty" type="number" min="0" step="0.01" required value="${esc(item.boq_qty??'')}"></td><td><button type="button" class="bsm-btn bsm-boq-remove">Delete</button></td></tr>`;}
+async function bsmLoadBoqSiteSections(siteId, existingItems=[]) {
+  App.boqSiteSections=[];
+  if(!siteId){$('#bsm-boq-rows .bsm-boq-row-section').html('<option value="">Select Site First</option>').prop('disabled',true);return;}
+  const r=await ajax('bsm_boq_site_sections',{site_id:siteId});
+  if(String($('#bsm-boq-site').val())!==String(siteId))return;
+  if(!r.success){showToast(r.data?.message||'Unable to load Sections',true);return;}
+  App.boqSiteSections=r.data.sections||[];
+  $('#bsm-boq-rows tr').each(function(i){const value=existingItems[i]?.section||'';const $select=$(this).find('.bsm-boq-row-section');const opts='<option value="">'+(App.boqSiteSections.length?'Select Section':'No Sections assigned')+'</option>'+App.boqSiteSections.map(x=>`<option value="${esc(x.label)}" ${x.label===value?'selected':''}>${esc(x.label)}</option>`).join('');$select.html(opts).prop('disabled',!App.boqSiteSections.length);bsmRefreshSearchableSelect($select[0]);});
+}
+function bsmBoqSiteUI(){const has=!!$('#bsm-boq-site').val();$('#bsm-boq-template,#bsm-boq-upload').toggle(has);}
+async function renderBoqForm(id=0){
+  setTitle(id?'Edit BOQ':'BOQ Form');let b={};if(id){const r=await ajax('bsm_boq_get',{id});if(!r.success){showToast(r.data?.message||'Could not load BOQ',true);return;}b=r.data;}
+  $('#bsm-content').html(`<div class="bsm-panel bsm-boq-form-panel"><form id="bsm-boq-form"><div class="bsm-boq-header-row"><label class="bsm-boq-date-field">BOQ Date<input id="bsm-boq-date" type="date" lang="en-GB" required value="${esc(b.boq_date||BSM.today||new Date().toISOString().slice(0,10))}"></label><label class="bsm-boq-site-field">Site *<select id="bsm-boq-site" required>${boqOptions('sites',b.site_id)}</select></label></div><div class="bsm-boq-header-tools"><button type="button" id="bsm-boq-template" class="bsm-btn bsm-boq-btn-template">⇩ Download Template</button><button type="button" id="bsm-boq-upload" class="bsm-btn bsm-boq-btn-upload">⇧ Upload Template</button><input id="bsm-boq-upload-file" type="file" accept=".xlsx" style="display:none"><button type="button" id="bsm-boq-add" class="bsm-btn bsm-boq-btn-add">+ Add Item</button></div><div class="bsm-table-wrap bsm-boq-table-wrap"><table class="bsm-table"><thead><tr><th>Section *</th><th>Item *</th><th>Unit</th><th>BOQ Qty *</th><th>Action</th></tr></thead><tbody id="bsm-boq-rows">${(b.items?.length?b.items:[{}]).map(boqItemRow).join('')}</tbody></table></div><div class="bsm-form-actions"><button type="submit" class="bsm-btn bsm-btn-primary">Save BOQ</button><button type="button" id="bsm-boq-cancel" class="bsm-btn bsm-btn-cancel">Cancel</button></div></form></div>`);
+  $('#bsm-boq-form').data('id',id);bsmEnhanceSearchableSelects($('#bsm-content'));bsmBoqSiteUI();
+  await bsmLoadBoqSiteSections(b.site_id||'',b.items||[]);
+}
+$(document).on('change','#bsm-boq-site',function(){bsmBoqSiteUI();bsmLoadBoqSiteSections($(this).val());});
+// Monitoring is a site/item summary: multiple sections and BOQs are consolidated.
+// Operational quantities already represent the entire site/item, so take them once.
+function bsmBoqMonitoringSummary(rows){
+  const grouped=new Map();
+  for(const row of rows){
+    const key=String(row.site_id)+'|'+String(row.item_id);
+    if(!grouped.has(key))grouped.set(key,{...row,boq_qty:0,_sections:new Set(),_numbers:new Set()});
+    const result=grouped.get(key);
+    result.boq_qty+=Number(row.boq_qty||0);
+    if(row.section)result._sections.add(row.section);
+    if(row.boq_no)result._numbers.add(row.boq_no);
+  }
+  return [...grouped.values()].map(row=>{
+    row.section=[...row._sections].join(', ');
+    row.boq_no=[...row._numbers].join(', ');
+    delete row._sections;delete row._numbers;
+    return row;
+  });
+}
+async function renderBoqListing(key){
+  const names={boq_master:'BOQ Master',boq_items:'BOQ Items Master',boq_monitoring:'BOQ Monitoring'};setTitle(names[key]);
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-boq-search" class="bsm-search" placeholder="Search"><select id="bsm-boq-filter-site">${boqOptions('sites').replace('Select Site','All Sites')}</select><div class="bsm-spacer"></div><button id="bsm-boq-export" class="bsm-btn">Excel Download</button><button id="bsm-boq-new" class="bsm-btn bsm-btn-primary"><span class="bsm-add-icon" aria-hidden="true">+</span><span>Add</span></button></div><div id="bsm-boq-list" class="bsm-panel"></div>`);
+  if(key==='boq_monitoring')$('#bsm-boq-new').remove();
+  await loadBoqRows(key);
+}
+async function loadBoqRows(key=App.current){
+  const r=await ajax('bsm_boq_list',{type:key,site_id:$('#bsm-boq-filter-site').val()||'',search:$('#bsm-boq-search').val()||''});if(!r.success){$('#bsm-boq-list').text(r.data?.message||'Unable to load BOQ');return;}
+  const sourceRows=r.data.rows||[];const rows=key==='boq_monitoring'?bsmBoqMonitoringSummary(sourceRows):sourceRows;App.boqRows=rows;
+  const columns=key==='boq_master'?[['site_name','Site'],['section','Section'],['boq_no','BOQ No.'],['boq_date','Date'],['item_name','Item'],['boq_qty','BOQ Qty']]:boqColumns;
+  const by=key==='boq_master'?[...new Map(rows.map(x=>[x.id,x])).values()].map(x=>({...x,section:[...new Set(rows.filter(z=>z.id===x.id).map(z=>z.section).filter(Boolean))].join(', ')})):rows;
+  $('#bsm-boq-list').html(`<div class="bsm-table-wrap"><table class="bsm-table"><thead><tr>${(key==='boq_master'?[['site_name','Site'],['section','Section'],['boq_no','BOQ No.'],['boq_date','Date']]:columns).map(c=>`<th>${esc(c[1])}</th>`).join('')}${key==='boq_master'?'<th>Action</th>':''}</tr></thead><tbody>${by.map(row=>`<tr>${(key==='boq_master'?[['site_name'],['section'],['boq_no'],['boq_date']]:columns).map(c=>`<td>${esc(c[0]==='boq_date'?dateFmt(row[c[0]]):c[0].endsWith('qty')||c[0]==='balance'?boqNum(row[c[0]]):row[c[0]]||'-')}</td>`).join('')}${key==='boq_master'?`<td><button type="button" class="bsm-btn bsm-boq-pdf" data-id="${row.id}" title="Download BOQ PDF">⇩ PDF</button> <button class="bsm-btn bsm-boq-edit" data-id="${row.id}">Edit</button> <button class="bsm-btn bsm-boq-delete" data-id="${row.id}">Delete</button></td>`:''}</tr>`).join('')||`<tr><td colspan="13">No BOQ records found.</td></tr>`}</tbody></table></div>`);
+}
+$(document).on('click','.bsm-boq-pdf',async function(){
+  const $btn=$(this);const id=Number($btn.attr('data-id')||0);if(!id)return;
+  $btn.prop('disabled',true);
+  try{const r=await ajax('bsm_boq_pdf',{id});if(!r.success)throw Error(r.data?.message||'Unable to generate BOQ PDF');
+    const a=document.createElement('a');a.href=r.data.url;a.download=r.data.filename||'BOQ.pdf';document.body.appendChild(a);a.click();a.remove();
+  }catch(e){showToast(e.message||'Unable to download BOQ PDF',true);}finally{$btn.prop('disabled',false);}
+});
+$(document).on('click','#bsm-boq-template',async function(){
+  const fd=new FormData();fd.append('action','bsm_boq_template');fd.append('nonce',BSM.nonce);fd.append('site_id',$('#bsm-boq-site').val());
+  try{const response=await fetch(BSM.ajax,{method:'POST',body:fd,credentials:'same-origin'});const blob=await response.blob();if(!response.ok||blob.size<500)throw Error('Template could not be downloaded');const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;a.download='BOQ-Upload-Template.xlsx';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1000);}catch(e){showToast(e.message,true);}
+});
+$(document).on('click','#bsm-boq-upload',()=>$('#bsm-boq-upload-file').trigger('click'));
+$(document).on('change','#bsm-boq-upload-file',async function(){
+  const file=this.files?.[0];if(!file)return;const fd=new FormData();fd.append('action','bsm_boq_import');fd.append('nonce',BSM.nonce);fd.append('site_id',$('#bsm-boq-site').val());fd.append('file',file);
+  try{const r=await $.ajax({url:BSM.ajax,method:'POST',data:fd,processData:false,contentType:false});if(!r.success)throw Error(r.data?.message||'Upload failed');const items=r.data.items||[];$('#bsm-boq-rows').html(items.map(boqItemRow).join(''));bsmEnhanceSearchableSelects($('#bsm-boq-rows'));await bsmLoadBoqSiteSections($('#bsm-boq-site').val(),items);showToast(items.length+' BOQ items loaded. Click Save BOQ to save.');}catch(e){showToast(e.message||'Upload failed',true);}this.value='';
+});
+$(document).on('click','#bsm-boq-add',()=>{$('#bsm-boq-rows').append(boqItemRow());bsmEnhanceSearchableSelects($('#bsm-boq-rows'));});
+$(document).on('click','.bsm-boq-remove',function(){if($('#bsm-boq-rows tr').length>1)$(this).closest('tr').remove();else showToast('At least one BOQ item is required',true);});
+$(document).on('change','.bsm-boq-item',function(){const item=(App.options.items||[]).find(o=>String(o.id)===String($(this).val()));$(this).closest('tr').find('.bsm-boq-unit').text(labelFor('units',item?.unit_id)||'-');});
+$(document).on('submit','#bsm-boq-form',async function(e){e.preventDefault();const items=$('#bsm-boq-rows tr').map(function(){return {item_id:$(this).find('.bsm-boq-item').val(),section:$(this).find('.bsm-boq-row-section').val(),boq_qty:$(this).find('.bsm-boq-qty').val()};}).get();if(items.some(x=>!x.section)){showToast('Select a Section for each BOQ item',true);return;}if(new Set(items.map(x=>x.section+'|'+x.item_id)).size!==items.length||items.some(x=>!x.item_id||x.boq_qty===''||Number(x.boq_qty)<0)){showToast('Select unique items and valid BOQ quantities',true);return;}const r=await ajax('bsm_boq_save',{id:$(this).data('id')||0,site_id:$('#bsm-boq-site').val(),boq_date:$('#bsm-boq-date').val(),items:JSON.stringify(items)});if(!r.success)return showToast(r.data?.message||'Save failed',true);showToast((r.data?.count||1)+' Section BOQ(s) saved');openView('boq_master');});
+$(document).on('click','#bsm-boq-cancel',()=>openView('boq_master'));
+$(document).on('click','#bsm-boq-new',()=>openView('boq_form'));
+$(document).on('click','.bsm-boq-edit',function(){renderBoqForm($(this).data('id'));});
+$(document).on('click','.bsm-boq-delete',async function(){if(!confirm('Delete this BOQ?'))return;const r=await ajax('bsm_boq_delete',{id:$(this).data('id')});if(!r.success)return showToast(r.data?.message||'Delete failed',true);loadBoqRows();});
+$(document).on('change','#bsm-boq-filter-site',()=>loadBoqRows());
+$(document).on('input','#bsm-boq-search',()=>loadBoqRows());
+$(document).on('click','#bsm-boq-export',()=>{const columns=boqColumns;downloadExcelFile('BOQ '+App.current,columns.map(x=>x[1]),(App.boqRows||[]).map(r=>columns.map(x=>x[0]==='boq_date'?dateFmt(r[x[0]]):r[x[0]]??'')));});
+
+let trackerSite=0;
+async function renderProjectTracker(){
+  setTitle('Site Tracker');
+  $('#bsm-content').html('<div class="bsm-panel" id="bsm-tracker"><div class="bsm-loading">Loading Sites…</div></div>');
+  await trackerLoad();
+}
+async function trackerLoad(){
+  const r=await ajax('bsm_project_tracker');if(!r.success){$('#bsm-tracker').html('<div class="bsm-empty">Unable to load Project Tracker.</div>');return;}
+  App.trackerSites=r.data.sites||[];
+  trackerDraw();
+}
+function trackerPct(v){return Number(v||0).toFixed(1).replace(/\.0$/,'')+'%';}
+function trackerBar(v){return `<div class="tracker-progress"><span style="width:${Math.min(100,Math.max(0,Number(v)||0))}%"></span></div>`;}
+function trackerDraw(){
+  const sites=App.trackerSites||[],$box=$('#bsm-tracker');
+  if(!trackerSite){
+    let html=`<div class="bsm-toolbar"><input class="bsm-search" id="tracker-search" placeholder="Search" value="${esc(App.trackerSearch||'')}"><div class="bsm-spacer"></div><button class="bsm-btn" id="tracker-excel">Excel Download</button></div><div class="bsm-table-wrap"><table><thead><tr><th>Site</th><th>Sections</th><th>Tasks</th><th>Sub-tasks</th><th>Completion</th><th>Status</th></tr></thead><tbody>`;
+    const filtered=sites.filter(s=>String(s.site_name).toLowerCase().includes(String(App.trackerSearch||'').toLowerCase()));
+    filtered.forEach(s=>{const count=(s.tasks||[]).reduce((n,t)=>n+(t.subtasks||[]).length,0);html+=`<tr class="tracker-site-row" data-id="${s.id}"><td><a href="#" class="tracker-open" data-id="${s.id}">${esc(s.site_name)}</a></td><td>${(s.sections||[]).length}</td><td>${(s.tasks||[]).length}</td><td>${count}</td><td>${s.has_tasks?trackerPct(s.completion):'—'}${trackerBar(s.completion)}</td><td>${!s.has_tasks?'Not Started':Number(s.completion)>=100?'Completed':'In Progress'}</td></tr>`;});
+    html+='</tbody></table></div>';if(!filtered.length)html+='<div class="bsm-empty">No sites found.</div>';$box.html(html);return;
+  }
+  const site=sites.find(s=>+s.id===+trackerSite);if(!site){trackerSite=0;return trackerDraw();}
+  let html='';
+  const sectionFilter=App.trackerSectionFilter||'';
+  const taskFilter=App.trackerTaskFilter||'';
+  const availableSections=(site.sections||[]);
+  const availableTasks=(site.tasks||[]).filter(t=>!sectionFilter||t.section===sectionFilter);
+  const sectionOpts=availableSections.map(v=>`<option value="${esc(v)}" ${v===sectionFilter?'selected':''}>${esc(v)}</option>`).join('');
+  const taskOpts=availableTasks.map(t=>`<option value="${t.id}" ${String(t.id)===String(taskFilter)?'selected':''}>${esc(t.task_name)}</option>`).join('');
+  const detailSearch=String(App.trackerDetailSearch||'').toLowerCase().trim();
+  html+=`<div class="tracker-head tracker-single-toolbar"><button type="button" class="bsm-btn tracker-back-icon" id="tracker-back" title="All Sites" aria-label="Back to All Sites">←</button><input type="text" class="bsm-search tracker-detail-search" id="tracker-detail-search" placeholder="Search" value="${esc(App.trackerDetailSearch||'')}"><label class="tracker-toolbar-label">Section<span class="tracker-select-wrap"><select id="tracker-filter-section"><option value="">All Sections</option>${sectionOpts}</select>${sectionFilter?'<button type="button" class="tracker-clear-filter" data-filter="section" title="Clear Section filter" aria-label="Clear Section filter">×</button>':''}</span></label><label class="tracker-toolbar-label">Task<span class="tracker-select-wrap"><select id="tracker-filter-task"><option value="">All Tasks</option>${taskOpts}</select>${taskFilter?'<button type="button" class="tracker-clear-filter" data-filter="task" title="Clear Task filter" aria-label="Clear Task filter">×</button>':''}</span></label><div class="bsm-spacer"></div>${excelButton('tracker-excel')}<button type="button" class="bsm-icon-btn bsm-btn-primary tracker-add-task-icon" id="tracker-add-task-main" title="Add Task" aria-label="Add Task">+</button></div>`;
+  html+='<div class="bsm-table-wrap tracker-flat-wrap"><table class="tracker-flat-table"><thead><tr><th>Section</th><th>Task</th><th>Sub-task</th><th>Progress %</th><th>Action</th></tr></thead><tbody>';
+  let count=0;
+  (site.sections||[]).filter(section=>!sectionFilter||section===sectionFilter).forEach(section=>{
+    const tasks=(site.tasks||[]).filter(t=>t.section===section&&(!taskFilter||String(t.id)===String(taskFilter)));
+    tasks.forEach(t=>{
+      const ss=t.subtasks||[];
+      if(!ss.length){
+        const matches=!detailSearch||[section,t.task_name,'Add Sub-task','—'].some(v=>String(v||'').toLowerCase().includes(detailSearch));
+        if(matches){count++;html+=`<tr><td>${esc(section)}</td><td><strong>${esc(t.task_name)}</strong></td><td><button class="tracker-inline tracker-add-subtask" data-task="${t.id}" title="Add Sub-task">+ Add Sub-task</button></td><td>—</td><td>${trackerActions(t.id,0)}</td></tr>`;}
+      }
+      ss.forEach(sub=>{
+        const pct=Number(sub.completion)||0;
+        const matches=!detailSearch||[section,t.task_name,sub.subtask_name,pct===0?'':String(pct),pct===0?'%':`${pct}%`].some(v=>String(v||'').toLowerCase().includes(detailSearch));
+        if(!matches)return;
+        count++;html+=`<tr><td>${esc(section)}</td><td><strong>${esc(t.task_name)}</strong></td><td>${esc(sub.subtask_name)}</td><td><div class="tracker-edit"><input type="number" min="0" max="100" step="0.01" class="tracker-value" data-id="${sub.id}" value="${pct===0?'':pct}" placeholder=""><span>%</span></div></td><td>${trackerActions(t.id,sub.id)}</td></tr>`;
+      });
+    });
+  });
+  if(!count)html+='<tr><td colspan="5">No matching Tasks or Sub-tasks found.</td></tr>';
+  html+='</tbody></table></div>';
+  if(!site.sections.length)html+='<div class="bsm-empty">Assign Sections to this Site in Site Master first.</div>';
+  $box.html(html);
+}
+$(document).on('click','.tracker-open',function(e){e.preventDefault();trackerSite=Number($(this).data('id'));App.trackerSectionFilter='';App.trackerTaskFilter='';App.trackerDetailSearch='';trackerDraw();});
+$(document).on('change','#tracker-filter-section',function(){
+  App.trackerSectionFilter=$(this).val()||'';
+  App.trackerTaskFilter='';
+  trackerDraw();
+});
+$(document).on('change','#tracker-filter-task',function(){
+  App.trackerTaskFilter=$(this).val()||'';
+  trackerDraw();
+});
+$(document).on('click','.tracker-clear-filter',function(e){e.preventDefault();e.stopPropagation();const filter=$(this).data('filter');if(filter==='section'){App.trackerSectionFilter='';App.trackerTaskFilter='';}else if(filter==='task'){App.trackerTaskFilter='';}trackerDraw();});
+$(document).on('click','#tracker-back',function(){trackerSite=0;App.trackerDetailSearch='';trackerDraw();});
+$(document).on('input','#tracker-search',function(){App.trackerSearch=$(this).val();const start=this.selectionStart;trackerDraw();const x=document.getElementById('tracker-search');if(x){x.focus();x.setSelectionRange(start,start);}});
+$(document).on('input','#tracker-detail-search',function(){App.trackerDetailSearch=$(this).val();const start=this.selectionStart;trackerDraw();const x=document.getElementById('tracker-detail-search');if(x){x.focus();x.setSelectionRange(start,start);}});
+function trackerActions(taskId,subId=0){return `<div class="tracker-actions"><button type="button" class="tracker-action-btn tracker-action-edit" data-task="${taskId}" data-sub="${subId}" title="Edit" aria-label="Edit"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L9 17l-4 1 1-4Z"/></svg></button><button type="button" class="tracker-action-btn tracker-action-delete" data-task="${taskId}" data-sub="${subId}" title="Delete" aria-label="Delete"><svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" aria-hidden="true"><path d="M8 2h8l1 2h4v2H3V4h4l1-2Zm-3 6h14l-1 13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 8Zm4 3v8h2v-8H9Zm4 0v8h2v-8h-2Z"/></svg></button></div>`;}
+function trackerModal({mode='task',taskId=0,section='',taskName='' }={}){
+  const site=(App.trackerSites||[]).find(s=>+s.id===+trackerSite);
+  if(!site)return showToast('Select a Site first',true);
+  const sections=site.sections||[];
+  if(mode==='task'&&!sections.length)return showToast('Assign Sections to the Site in Site Master first',true);
+  $('#tracker-entry-overlay').remove();
+  const isTask=mode==='task';
+  const sectionOptions=sections.map(x=>`<option value="${esc(x)}" ${x===section?'selected':''}>${esc(x)}</option>`).join('');
+  const sectionBlock=isTask?`<label><span class="tracker-field-label">Section <span class="tracker-required">*</span></span><select name="section" required><option value="">Select Section</option>${sectionOptions}</select></label>`:`<label>Section<input value="${esc(section)}" readonly></label><label>Task<input value="${esc(taskName)}" readonly></label>`;
+  const nameBlock=isTask?`<label><span class="tracker-field-label">Task Name <span class="tracker-required">*</span></span><input name="task_name" maxlength="255" required placeholder="Enter Task name"></label>`:'';
+  const modal=`<div id="tracker-entry-overlay" class="tracker-modal-overlay"><div class="tracker-modal" role="dialog" aria-modal="true" aria-labelledby="tracker-modal-title"><div class="tracker-modal-title"><h3 id="tracker-modal-title">${isTask?'Add Task':'Add Sub-task'}</h3><button type="button" class="tracker-modal-close" aria-label="Close">×</button></div><form id="tracker-entry-form" data-mode="${mode}" data-task="${taskId}">${sectionBlock}${nameBlock}<div class="tracker-subtask-group"><span class="tracker-field-label">Sub-task Name <span class="tracker-required">*</span></span><div class="tracker-subtask-rows"><div class="tracker-subtask-row"><input name="subtask_names[]" maxlength="255" required placeholder="Enter Sub-task name"><button type="button" class="tracker-subtask-add" title="Add another Sub-task" aria-label="Add another Sub-task">＋</button></div></div></div><div class="tracker-modal-actions"><button type="button" class="bsm-btn tracker-modal-cancel">Cancel</button><button type="submit" class="bsm-btn bsm-btn-primary" id="tracker-modal-save">Save</button></div></form></div></div>`;
+  $('body').append(modal);
+  $('#tracker-entry-form input[name="task_name"],#tracker-entry-form input[name="subtask_names[]"]').first().trigger('focus');
+}
+$(document).on('click','.tracker-add-task',function(){trackerModal({mode:'task'});});
+$(document).on('click','.tracker-add-subtask',function(){const id=Number($(this).data('task'));const site=(App.trackerSites||[]).find(s=>+s.id===+trackerSite);const task=(site?.tasks||[]).find(t=>+t.id===id);if(!task)return showToast('Task not found',true);trackerModal({mode:'subtask',taskId:id,section:task.section,taskName:task.task_name});});
+
+$(document).on('click','.tracker-action-edit',function(){
+ const taskId=Number($(this).data('task'));
+ const site=(App.trackerSites||[]).find(x=>+x.id===+trackerSite),task=(site?.tasks||[]).find(x=>+x.id===taskId);
+ if(!task)return showToast('Task not found',true);
+ $('#tracker-edit-overlay').remove();
+ const allSub=(task.subtasks||[]).map(sub=>`<div class="tracker-subtask-row tracker-edit-row" data-id="${sub.id}"><input name="existing_subtask" maxlength="255" required value="${esc(sub.subtask_name)}" aria-label="Sub-task name"></div>`).join('');
+ const opts=(site.sections||[]).map(x=>`<option value="${esc(x)}" ${x===task.section?'selected':''}>${esc(x)}</option>`).join('');
+ const body=`<label><span class="tracker-field-label">Section <span class="tracker-required">*</span></span><select name="section" required>${opts}</select></label><label><span class="tracker-field-label">Task Name <span class="tracker-required">*</span></span><input name="task_name" maxlength="255" required value="${esc(task.task_name)}"></label><div class="tracker-subtask-group"><div class="tracker-edit-subtitle"><span class="tracker-field-label">Sub-task Names</span><button type="button" class="tracker-edit-add" title="Add Sub-task" aria-label="Add Sub-task">＋</button></div><div class="tracker-subtask-rows">${allSub}</div></div>`;
+ $('body').append(`<div id="tracker-edit-overlay" class="tracker-modal-overlay"><div class="tracker-modal" role="dialog" aria-modal="true" aria-labelledby="tracker-edit-heading"><div class="tracker-modal-title"><h3 id="tracker-edit-heading">EDIT</h3><button type="button" class="tracker-edit-cancel" aria-label="Close">×</button></div><form id="tracker-edit-form" data-task="${taskId}">${body}<div class="tracker-modal-actions"><button type="button" class="bsm-btn tracker-edit-cancel">Cancel</button><button type="submit" class="bsm-btn bsm-btn-primary">Save Changes</button></div></form></div></div>`);
+ $('#tracker-edit-form [name="task_name"]').trigger('focus');
+});
+$(document).on('click','.tracker-edit-add',function(){
+ const rows=$('#tracker-edit-form .tracker-subtask-rows');
+ if(rows.children().length>=100)return showToast('Maximum 100 Sub-tasks per Task',true);
+ rows.append('<div class="tracker-subtask-row tracker-edit-row"><input name="new_subtask" maxlength="255" required placeholder="Enter Sub-task name"><button type="button" class="tracker-edit-remove" title="Remove new Sub-task" aria-label="Remove new Sub-task">×</button></div>');
+ rows.children().last().find('input').trigger('focus');
+});
+$(document).on('click','.tracker-edit-remove',function(){$(this).closest('.tracker-edit-row').remove();});
+// Enter saves the active Site Tracker form, just like clicking its Save button.
+// Exclude textareas, composition events and non-input controls.
+$(document).on('keydown','#tracker-entry-form input,#tracker-entry-form select,#tracker-edit-form input,#tracker-edit-form select',function(e){
+ if(e.key!=='Enter'||e.isComposing||e.originalEvent?.isComposing||e.repeat||e.ctrlKey||e.altKey||e.metaKey||e.shiftKey)return;
+ const form=this.form;if(!form)return;
+ const submit=form.querySelector('button[type="submit"]');if(!submit||submit.disabled)return;
+ e.preventDefault();
+ if(typeof form.requestSubmit==='function')form.requestSubmit(submit);else submit.click();
+});
+
+$(document).on('click','.tracker-edit-cancel',()=>$('#tracker-edit-overlay').remove());
+$(document).on('submit','#tracker-edit-form',async function(e){
+ e.preventDefault();const form=$(this),taskId=Number(form.data('task'));
+ const taskName=(form.find('[name="task_name"]').val()||'').trim(),section=form.find('[name="section"]').val()||'';
+ const existing=[],added=[];
+ form.find('.tracker-edit-row').each(function(){const name=$(this).find('input').val().trim(),id=Number($(this).data('id'));if(id)existing.push({id,name});else added.push(name);});
+ if(!taskName||!section||existing.some(x=>!x.name)||added.some(x=>!x))return showToast('Fill in all required fields',true);
+ const btn=form.find('[type="submit"]');btn.prop('disabled',true).text('Saving…');
+ try{const r=await ajax('bsm_project_tracker_save',{type:'edit_task_full',id:taskId,task_name:taskName,section,existing_subtasks:existing,new_subtasks:added});if(!r.success)return showToast(r.data?.message||'Unable to save',true);$('#tracker-edit-overlay').remove();await trackerLoad();showToast('Updated successfully');}
+ catch(err){showToast('Unable to update',true);}finally{btn.prop('disabled',false).text('Save Changes');}
+});
+$(document).on('click','.tracker-action-delete',async function(){const taskId=Number($(this).data('task')),subId=Number($(this).data('sub'));const isSub=!!subId;if(!window.confirm(isSub?'Delete this Sub-task permanently?':'Delete this Task and all its Sub-tasks permanently?'))return;const btn=$(this);btn.prop('disabled',true);try{const r=await ajax('bsm_project_tracker_save',{type:isSub?'delete_subtask':'delete_task',id:isSub?subId:taskId});if(!r.success)return showToast(r.data?.message||'Unable to delete',true);await trackerLoad();showToast('Deleted successfully');}catch(err){showToast('Unable to delete',true);}finally{btn.prop('disabled',false);}});
+$(document).on('click','.tracker-modal-close,.tracker-modal-cancel',()=>$('#tracker-entry-overlay').remove());
+$(document).on('click','.tracker-subtask-add',function(){
+  const rows=$(this).closest('.tracker-subtask-group').find('.tracker-subtask-rows');
+  if(rows.children().length>=100)return showToast('Maximum 100 Sub-tasks at a time',true);
+  rows.append('<div class="tracker-subtask-row"><input name="subtask_names[]" maxlength="255" required placeholder="Enter Sub-task name"><button type="button" class="tracker-subtask-remove" aria-label="Remove Sub-task">−</button></div>');
+  rows.children().last().find('input').trigger('focus');
+});
+$(document).on('click','.tracker-subtask-remove',function(){$(this).closest('.tracker-subtask-row').remove();});
+$(document).on('submit','#tracker-entry-form',async function(e){
+  e.preventDefault();const form=$(this),mode=form.data('mode'),taskId=Number(form.data('task'));
+  const names=form.find('input[name="subtask_names[]"]').map(function(){return $(this).val().trim();}).get();
+  if(!names.length||names.some(x=>!x))return showToast('Enter all Sub-task Names',true);
+  const params=mode==='task'?{type:'task_with_subtasks',site_id:trackerSite,section:form.find('[name="section"]').val(),name:form.find('[name="task_name"]').val().trim(),subtask_names:names}:{type:'subtasks',task_id:taskId,subtask_names:names};
+  if(mode==='task'&&(!params.section||!params.name))return showToast('Select Section and enter Task name',true);
+  const btn=form.find('#tracker-modal-save');btn.prop('disabled',true).text('Saving…');
+  try{const r=await ajax('bsm_project_tracker_save',params);if(!r.success)return showToast(r.data?.message||'Unable to save',true);$('#tracker-entry-overlay').remove();await trackerLoad();showToast('Saved successfully');}
+  catch(err){showToast('Unable to save. Please try again.',true);}
+  finally{btn.prop('disabled',false).text('Save');}
+});
+$(document).on('change','.tracker-value',async function(){const el=this,id=Number($(el).data('id')),value=Number(el.value);if(!Number.isFinite(value)||value<0||value>100){showToast('Progress must be 0 to 100',true);return trackerDraw();}el.disabled=true;const r=await ajax('bsm_project_tracker_save',{type:'progress',id,completion:value});if(!r.success)showToast(r.data?.message||'Unable to save Progress',true);await trackerLoad();});
+$(document).on('click','#tracker-excel',function(){const sites=(App.trackerSites||[]).filter(s=>!trackerSite||+s.id===+trackerSite);const rows=[];sites.forEach(site=>(site.tasks||[]).filter(t=>!trackerSite||((!App.trackerSectionFilter||t.section===App.trackerSectionFilter)&&(!App.trackerTaskFilter||String(t.id)===String(App.trackerTaskFilter)))).forEach(t=>(t.subtasks||[]).forEach(sub=>rows.push([site.site_name,t.section,t.task_name,sub.subtask_name,sub.completion]))));downloadExcelFile('Project Tracker',['Site','Section','Task','Sub-task','Progress %'],rows);});
+
 async function openView(key){
   const allowed=(BSM.currentUser&&BSM.currentUser.is_admin)?null:new Set((BSM.currentUser&&BSM.currentUser.allowed_views)||[]);
   if(allowed!==null && key!=='my_salary_slips' && (key==='company_settings' || !allowed.has(key))){ showToast('You do not have permission to access this view.',true); return; }
   exitInlineFormMode();
   App.current=key;App.page=1;App.search=''; $('.bsm-nav-item').removeClass('active');$(`.bsm-nav-item[data-view="${key}"]`).addClass('active');$('.bsm-sidebar').removeClass('open');
+  if(key==='project_tracker')return renderProjectTracker();
   if(key==='dashboard'){await ensureOptions(['sites']);return renderDashboard();}
+  if(key.startsWith('boq_')){await ensureOptions(['sites','items','units','sections']);return key==='boq_form'?renderBoqForm():renderBoqListing(key);}
   if(key==='purchase_form') return openDirectForm(key,'material_inwards','Purchase Form','purchase');
   if(key==='purchase_pending_approval'){await ensureOptions(optionTypesForView(key));return renderPurchasePendingApproval();}
   if(key==='purchase_register'){await ensureOptions(optionTypesForView('material_inwards'));return renderPurchaseRegister();}
@@ -334,8 +568,8 @@ async function openView(key){
   if(key==='payment_form'){await ensureOptions(['vendors','banks']);return renderVendorPaymentForm();}
   if(key==='report_vendor_outstanding'){await ensureOptions(['vendors','sites']);return renderVendorOutstanding();}
   if(key==='pending_invoice_copy'){await ensureOptions(optionTypesForView('material_inwards'));return renderPendingInvoiceCopy();}
-  if(key==='purchase_order_form'){await ensureOptions(['warehouses','vendors','items','units','gst_rates']);return renderPurchaseOrderForm();}
-  if(key==='pending_po_items'){await ensureOptions(['warehouses','vendors','items','units','gst_rates']);return renderPendingPoItems();}
+  if(key==='purchase_order_form'){await ensureOptions(['warehouses','vendors','items','units']);return renderPurchaseOrderForm();}
+  if(key==='pending_po_items'){await ensureOptions(['warehouses','vendors','items','units']);return renderPendingPoItems();}
   if(key==='purchase_order_pending_receipt'){return renderPurchaseOrderPendingReceipt();}
   if(key==='purchase_order_master'){await ensureOptions(['vendors','warehouses']);return renderPurchaseOrderMaster();}
   if(key==='purchase_order_items_master'){await ensureOptions(['vendors']);return renderPurchaseOrderItemsMaster();}
@@ -403,8 +637,6 @@ function directPoItemRow(){
     <td><input type="number" class="po-direct-qty num" min="0.01" step="0.01" value=""></td>
     <td><input type="number" class="po-direct-fixed-price num" min="0" step="0.01" value="" readonly></td>
     <td><input type="number" class="po-direct-rate num" min="0" step="0.01" value=""></td>
-    <td><select class="po-direct-gst-rate bsm-native-gst-rate" aria-label="GST Rate">${bsmGstRateOptions().map(o=>`<option value="${esc(o.id)}">${esc(o.label)}</option>`).join('')}</select></td>
-    ${['igst','cgst','sgst'].map(k=>`<td><input type="number" min="0" step="0.01" class="po-direct-${k} num" readonly disabled value=""></td>`).join('')}
     <td class="num po-direct-amount">0.00</td>
     <td class="po-direct-actions">
       <button type="button" class="bsm-icon-btn bsm-icon-primary po-direct-add" title="Add Item">+</button>
@@ -414,23 +646,22 @@ function directPoItemRow(){
 }
 async function renderPurchaseOrderForm(){
   setTitle('PO Form');
-  const vendorTypes=await ajax('bsm_pending_po_items',{});App.directPoVendorTypes=vendorTypes.success?(vendorTypes.data.vendor_gst_types||{}):{};
   const vendorOpts=poVendorOptions();
   const whOpts=`<option value="">Select Warehouse</option>`+(App.options.warehouses||[]).map(x=>`<option value="${esc(x.id)}">${esc(x.label)}</option>`).join('');
   $('#bsm-content').html(`
     <div class="bsm-panel bsm-direct-po-panel">
       <div class="bsm-form-grid">
-        <label><span class="bsm-field-label">PO Date <span class="bsm-required">*</span></span><input type="date" id="po_direct_date" value="${esc(BSM.today||'')}"></label>
+        <label><span class="bsm-field-label">PO Date <span class="bsm-required">*</span></span><input type="date" lang="en-GB" id="po_direct_date" value="${esc(BSM.today||'')}"></label>
         <label><span class="bsm-field-label">Vendor <span class="bsm-required">*</span></span><select id="po_direct_vendor">${vendorOpts}</select></label>
         <label><span class="bsm-field-label">Warehouse <span class="bsm-required">*</span></span><select id="po_direct_warehouse">${whOpts}</select></label>
-        <label><span class="bsm-field-label">Required Date</span><input type="date" id="po_direct_required"></label>
+        <label><span class="bsm-field-label">Required Date</span><input type="date" lang="en-GB" id="po_direct_required"></label>
         <label><span class="bsm-field-label">Created By</span><input type="text" id="po_direct_created_by" value="${esc((BSM.currentUser&&BSM.currentUser.name)||'')}" readonly></label>
       </div>
       <div class="bsm-lines">
         <div class="bsm-lines-head"><h3>Items</h3></div>
         <div class="bsm-table-wrap">
-          <table class="po-direct-table">
-            <thead><tr><th>Item</th><th>Unit</th><th class="num">PO Qty</th><th class="num">Fixed Price</th><th class="num">Rate</th><th>GST %</th><th class="num">IGST</th><th class="num">CGST</th><th class="num">SGST</th><th class="num">Amount</th><th></th></tr></thead>
+          <table>
+            <thead><tr><th>Item</th><th>Unit</th><th class="num">PO Qty</th><th class="num">Fixed Price</th><th class="num">Rate</th><th class="num">Amount</th><th></th></tr></thead>
             <tbody id="po_direct_items">${directPoItemRow()}</tbody>
           </table>
         </div>
@@ -441,15 +672,13 @@ async function renderPurchaseOrderForm(){
       </div>
     </div>`);
   bsmEnhanceSearchableSelects($('#bsm-content'));
-  $('#po_direct_items .po-direct-row').each(function(){updateDirectPoAmount($(this));});
 }
 async function refreshDirectPoItemRow($row){
   const iid=$row.find('.po-direct-item').val();
-  if(!iid){$row.find('.po-direct-unit').text('-');$row.find('.po-direct-fixed-price,.po-direct-rate,.po-direct-igst,.po-direct-cgst,.po-direct-sgst').val('');$row.find('.po-direct-amount').text('0.00');return;}
+  if(!iid){$row.find('.po-direct-unit').text('-');$row.find('.po-direct-fixed-price,.po-direct-rate').val('');$row.find('.po-direct-amount').text('0.00');return;}
   const item=(App.options.items||[]).find(x=>String(x.id)===String(iid))||{};
   const unitLabel=labelFor('units',item.unit_id)||item.unit_name||'-';
   $row.find('.po-direct-unit').text(unitLabel);
-  $row.find('.po-direct-gst-rate').val(String(Number(item.gst_rate||0)));
   const fixedPrice=Number(item.opening_rate||item.price||0);
   if(!$row.find('.po-direct-fixed-price').val())$row.find('.po-direct-fixed-price').val(fixedPrice.toFixed(2));
   const rate=Number(item.opening_rate||item.price||0);
@@ -457,72 +686,39 @@ async function refreshDirectPoItemRow($row){
   updateDirectPoAmount($row);
 }
 function updateDirectPoAmount($row){
-  const qty=Math.max(0,Number($row.find('.po-direct-qty').val()||0));
-  const rate=Math.max(0,Number($row.find('.po-direct-rate').val()||0));
-  const gst=Math.max(0,Number($row.find('.po-direct-gst-rate').val()||0));
-  const vendorId=String($('#po_direct_vendor').val()||'');
-  const vendor=(App.options.vendors||[]).find(v=>String(v.id)===vendorId)||{};
-  const type=String((App.directPoVendorTypes||{})[vendorId]||vendor.gst_type||'').toLowerCase();
-  const taxable=Math.round(qty*rate*100)/100;
-  const tax=Math.round(taxable*gst)/100;
-  const values={igst:type==='inter_state'?tax:0,cgst:type==='intra_state'?Math.round(tax*50)/100:0,sgst:0};
-  if(type==='intra_state')values.sgst=Math.round((tax-values.cgst)*100)/100;
-  ['igst','cgst','sgst'].forEach(k=>{
-    const enabled=(type==='inter_state'&&k==='igst')||(type==='intra_state'&&(k==='cgst'||k==='sgst'));
-    $row.find('.po-direct-'+k).prop('disabled',!enabled).val(enabled?values[k].toFixed(2):'');
-  });
-  $row.find('.po-direct-amount').text((taxable+values.igst+values.cgst+values.sgst).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}));
+  const qty=Number($row.find('.po-direct-qty').val()||0);
+  const rate=Number($row.find('.po-direct-rate').val()||0);
+  $row.find('.po-direct-amount').text((qty*rate).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}));
 }
-
-// Independent page state avoids affecting other application table views.
-const bsmPagedViews={pending_po_items:loadPendingPoItems,purchase_order_pending_receipt:loadPurchaseOrderPendingReceipt,purchase_order_master:loadPurchaseOrderMaster,purchase_order_items_master:loadPurchaseOrderItemsMaster,vendor_outstanding:loadVendorOutstanding,users:loadUserList,office_monthly_salary:loadOfficeMonthlySalary};
-const bsmListPage={};
-function bsmPage(view){return bsmListPage[view]||1;}
-function bsmPager(view,data){
- if(!data||Number(data.total||0)<=20)return '';
- const page=Number(data.page||1),pages=Number(data.pages||1),total=Number(data.total||0);
- const first=Math.max(1,Math.min(page-2,pages-4));const buttons=Array.from({length:Math.min(5,pages)},(_,i)=>first+i).map(n=>`<button type="button" class="bsm-btn bsm-audit-page ${n===page?'bsm-btn-primary':''}" data-page="${n}" ${n===page?'aria-current="page"':''}>${n}</button>`).join('');
- return `<div class="bsm-pagination bsm-audit-pagination" data-view="${view}"><span>Showing ${(page-1)*20+1}–${Math.min(total,page*20)} of ${total}</span><button type="button" class="bsm-btn bsm-audit-page" data-page="${page-1}" ${page<=1?'disabled':''}>Previous</button>${buttons}<button type="button" class="bsm-btn bsm-audit-page" data-page="${page+1}" ${page>=pages?'disabled':''}>Next</button></div>`;
-}
-$(document).on('click','.bsm-audit-page',function(){const view=$(this).closest('.bsm-audit-pagination').data('view'),page=Number($(this).data('page'));if(page<1||!bsmPagedViews[view])return;bsmListPage[view]=page;bsmPagedViews[view]();});
-function bsmResetPage(view){bsmListPage[view]=1;}
-$(document).on('input','#po_receipt_search,#po_items_search,#bsm-vo-search,#bsm-user-search',function(){
- const map={'po_receipt_search':'purchase_order_pending_receipt','po_items_search':'purchase_order_items_master','bsm-vo-search':'vendor_outstanding','bsm-user-search':'users'};
- if(map[this.id])bsmResetPage(map[this.id]);
-});
-$(document).on('change','#bsm-vo-site,#bsm-vo-vendor,#bsm-vo-date-from,#bsm-vo-date-to,#bsm-salary-month',function(){
- bsmResetPage(this.id==='bsm-salary-month'?'office_monthly_salary':'vendor_outstanding');
-});
-
 
 async function renderPendingPoItems(){
   setTitle('Approved Requisition Pending PO');
   $('#bsm-content').html(`<div id="po_pending_list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);await loadPendingPoItems();
 }
 async function loadPendingPoItems(exportAll=false){
-  const r=await ajax('bsm_pending_po_items',{page:exportAll?1:bsmPage('pending_po_items'),export_all:exportAll?'1':''});if(!r.success){if(!exportAll)$('#po_pending_list').html('<div class="bsm-empty">Unable to load Pending PO Items.</div>');return null;}const rows=r.data.rows||[];if(exportAll)return rows;App.pendingPoRows=rows;App.pendingPoVendorGstTypes=r.data.vendor_gst_types||{};App.pendingPoWarehouse=r.data.warehouse_id||'';const num=v=>Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:2});
-  let h='<div class="bsm-table-wrap po-pending-table-wrap"><table class="po-pending-table"><thead><tr><th>Item</th><th>Unit</th><th class="num">Approved Qty</th><th class="num">Current Stock</th><th class="num">Pending PO Qty</th><th class="num">Fixed Price</th><th>Vendor</th><th class="num">PO Qty</th><th class="num">Rate</th><th class="num">GST %</th><th class="num">IGST</th><th class="num">CGST</th><th class="num">SGST</th></tr></thead><tbody>';
+  const r=await ajax('bsm_pending_po_items',{});if(!r.success){if(!exportAll)$('#po_pending_list').html('<div class="bsm-empty">Unable to load Pending PO Items.</div>');return null;}const rows=r.data.rows||[];if(exportAll)return rows;App.pendingPoRows=rows;App.pendingPoWarehouse=r.data.warehouse_id||'';const num=v=>Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:2});
+  let h='<div class="bsm-table-wrap po-pending-table-wrap"><table class="po-pending-table"><thead><tr><th>Item</th><th>Unit</th><th class="num">Approved Qty</th><th class="num">Current Stock</th><th class="num">Pending PO Qty</th><th class="num">Fixed Price</th><th>Vendor</th><th class="num">PO Qty</th><th class="num">Rate</th></tr></thead><tbody>';
   rows.forEach(x=>{
-    h+=`<tr class="po-pending-summary-row" data-item="${x.item_id}" tabindex="0" aria-expanded="false" title="Click to view pending requisition details"><td><strong>${esc(x.item_name||'')}</strong></td><td>${esc(x.unit_name||'')}</td><td class="num">${num(x.approved_qty)}</td><td class="num" title="Physical Stock ${num(x.physical_stock)} + PO in Progress ${num(x.po_in_progress_qty)}">${num(x.current_stock)}</td><td class="num"><strong>${num(x.pending_po_qty)}</strong></td><td class="num"><input type="number" class="po-row-fixed-price num" value="${Number(x.fixed_price||0).toFixed(2)}" readonly tabindex="-1"></td><td><select class="po-row-vendor">${poVendorOptions()}</select></td><td><input type="number" class="po-row-qty num" min="0" step="0.01" max="${Number(x.pending_po_qty||0)}" value="${Number(x.pending_po_qty||0).toFixed(2)}"></td><td><input type="number" class="po-row-rate num" min="0" step="0.01" placeholder="Enter Rate" value=""></td><td><select class="po-row-gst-rate">${bsmGstRateOptions().map(o=>`<option value="${esc(o.id)}" ${Number(o.id)===Number(x.gst_rate)?'selected':''}>${esc(o.label)}</option>`).join('')}</select></td>${["igst","cgst","sgst"].map(k=>`<td><input type="number" class="po-row-${k} num" min="0" step="0.01" placeholder="" value="" disabled></td>`).join("")}</tr>`;
+    h+=`<tr class="po-pending-summary-row" data-item="${x.item_id}" tabindex="0" aria-expanded="false" title="Click to view pending requisition details"><td><strong>${esc(x.item_name||'')}</strong></td><td>${esc(x.unit_name||'')}</td><td class="num">${num(x.approved_qty)}</td><td class="num" title="Physical Stock ${num(x.physical_stock)} + PO in Progress ${num(x.po_in_progress_qty)}">${num(x.current_stock)}</td><td class="num"><strong>${num(x.pending_po_qty)}</strong></td><td class="num"><input type="number" class="po-row-fixed-price num" value="${Number(x.fixed_price||0).toFixed(2)}" readonly tabindex="-1"></td><td><select class="po-row-vendor">${poVendorOptions()}</select></td><td><input type="number" class="po-row-qty num" min="0" step="0.01" max="${Number(x.pending_po_qty||0)}" value="${Number(x.pending_po_qty||0).toFixed(2)}"></td><td><input type="number" class="po-row-rate num" min="0" step="0.01" placeholder="Enter Rate" value=""></td></tr>`;
     const details=x.details||[];
     let d='<div class="bsm-po-pending-details"><table><thead><tr><th>Site</th><th>Requisition No.</th><th>Item</th><th class="num">Approved Qty</th><th>Approved By</th><th>Requested By</th><th>Requisition Date</th><th>Required Date</th></tr></thead><tbody>';
     details.forEach(y=>{d+=`<tr><td>${esc(y.site_name||'')}</td><td>${esc(y.requisition_no||'')}</td><td>${esc(y.item_name||x.item_name||'')}</td><td class="num">${num(y.approved_qty)}</td><td>${esc(y.approved_by_name||'-')}</td><td>${esc(y.requested_by_name||'-')}</td><td>${dateFmt(y.requisition_date)}</td><td>${dateFmt(y.required_date)}</td></tr>`;});
     if(!details.length)d+='<tr><td colspan="9" class="bsm-empty">No pending requisition details.</td></tr>';d+='</tbody></table></div>';
-    h+=`<tr class="po-pending-detail-row" data-detail-for="${x.item_id}" style="display:none"><td colspan="13">${d}</td></tr>`;
+    h+=`<tr class="po-pending-detail-row" data-detail-for="${x.item_id}" style="display:none"><td colspan="9">${d}</td></tr>`;
   });
-  if(!rows.length)h+='<tr><td colspan="13" class="bsm-empty">No approved items require a PO.</td></tr>';h+='</tbody></table></div>'+bsmPager('pending_po_items',r.data);if(rows.length)h+='<div class="bsm-form-actions"><button class="bsm-btn bsm-btn-primary" id="po_create_selected">Create PO</button></div>';$('#po_pending_list').html(h);bsmEnhanceSearchableSelects($('#po_pending_list'));$('#po_pending_list .po-row-vendor').trigger('change');return rows;
+  if(!rows.length)h+='<tr><td colspan="9" class="bsm-empty">No approved items require a PO.</td></tr>';h+='</tbody></table></div>';if(rows.length)h+='<div class="bsm-form-actions"><button class="bsm-btn bsm-btn-primary" id="po_create_selected">Create PO</button></div>';$('#po_pending_list').html(h);bsmEnhanceSearchableSelects($('#po_pending_list'));return rows;
 }
 async function renderPurchaseOrderPendingReceipt(){
-  setTitle('Ordered but Not Received');$('#bsm-content').html(`<div class="bsm-toolbar"><input id="po_receipt_search" class="bsm-search" placeholder="Search..."><div class="bsm-spacer"></div></div><div id="po_receipt_list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);await loadPurchaseOrderPendingReceipt();
+  setTitle('Ordered but Not Received');$('#bsm-content').html(`<div class="bsm-toolbar"><input id="po_receipt_search" class="bsm-search" placeholder="Search Ordered but Not Received"><div class="bsm-spacer"></div></div><div id="po_receipt_list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);await loadPurchaseOrderPendingReceipt();
 }
 async function loadPurchaseOrderPendingReceipt(){
   const r=await ajax('bsm_purchase_order_pending_receipt',{});if(!r.success){$('#po_receipt_list').html('<div class="bsm-empty">Unable to load Pending Receipt.</div>');return;}
   let itemRows=r.data.rows||[];const q=String($('#po_receipt_search').val()||'').toLowerCase().trim();const groups={};
   itemRows.forEach(x=>{const k=String(x.purchase_order_id||'');if(!groups[k])groups[k]={purchase_order_id:x.purchase_order_id,po_no:x.po_no,po_date:x.po_date,vendor_id:x.vendor_id,vendor_name:x.vendor_name,warehouse_id:x.warehouse_id,warehouse_name:x.warehouse_name,items:[],po_qty:0,received_qty:0,pending_qty:0};groups[k].items.push(x);groups[k].po_qty+=Number(x.po_qty||0);groups[k].received_qty+=Number(x.received_qty||0);groups[k].pending_qty+=Number(x.pending_qty||0);});
-  let rows=Object.values(groups);if(q)rows=rows.filter(x=>`${x.po_no||''} ${x.vendor_name||''} ${(x.items||[]).map(i=>i.item_name||'').join(' ')}`.toLowerCase().includes(q));App.pendingReceiptGroups=rows;const bsmReceiptTotal=rows.length;const bsmReceiptPages=Math.max(1,Math.ceil(bsmReceiptTotal/20));bsmListPage.purchase_order_pending_receipt=Math.min(bsmPage('purchase_order_pending_receipt'),bsmReceiptPages);rows=rows.slice((bsmPage('purchase_order_pending_receipt')-1)*20,bsmPage('purchase_order_pending_receipt')*20);
+  let rows=Object.values(groups);if(q)rows=rows.filter(x=>`${x.po_no||''} ${x.vendor_name||''} ${(x.items||[]).map(i=>i.item_name||'').join(' ')}`.toLowerCase().includes(q));App.pendingReceiptGroups=rows;
   const num=v=>Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:2});let h='<div class="bsm-table-wrap"><table><thead><tr><th>PO No.</th><th>PO Date</th><th>Vendor</th><th class="num">PO Qty</th><th class="num">Received Qty</th><th class="num">Pending Receipt Qty</th><th>Action</th></tr></thead><tbody>';
   rows.forEach(x=>{h+=`<tr class="po-receipt-summary-row" data-po="${x.purchase_order_id}" tabindex="0" aria-expanded="false" title="Click to view PO Items"><td><strong>${esc(x.po_no||'')}</strong></td><td>${dateFmt(x.po_date)}</td><td>${esc(x.vendor_name||'')}</td><td class="num">${num(x.po_qty)}</td><td class="num">${num(x.received_qty)}</td><td class="num"><strong>${num(x.pending_qty)}</strong></td><td><button class="bsm-btn bsm-btn-small bsm-btn-primary po-receive-po" data-po="${x.purchase_order_id}">Receive</button></td></tr>`;let d='<div class="bsm-po-pending-details"><table><thead><tr><th>Item</th><th>Unit</th><th class="num">PO Qty</th><th class="num">Received Qty</th><th class="num">Pending Receipt Qty</th></tr></thead><tbody>';(x.items||[]).forEach(it=>{d+=`<tr><td>${esc(it.item_name||'')}</td><td>${esc(it.unit_name||'')}</td><td class="num">${num(it.po_qty)}</td><td class="num">${num(it.received_qty)}</td><td class="num"><strong>${num(it.pending_qty)}</strong></td></tr>`;});d+='</tbody></table></div>';h+=`<tr class="po-receipt-detail-row" data-detail-for="${x.purchase_order_id}" style="display:none"><td colspan="7">${d}</td></tr>`;});
-  if(!rows.length)h+='<tr><td colspan="7" class="bsm-empty">No Purchase Orders pending receipt.</td></tr>';h+='</tbody></table></div>'+bsmPager('purchase_order_pending_receipt',{total:bsmReceiptTotal,page:bsmPage('purchase_order_pending_receipt'),pages:bsmReceiptPages});$('#po_receipt_list').html(h);
+  if(!rows.length)h+='<tr><td colspan="7" class="bsm-empty">No Purchase Orders pending receipt.</td></tr>';h+='</tbody></table></div>';$('#po_receipt_list').html(h);
 }
 async function prepareRequiredPurchasePOSelector(){
   const $grid=$('#bsm-form-fields');
@@ -547,37 +743,37 @@ async function prepareRequiredPurchasePOSelector(){
 async function openPurchaseFormFromPO(poId){const g=(App.pendingReceiptGroups||[]).find(x=>String(x.purchase_order_id)===String(poId));if(!g)return showToast('Purchase Order not found',true);App.poReceiptPrefill=g;await openView('purchase_form');}
 async function renderPurchaseOrderMaster(){
   setTitle('PO Master');
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="po_master_search" class="bsm-search" placeholder="Search...">${selectHtml('po_master_vendor','Vendor','vendors','')}<label>Status<select id="po_master_status"><option value="">All</option><option value="created">Created</option><option value="sent">Sent</option><option value="partly_received">Partly Received</option><option value="fully_received">Fully Received</option><option value="cancelled">Cancelled</option></select></label><div class="bsm-spacer"></div>${excelButton('po_master_export')}</div><div id="po_master_list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);await loadPurchaseOrderMaster();
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="po_master_search" class="bsm-search" placeholder="Search PO Master">${selectHtml('po_master_vendor','Vendor','vendors','')}<label>Status<select id="po_master_status"><option value="">All</option><option value="created">Created</option><option value="sent">Sent</option><option value="partly_received">Partly Received</option><option value="fully_received">Fully Received</option><option value="cancelled">Cancelled</option></select></label><div class="bsm-spacer"></div>${excelButton('po_master_export')}</div><div id="po_master_list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);await loadPurchaseOrderMaster();
 }
 async function loadPurchaseOrderMaster(exportAll=false){
-  const r=await ajax('bsm_purchase_order_master',{search:$('#po_master_search').val()||'',vendor_id:$('#po_master_vendor').val()||'',status:$('#po_master_status').val()||'',page:exportAll?1:bsmPage('purchase_order_master'),export_all:exportAll?'1':''});if(!r.success){if(!exportAll)$('#po_master_list').html('<div class="bsm-empty">Unable to load PO Master.</div>');return null;}const rows=r.data.rows||[];if(exportAll)return rows;const amt=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>PO No.</th><th>PO Date</th><th>Vendor</th><th>Warehouse</th><th>Required Date</th><th>Items</th><th class="num">PO Qty</th><th class="num">Received</th><th class="num">Pending</th><th class="num">Total</th><th class="num">IGST</th><th class="num">CGST</th><th class="num">SGST</th><th>Status</th><th>Created By</th><th>Action</th></tr></thead><tbody>';rows.forEach((x,i)=>{const pdf=`<button type="button" class="bsm-pdf-link po-pdf" data-id="${x.id}" title="Download PO PDF" aria-label="Download PO PDF"><svg class="bsm-pdf-icon" viewBox="0 0 32 36" aria-hidden="true"><path d="M6.5 1.5h12l7 7v25H6.5z" fill="#fff" stroke="#ef2020" stroke-width="2" stroke-linejoin="round"/><path d="M18.5 1.5v7h7" fill="none" stroke="#ef2020" stroke-width="2" stroke-linejoin="round"/><rect x="3" y="19" width="26" height="11" rx="2" fill="#ef2020"/><text x="16" y="27.1" text-anchor="middle" font-size="8.3" font-weight="700" font-family="Arial,Helvetica,sans-serif" fill="#fff">PDF</text></svg></button>`;const edit=String(x.status||'')!=='cancelled'?`<button type="button" class="bsm-action-edit po-edit" data-id="${x.id}" title="Edit PO">✎</button>`:'';const del=BSM.currentUser?.role?.includes('administrator')?`<button type="button" class="bsm-action-delete po-admin-delete" data-id="${x.id}" title="Delete PO (Administrator only)"><img class="bsm-delete-icon" src="${BSM.deleteIcon}" alt="Delete"></button>`:'';const cancel=(Number(x.received_qty||0)<=0.009&&!['cancelled','fully_received'].includes(String(x.status||'')))?`<button class="bsm-btn bsm-btn-small bsm-btn-danger po-cancel" data-id="${x.id}">Cancel</button>`:'';h+=`<tr><td>${(r.data.page-1)*20+i+1}</td><td>${esc(x.po_no||'')}</td><td>${dateFmt(x.po_date)}</td><td>${esc(x.vendor_name||'')}</td><td>${esc(x.warehouse_name||'')}</td><td>${dateFmt(x.required_date)}</td><td class="num">${Number(x.item_count||0)}</td><td class="num">${Number(x.po_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.received_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.pending_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${amt(x.total_amount)}</td><td class="num">${amt(x.igst_amount)}</td><td class="num">${amt(x.cgst_amount)}</td><td class="num">${amt(x.sgst_amount)}</td><td><span class="bsm-pill">${esc(String(x.status||'').replaceAll('_',' '))}</span></td><td>${esc(x.created_by_name||'-')}</td><td class="bsm-actions">${pdf}${edit}${cancel}${del}</td></tr>`;});if(!rows.length)h+='<tr><td colspan="17" class="bsm-empty">No Purchase Orders found.</td></tr>';h+='</tbody></table></div>'+bsmPager('purchase_order_master',r.data);$('#po_master_list').html(h);return rows;
+  const r=await ajax('bsm_purchase_order_master',{search:$('#po_master_search').val()||'',vendor_id:$('#po_master_vendor').val()||'',status:$('#po_master_status').val()||''});if(!r.success){if(!exportAll)$('#po_master_list').html('<div class="bsm-empty">Unable to load PO Master.</div>');return null;}const rows=r.data.rows||[];if(exportAll)return rows;const amt=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>PO No.</th><th>PO Date</th><th>Vendor</th><th>Warehouse</th><th>Required Date</th><th>Items</th><th class="num">PO Qty</th><th class="num">Received</th><th class="num">Pending</th><th class="num">Total</th><th>Status</th><th>Created By</th><th>Action</th></tr></thead><tbody>';rows.forEach((x,i)=>{const pdf=`<button type="button" class="bsm-pdf-link po-pdf" data-id="${x.id}" title="Download PO PDF" aria-label="Download PO PDF"><svg class="bsm-pdf-icon" viewBox="0 0 32 36" aria-hidden="true"><path d="M6.5 1.5h12l7 7v25H6.5z" fill="#fff" stroke="#ef2020" stroke-width="2" stroke-linejoin="round"/><path d="M18.5 1.5v7h7" fill="none" stroke="#ef2020" stroke-width="2" stroke-linejoin="round"/><rect x="3" y="19" width="26" height="11" rx="2" fill="#ef2020"/><text x="16" y="27.1" text-anchor="middle" font-size="8.3" font-weight="700" font-family="Arial,Helvetica,sans-serif" fill="#fff">PDF</text></svg></button>`;const edit=String(x.status||'')!=='cancelled'?`<button type="button" class="bsm-action-edit po-edit" data-id="${x.id}" title="Edit PO">✎</button>`:'';const cancel=(Number(x.received_qty||0)<=0.009&&!['cancelled','fully_received'].includes(String(x.status||'')))?`<button class="bsm-btn bsm-btn-small bsm-btn-danger po-cancel" data-id="${x.id}">Cancel</button>`:'';h+=`<tr><td>${i+1}</td><td>${esc(x.po_no||'')}</td><td>${dateFmt(x.po_date)}</td><td>${esc(x.vendor_name||'')}</td><td>${esc(x.warehouse_name||'')}</td><td>${dateFmt(x.required_date)}</td><td class="num">${Number(x.item_count||0)}</td><td class="num">${Number(x.po_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.received_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.pending_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${amt(x.total_amount)}</td><td><span class="bsm-pill">${esc(String(x.status||'').replaceAll('_',' '))}</span></td><td>${esc(x.created_by_name||'-')}</td><td class="bsm-actions">${pdf}${edit}${cancel}</td></tr>`;});if(!rows.length)h+='<tr><td colspan="14" class="bsm-empty">No Purchase Orders found.</td></tr>';h+='</tbody></table></div>';$('#po_master_list').html(h);return rows;
 }
 async function renderPurchaseOrderItemsMaster(){
   setTitle('PO Items Master');
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="po_items_search" class="bsm-search" placeholder="Search...">${selectHtml('po_items_vendor','Vendor','vendors','')}<div class="bsm-spacer"></div>${excelButton('po_items_export')}</div><div id="po_items_list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);await loadPurchaseOrderItemsMaster();
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="po_items_search" class="bsm-search" placeholder="Search PO Items Master">${selectHtml('po_items_vendor','Vendor','vendors','')}<div class="bsm-spacer"></div>${excelButton('po_items_export')}</div><div id="po_items_list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);await loadPurchaseOrderItemsMaster();
 }
 async function loadPurchaseOrderItemsMaster(exportAll=false){
-  const r=await ajax('bsm_purchase_order_items_master',{search:$('#po_items_search').val()||'',vendor_id:$('#po_items_vendor').val()||'',page:exportAll?1:bsmPage('purchase_order_items_master'),export_all:exportAll?'1':''});if(!r.success){if(!exportAll)$('#po_items_list').html('<div class="bsm-empty">Unable to load PO Items Master.</div>');return null;}const rows=r.data.rows||[];if(exportAll)return rows;const amt=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>PO No.</th><th>PO Date</th><th>Vendor</th><th>Item</th><th>Unit</th><th class="num">Fixed Price</th><th class="num">Rate</th><th class="num">PO Qty</th><th class="num">Received Qty</th><th class="num">Pending Qty</th><th class="num">Amount</th><th class="num">IGST</th><th class="num">CGST</th><th class="num">SGST</th><th>Status</th></tr></thead><tbody>';rows.forEach((x,i)=>h+=`<tr><td>${(r.data.page-1)*20+i+1}</td><td>${esc(x.po_no||'')}</td><td>${dateFmt(x.po_date)}</td><td>${esc(x.vendor_name||'')}</td><td>${esc(x.item_name||'')}</td><td>${esc(x.unit_name||'')}</td><td class="num">${amt(x.fixed_price)}</td><td class="num">${amt(x.rate)}</td><td class="num">${Number(x.po_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.received_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.pending_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${amt(Number(x.po_qty||0)*Number(x.rate||0))}</td><td class="num">${amt(x.igst_amount)}</td><td class="num">${amt(x.cgst_amount)}</td><td class="num">${amt(x.sgst_amount)}</td><td>${esc(String(x.status||'').replaceAll('_',' '))}</td></tr>`);if(!rows.length)h+='<tr><td colspan="16" class="bsm-empty">No PO Item records found.</td></tr>';h+='</tbody></table></div>'+bsmPager('purchase_order_items_master',r.data);$('#po_items_list').html(h);return rows;
+  const r=await ajax('bsm_purchase_order_items_master',{search:$('#po_items_search').val()||'',vendor_id:$('#po_items_vendor').val()||''});if(!r.success){if(!exportAll)$('#po_items_list').html('<div class="bsm-empty">Unable to load PO Items Master.</div>');return null;}const rows=r.data.rows||[];if(exportAll)return rows;const amt=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>PO No.</th><th>PO Date</th><th>Vendor</th><th>Item</th><th>Unit</th><th class="num">Fixed Price</th><th class="num">Rate</th><th class="num">PO Qty</th><th class="num">Received Qty</th><th class="num">Pending Qty</th><th class="num">Amount</th><th>Status</th></tr></thead><tbody>';rows.forEach((x,i)=>h+=`<tr><td>${i+1}</td><td>${esc(x.po_no||'')}</td><td>${dateFmt(x.po_date)}</td><td>${esc(x.vendor_name||'')}</td><td>${esc(x.item_name||'')}</td><td>${esc(x.unit_name||'')}</td><td class="num">${amt(x.fixed_price)}</td><td class="num">${amt(x.rate)}</td><td class="num">${Number(x.po_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.received_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.pending_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${amt(Number(x.po_qty||0)*Number(x.rate||0))}</td><td>${esc(String(x.status||'').replaceAll('_',' '))}</td></tr>`);if(!rows.length)h+='<tr><td colspan="13" class="bsm-empty">No PO Item records found.</td></tr>';h+='</tbody></table></div>';$('#po_items_list').html(h);return rows;
 }
 
 function vendorOptionHtml(selected=''){
   return `<option value="">Select Vendor</option>`+(App.options.vendors||[]).map(x=>`<option value="${esc(x.id)}" ${String(x.id)===String(selected)?'selected':''}>${esc(x.label)}</option>`).join('');
 }
 async function fetchVendorOutstanding(extra={}){
-  return ajax('bsm_vendor_outstanding',Object.assign({site_id:$('#bsm-vo-site').val()||'',vendor_id:$('#bsm-vo-vendor').val()||'',date_from:dateSql($('#bsm-vo-date-from').val()||''),date_to:dateSql($('#bsm-vo-date-to').val()||''),status:'',search:$('#bsm-vo-search').val()||'',summary:'1',page:bsmPage('vendor_outstanding')},extra));
+  return ajax('bsm_vendor_outstanding',Object.assign({site_id:$('#bsm-vo-site').val()||'',vendor_id:$('#bsm-vo-vendor').val()||'',date_from:dateSql($('#bsm-vo-date-from').val()||''),date_to:dateSql($('#bsm-vo-date-to').val()||''),status:'',search:$('#bsm-vo-search').val()||'',summary:'1'},extra));
 }
 async function renderVendorOutstanding(){
   setTitle('Vendor Outstanding');
-  const filters=`<div class="bsm-filters report bsm-vendor-outstanding-filters">${selectHtml('bsm-vo-site','Site','sites','')}<label>Vendor<select id="bsm-vo-vendor">${vendorOptionHtml()}</select></label><label>Date From<input type="date" id="bsm-vo-date-from"></label><label>Date To<input type="date" id="bsm-vo-date-to"></label><button class="bsm-icon-btn bsm-purchase-clear-btn" id="bsm-vo-clear" title="Clear Filters">${clearIcon()}</button></div>`;
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-vo-search" class="bsm-search" placeholder="Search..."><div class="bsm-spacer"></div>${excelButton('bsm-vo-export')}</div>${filters}<div id="bsm-vendor-outstanding-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  const filters=`<div class="bsm-filters report bsm-vendor-outstanding-filters">${selectHtml('bsm-vo-site','Site','sites','')}<label>Vendor<select id="bsm-vo-vendor">${vendorOptionHtml()}</select></label><label>Date From<input type="date" lang="en-GB" id="bsm-vo-date-from"></label><label>Date To<input type="date" lang="en-GB" id="bsm-vo-date-to"></label><button class="bsm-icon-btn bsm-purchase-clear-btn" id="bsm-vo-clear" title="Clear Filters">${clearIcon()}</button></div>`;
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-vo-search" class="bsm-search" placeholder="Search Vendor Outstanding"><div class="bsm-spacer"></div>${excelButton('bsm-vo-export')}</div>${filters}<div id="bsm-vendor-outstanding-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   await loadVendorOutstanding();
 }
 async function loadVendorOutstanding(exportAll=false){
-  const r=await fetchVendorOutstanding(exportAll?{export_all:'1'}:{});if(!r.success){if(!exportAll)$('#bsm-vendor-outstanding-list').html('<div class="bsm-empty">Unable to load Vendor Outstanding.</div>');return null;}
+  const r=await fetchVendorOutstanding();if(!r.success){if(!exportAll)$('#bsm-vendor-outstanding-list').html('<div class="bsm-empty">Unable to load Vendor Outstanding.</div>');return null;}
   const rows=r.data.rows||[];if(exportAll)return rows;
   let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>Vendor</th><th class="num">Pending POs</th><th class="num">Purchase Amount</th><th class="num">Paid Amount</th><th class="num">Outstanding</th><th>Action</th></tr></thead><tbody>';
-  rows.forEach((x,i)=>{h+=`<tr><td>${(r.data.page-1)*20+i+1}</td><td>${esc(x.vendor_name||'')}</td><td class="num">${Number(x.purchase_count||0).toLocaleString('en-IN')}</td><td class="num">${moneyFmt(x.purchase_amount)}</td><td class="num">${moneyFmt(x.paid_amount)}</td><td class="num">${moneyFmt(x.outstanding)}</td><td>${Number(x.outstanding||0)>0.009?`<button class="bsm-btn bsm-btn-primary bsm-btn-small bsm-vendor-pay" data-vendor="${x.vendor_id}">Pay</button>`:'-'}</td></tr>`;});
-  if(!rows.length)h+='<tr><td colspan="7" class="bsm-empty">No pending vendor outstanding.</td></tr>';h+='</tbody></table></div>'+bsmPager('vendor_outstanding',r.data);$('#bsm-vendor-outstanding-list').html(h);return rows;
+  rows.forEach((x,i)=>{h+=`<tr><td>${i+1}</td><td>${esc(x.vendor_name||'')}</td><td class="num">${Number(x.purchase_count||0).toLocaleString('en-IN')}</td><td class="num">${moneyFmt(x.purchase_amount)}</td><td class="num">${moneyFmt(x.paid_amount)}</td><td class="num">${moneyFmt(x.outstanding)}</td><td>${Number(x.outstanding||0)>0.009?`<button class="bsm-btn bsm-btn-primary bsm-btn-small bsm-vendor-pay" data-vendor="${x.vendor_id}">Pay</button>`:'-'}</td></tr>`;});
+  if(!rows.length)h+='<tr><td colspan="7" class="bsm-empty">No pending vendor outstanding.</td></tr>';h+='</tbody></table></div>';$('#bsm-vendor-outstanding-list').html(h);return rows;
 }
 async function renderVendorPaymentForm(prefill={}){
   // Vendor Outstanding launches this form without loading Bank Master options first.
@@ -586,7 +782,7 @@ async function renderVendorPaymentForm(prefill={}){
   const today=BSM.today||'';
   const bankOptions=(App.options.banks||[]).map(x=>`<option value="${esc(x.id)}">${esc(x.label)}</option>`).join('');
   const missingBanks=!(App.options.banks||[]).length;
-  $('#bsm-content').html(`<div class="bsm-panel bsm-vendor-payment-form"><div class="bsm-form-grid bsm-payment-top-grid"><label><span class="bsm-field-label">Payment Date</span><input type="date" id="bsm-pay-date" value="${esc(today)}"></label><label><span class="bsm-field-label">Vendor</span><select id="bsm-pay-vendor">${vendorOptionHtml(prefill.vendor_id||'')}</select></label><label><span class="bsm-field-label">Payment Mode</span><select id="bsm-pay-mode"><option value="Bank">Bank</option><option value="UPI">UPI</option><option value="Cheque">Cheque</option><option value="Cash">Cash</option><option value="Other">Other</option></select></label><label id="bsm-pay-bank-wrap"><span class="bsm-field-label">Bank</span><select id="bsm-pay-bank" required><option value="">${missingBanks?'No active banks in Bank Master':'Select Bank'}</option>${bankOptions}</select></label><label><span class="bsm-field-label">Reference / UTR / Cheque No.</span><input id="bsm-pay-ref"></label><label><span class="bsm-field-label">Payment Amount</span><input id="bsm-pay-amount" class="num" type="number" min="0" step="0.01" value="${Number(prefill.amount||0).toFixed(2)}"></label><label><span class="bsm-field-label">Made By</span><input value="${esc(BSM.currentUser?.name||'')}" readonly></label><label class="wide"><span class="bsm-field-label">Remarks</span><textarea id="bsm-pay-remarks"></textarea></label><label class="wide"><span class="bsm-field-label">Upload Payment Photo</span><input id="bsm-vendor-payment-photo" type="file" accept="image/jpeg,image/png,image/webp,application/pdf"></label></div><div class="bsm-form-actions"><button class="bsm-btn bsm-btn-primary" id="bsm-save-vendor-payment">Save Payment</button><button class="bsm-btn bsm-btn-cancel" id="bsm-cancel-vendor-payment">Cancel</button></div></div>`);
+  $('#bsm-content').html(`<div class="bsm-panel bsm-vendor-payment-form"><div class="bsm-form-grid bsm-payment-top-grid"><label><span class="bsm-field-label">Payment Date</span><input type="date" lang="en-GB" id="bsm-pay-date" value="${esc(today)}"></label><label><span class="bsm-field-label">Vendor</span><select id="bsm-pay-vendor">${vendorOptionHtml(prefill.vendor_id||'')}</select></label><label><span class="bsm-field-label">Payment Mode</span><select id="bsm-pay-mode"><option value="Bank">Bank</option><option value="UPI">UPI</option><option value="Cheque">Cheque</option><option value="Cash">Cash</option><option value="Other">Other</option></select></label><label id="bsm-pay-bank-wrap"><span class="bsm-field-label">Bank</span><select id="bsm-pay-bank" required><option value="">${missingBanks?'No active banks in Bank Master':'Select Bank'}</option>${bankOptions}</select></label><label><span class="bsm-field-label">Reference / UTR / Cheque No.</span><input id="bsm-pay-ref"></label><label><span class="bsm-field-label">Payment Amount</span><input id="bsm-pay-amount" class="num" type="number" min="0" step="0.01" value="${Number(prefill.amount||0).toFixed(2)}"></label><label><span class="bsm-field-label">Made By</span><input value="${esc(BSM.currentUser?.name||'')}" readonly></label><label class="wide"><span class="bsm-field-label">Remarks</span><textarea id="bsm-pay-remarks"></textarea></label><label class="wide"><span class="bsm-field-label">Upload Payment Photo</span><input id="bsm-vendor-payment-photo" type="file" accept="image/jpeg,image/png,image/webp,application/pdf"></label></div><div class="bsm-form-actions"><button class="bsm-btn bsm-btn-primary" id="bsm-save-vendor-payment">Save Payment</button><button class="bsm-btn bsm-btn-cancel" id="bsm-cancel-vendor-payment">Cancel</button></div></div>`);
   bsmEnhanceSearchableSelects($('#bsm-content'));
   $('#bsm-pay-bank-wrap').show();
   if(missingBanks) $('#bsm-pay-bank-wrap').append('<small class="bsm-field-help">No active bank accounts available. Please add or activate an account in Bank Master.</small>');
@@ -625,8 +821,8 @@ function drawPurchasePendingApproval(){
   h+='</tbody></table></div>';$('#bsm-purchase-pending-approval').html(h);
 }
 async function renderPurchasePendingApproval(){
-  setTitle('Purchase Pending Approval');App.specialSearch='';
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-purchase-approval-search" class="bsm-search" placeholder="Search..."><div class="bsm-spacer"></div></div><div id="bsm-purchase-pending-approval" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  setTitle('Requisitions Pending Approval');App.specialSearch='';
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-purchase-approval-search" class="bsm-search" placeholder="Search Requisitions Pending Approval"><div class="bsm-spacer"></div></div><div id="bsm-purchase-pending-approval" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   const r=await ajax('bsm_purchase_pending_approval');if(!r.success){$('#bsm-purchase-pending-approval').html('<div class="bsm-empty">Unable to load pending purchases.</div>');return;}App.purchasePendingApprovalRows=r.data.rows||[];drawPurchasePendingApproval();
 }
 async function openPurchaseApprovalForm(id){
@@ -649,12 +845,12 @@ async function renderPurchaseRegister(){
   const key='material_inwards',cfg=App.configs[key];
   setTitle('Purchase Master');
   const filters=`<div id="bsm-purchase-filters" class="bsm-filters" style="display:none">
-    <label>Date From<input type="date" class="bsm-date-input bsm-native-date" id="purchase_date_from"></label>
-    <label>Date To<input type="date" class="bsm-date-input bsm-native-date" id="purchase_date_to"></label>
+    <label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="purchase_date_from"></label>
+    <label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="purchase_date_to"></label>
     ${selectHtml('purchase_vendor','Vendor','vendors','')}
     <button class="bsm-icon-btn bsm-purchase-clear-btn" id="purchase_clear_filters" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button>
   </div>`;
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-search" class="bsm-search" placeholder="Search..." value="${esc(App.search)}"><button id="bsm-purchase-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-export-excel')}</div>${filters}<div id="bsm-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-search" class="bsm-search" placeholder="Search Purchase Master" value="${esc(App.search)}"><button id="bsm-purchase-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-export-excel')}</div>${filters}<div id="bsm-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   await loadPurchaseRegister();
 }
 function billTypeLabel(v){return ({gst_bill:'GST Bill',non_gst_bill:'Non GST Bill'}[String(v||'')]||'—');}
@@ -679,7 +875,7 @@ async function loadPurchaseRegister(){
   rows.forEach((row,i)=>{
     const isApproved=String(row.status||'').toLowerCase()==='approved';
     const edit=isApproved?'':`<button class="bsm-action-edit" data-module="material_inwards" data-id="${row.id}" data-allowed="${row._can_edit!==0?1:0}" data-message="${esc(row._edit_message||'This record cannot be edited.')}" title="Edit">✎</button>`;
-    const del=(!BSM.currentUser?.role?.includes('administrator'))?'':`<button class="bsm-action-delete" data-module="material_inwards" data-id="${row.id}" data-allowed="${row._can_delete!==0?1:0}" data-message="${esc(row._delete_message||'This record cannot be deleted.')}" title="Delete"><img class="bsm-delete-icon" src="${BSM.deleteIcon}" alt="Delete"></button>`;
+    const del=isApproved?'':`<button class="bsm-action-delete" data-module="material_inwards" data-id="${row.id}" data-allowed="${row._can_delete!==0?1:0}" data-message="${esc(row._delete_message||'This record cannot be deleted.')}" title="Delete"><img class="bsm-delete-icon" src="${BSM.deleteIcon}" alt="Delete"></button>`;
     const invoice=row.invoice_url?`<a class="bsm-pdf-link" href="${esc(row.invoice_url)}" target="_blank" rel="noopener" title="Open Supplier Invoice" aria-label="Open Supplier Invoice"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h8l4 4v16H6z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M14 2v5h5M8 16h8M8 12h8" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></a>`:'-';
     h+=`<tr class="bsm-purchase-row" data-id="${row.id}" tabindex="0" aria-expanded="false" title="Click to view purchase items"><td>${(r.data.page-1)*20+i+1}</td>${purchaseCols.map(c=>`<td class="${c.type==='money'||c.type==='number'||c.type==='percent'?'num':''}">${renderCell(row,c)}</td>`).join('')}<td>${esc(purchaseApprovedByName(row))}</td><td class="bsm-invoice-cell">${invoice}</td><td class="bsm-actions">${edit}${del}</td></tr>`;
   });
@@ -711,14 +907,14 @@ function purchaseItemsSyncCategoryFromItem(){
 async function renderPurchaseItemsRegister(){
   setTitle('Purchase Items Master');
   const filters=`<div id="bsm-purchase-items-filters" class="bsm-filters" style="display:none">
-    <label>Date From<input type="date" class="bsm-date-input bsm-native-date" id="purchase_items_date_from"></label>
-    <label>Date To<input type="date" class="bsm-date-input bsm-native-date" id="purchase_items_date_to"></label>
+    <label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="purchase_items_date_from"></label>
+    <label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="purchase_items_date_to"></label>
     ${selectHtml('purchase_items_vendor','Vendor','vendors','')}
     ${selectHtml('purchase_items_category','Item Category','categories','')}
     ${selectHtml('purchase_items_item','Item','items','')}
     <button class="bsm-icon-btn bsm-purchase-clear-btn" id="purchase_items_clear_filters" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button>
   </div>`;
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-purchase-items-search" class="bsm-search" placeholder="Search..."><button id="bsm-purchase-items-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-purchase-items-export')}</div>${filters}<div id="bsm-purchase-items-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-purchase-items-search" class="bsm-search" placeholder="Search Purchase Items Master"><button id="bsm-purchase-items-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-purchase-items-export')}</div>${filters}<div id="bsm-purchase-items-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   purchaseItemsFilterItemOptions();
   await loadPurchaseItemsRegister();
 }
@@ -738,8 +934,8 @@ async function loadPurchaseItemsRegister(exportAll=false){
   const rows=r.data.rows||[];
   const amt=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
   let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>Purchase</th><th>Date</th><th>Vendor</th><th>GST Type</th><th>Bill Type</th><th>Supplier Invoice No.</th><th>Item Category</th><th>Item</th><th class="num">Qty</th><th class="num">Approved Qty</th><th>Unit</th><th class="num">Fixed Price</th><th class="num">Rate</th><th class="num">Taxable</th><th class="num">GST %</th><th class="num">CGST</th><th class="num">SGST</th><th class="num">IGST</th><th class="num">Total</th><th>Approved By</th></tr></thead><tbody>';
-  rows.forEach((x,i)=>{h+=`<tr><td>${(r.data.page-1)*20+i+1}</td><td>${esc(x.inward_no||'')}</td><td>${dateFmt(x.inward_date)}</td><td>${esc(x.vendor_name||'')}</td><td>${esc(gstTypeLabel(x.gst_type))}</td><td>${esc(billTypeLabel(x.bill_type))}</td><td>${esc(x.supplier_invoice_no||'')}</td><td>${esc(x.category_name||'')}</td><td>${esc(x.item_name||'')}</td><td class="num">${Number(x.qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number((x.approved_qty||0)!==0?x.approved_qty:x.qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td>${esc(x.unit_name||'')}</td><td class="num">${amt(x.master_price)}</td><td class="num">${amt(x.rate)}</td><td class="num">${amt(x.taxable_amount)}</td><td class="num">${Number(x.gst_rate||0).toFixed(2)}%</td><td class="num">${amt(x.cgst_amount)}</td><td class="num">${amt(x.sgst_amount)}</td><td class="num">${amt(x.igst_amount)}</td><td class="num">${amt(x.total_amount)}</td><td>${esc(x.approved_by_name||'-')}</td></tr>`;});
-  if(!rows.length)h+='<tr><td colspan="21" class="bsm-empty">No purchase item records found.</td></tr>';
+  rows.forEach((x,i)=>{h+=`<tr><td>${(r.data.page-1)*20+i+1}</td><td>${esc(x.inward_no||'')}</td><td>${dateFmt(x.inward_date)}</td><td>${esc(x.vendor_name||'')}</td><td>${esc(x.supplier_invoice_no||'')}</td><td>${esc(x.category_name||'')}</td><td>${esc(x.item_name||'')}</td><td class="num">${Number(x.qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number((x.approved_qty||0)!==0?x.approved_qty:x.qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td>${esc(x.unit_name||'')}</td><td class="num">${amt(x.master_price)}</td><td class="num">${amt(x.rate)}</td><td class="num">${amt(x.taxable_amount)}</td><td class="num">${Number(x.gst_rate||0).toFixed(2)}%</td><td class="num">${amt(x.cgst_amount)}</td><td class="num">${amt(x.sgst_amount)}</td><td class="num">${amt(x.igst_amount)}</td><td class="num">${amt(x.total_amount)}</td><td>${esc(x.approved_by_name||'-')}</td></tr>`;});
+  if(!rows.length)h+='<tr><td colspan="19" class="bsm-empty">No purchase item records found.</td></tr>';
   h+='</tbody></table></div>';
   if(r.data.pages>1)h+=`<div class="bsm-pagination"><button class="bsm-btn page-prev" ${r.data.page<=1?'disabled':''}>Previous</button><span>Page ${r.data.page} of ${r.data.pages}</span><button class="bsm-btn page-next" ${r.data.page>=r.data.pages?'disabled':''}>Next</button></div>`;
   $('#bsm-purchase-items-list').html(h);
@@ -747,8 +943,8 @@ async function loadPurchaseItemsRegister(exportAll=false){
 }
 async function exportPurchaseItemsRegister(){
   const rows=await loadPurchaseItemsRegister(true); if(!rows)return;
-  const headers=['Sl','Purchase','Date','Vendor','GST Type','Bill Type','Supplier Invoice No.','Item Category','Item','Qty','Approved Qty','Unit','Fixed Price','Rate','Taxable','GST %','CGST','SGST','IGST','Total','Approved By'];
-  const data=rows.map((x,i)=>[i+1,x.inward_no||'',dateFmt(x.inward_date),x.vendor_name||'',gstTypeLabel(x.gst_type),billTypeLabel(x.bill_type),x.supplier_invoice_no||'',x.category_name||'',x.item_name||'',x.qty||0,((x.approved_qty||0)!==0?x.approved_qty:x.qty||0),x.unit_name||'',x.master_price||0,x.rate||0,x.taxable_amount||0,x.gst_rate||0,x.cgst_amount||0,x.sgst_amount||0,x.igst_amount||0,x.total_amount||0,x.approved_by_name||'']);
+  const headers=['Sl','Purchase','Date','Vendor','Supplier Invoice No.','Item Category','Item','Qty','Approved Qty','Unit','Fixed Price','Rate','Taxable','GST %','CGST','SGST','IGST','Total','Approved By'];
+  const data=rows.map((x,i)=>[i+1,x.inward_no||'',dateFmt(x.inward_date),x.vendor_name||'',x.supplier_invoice_no||'',x.category_name||'',x.item_name||'',x.qty||0,((x.approved_qty||0)!==0?x.approved_qty:x.qty||0),x.unit_name||'',x.master_price||0,x.rate||0,x.taxable_amount||0,x.gst_rate||0,x.cgst_amount||0,x.sgst_amount||0,x.igst_amount||0,x.total_amount||0,x.approved_by_name||'']);
   downloadExcelFile('Purchase Items Master',headers,data);
 }
 
@@ -805,14 +1001,14 @@ function dispatchItemsSyncCategoryFromItem(){
 async function renderDispatchItemsRegister(){
   setTitle('Dispatch Items Master');
   const filters=`<div id="bsm-dispatch-items-filters" class="bsm-filters" style="display:none">
-    <label>Date From<input type="date" class="bsm-date-input bsm-native-date" id="dispatch_items_date_from"></label>
-    <label>Date To<input type="date" class="bsm-date-input bsm-native-date" id="dispatch_items_date_to"></label>
+    <label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="dispatch_items_date_from"></label>
+    <label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="dispatch_items_date_to"></label>
     ${selectHtml('dispatch_items_site','Site','sites','')}
     ${selectHtml('dispatch_items_category','Item Category','categories','')}
     ${selectHtml('dispatch_items_item','Item','items','')}
     <button class="bsm-icon-btn bsm-purchase-clear-btn" id="dispatch_items_clear_filters" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button>
   </div>`;
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-dispatch-items-search" class="bsm-search" placeholder="Search..."><button id="bsm-dispatch-items-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-dispatch-items-export')}</div>${filters}<div id="bsm-dispatch-items-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-dispatch-items-search" class="bsm-search" placeholder="Search Dispatch Items Master"><button id="bsm-dispatch-items-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-dispatch-items-export')}</div>${filters}<div id="bsm-dispatch-items-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   dispatchItemsFilterItemOptions();
   await loadDispatchItemsRegister();
 }
@@ -888,8 +1084,8 @@ async function renderSalesRegister(kind){
   const m=salesKindMeta(kind);App.page=1;setTitle(m.title);await ensureOptions(['customers','sites','categories','items','units']);
   const p=`sales_${kind}`;
   const extra=m.items?`${selectHtml(`${p}_category`,'Item Category','categories','')}${selectHtml(`${p}_item`,'Item','items','')}`:'';
-  const filters=`<div id="${p}_filters" class="bsm-filters" style="display:none"><label>Date From<input type="date" class="bsm-date-input bsm-native-date" id="${p}_from"></label><label>Date To<input type="date" class="bsm-date-input bsm-native-date" id="${p}_to"></label>${selectHtml(`${p}_customer`,'Customer','customers','')}${selectHtml(`${p}_site`,'Site','sites','')}${extra}<button class="bsm-icon-btn bsm-purchase-clear-btn sales-clear" data-kind="${kind}" title="Clear Filters">${clearIcon()}</button></div>`;
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="${p}_search" class="bsm-search sales-search" data-kind="${kind}" placeholder="Search..."><button class="bsm-icon-btn sales-filter-toggle" data-kind="${kind}" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton(`${p}_export`)}</div>${filters}<div id="${p}_list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  const filters=`<div id="${p}_filters" class="bsm-filters" style="display:none"><label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="${p}_from"></label><label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="${p}_to"></label>${selectHtml(`${p}_customer`,'Customer','customers','')}${selectHtml(`${p}_site`,'Site','sites','')}${extra}<button class="bsm-icon-btn bsm-purchase-clear-btn sales-clear" data-kind="${kind}" title="Clear Filters">${clearIcon()}</button></div>`;
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="${p}_search" class="bsm-search sales-search" data-kind="${kind}" placeholder="Search ${esc(m.title)}"><button class="bsm-icon-btn sales-filter-toggle" data-kind="${kind}" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton(`${p}_export`)}</div>${filters}<div id="${p}_list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   if(m.items)salesFilterItemOptions(p);await loadSalesRegister(kind);
 }
 async function loadSalesRegister(kind,exportAll=false){
@@ -920,18 +1116,8 @@ async function loadSalesRegister(kind,exportAll=false){
   if(!rows.length)h+=`<tr><td colspan="${m.items?14:(m.quote?13:12)}" class="bsm-empty">No records found.</td></tr>`;h+='</tbody></table></div>';if(r.data.pages>1)h+=`<div class="bsm-pagination"><button class="bsm-btn page-prev" ${r.data.page<=1?'disabled':''}>Previous</button><span>Page ${r.data.page} of ${r.data.pages}</span><button class="bsm-btn page-next" ${r.data.page>=r.data.pages?'disabled':''}>Next</button></div>`;$(`#${p}_list`).html(h);return rows;
 }
 async function exportSalesRegister(kind){const m=salesKindMeta(kind),rows=await loadSalesRegister(kind,true);if(!rows)return;if(m.items&&m.quote){const headers=['Sl','Quotation No.','Date','Customer','Item Category','Item','Description','Qty','Unit','Rate','GST %','GST','Amount'];downloadExcelFile(m.title,headers,rows.map((x,i)=>[i+1,x.document_no||'',dateFmt(x.document_date),x.customer_name||'',x.category_name||'',x.item_name||'',x.description||'',x.qty||0,x.unit_name||'',x.rate||0,x.gst_rate||0,Number(x.cgst_amount||0)+Number(x.sgst_amount||0)+Number(x.igst_amount||0),x.amount||0]));}else if(m.items){const headers=['Sl','Document No.','Date','Customer','Site','Item Category','Item','Description','Qty','Unit','Rate','GST %','GST','Amount'];downloadExcelFile(m.title,headers,rows.map((x,i)=>[i+1,x.document_no||'',dateFmt(x.document_date),x.customer_name||'',x.site_name||'',x.category_name||'',x.item_name||'',x.description||'',x.qty||0,x.unit_name||'',x.rate||0,x.gst_rate||0,Number(x.cgst_amount||0)+Number(x.sgst_amount||0)+Number(x.igst_amount||0),x.amount||0]));}else if(m.quote){downloadExcelFile(m.title,['Sl','Document No.','Date','Valid Till','Customer','Site','Taxable','GST','Other Charge','GST on Other Charge','Total'],rows.map((x,i)=>[i+1,x.document_no||'',dateFmt(x.document_date),dateFmt(x.valid_till),x.customer_name||'',x.site_name||'',x.taxable_amount||0,Number(x.cgst_amount||0)+Number(x.sgst_amount||0)+Number(x.igst_amount||0),x.other_charges||0,x.gst_on_other_charge||0,x.document_total||0]));}else{downloadExcelFile(m.title,['Sl','Document No.','Date','Customer','Site','Taxable','GST','Other Charge','GST on Other Charge','Total'],rows.map((x,i)=>[i+1,x.document_no||'',dateFmt(x.document_date),x.customer_name||'',x.site_name||'',x.taxable_amount||0,Number(x.cgst_amount||0)+Number(x.sgst_amount||0)+Number(x.igst_amount||0),x.other_charges||0,x.gst_on_other_charge||0,x.document_total||0]));}}
-function salesDetailHtml(items,quotation=false){
-  let h='<div class="bsm-purchase-item-details"><div class="bsm-purchase-detail-wrap"><table class="bsm-purchase-detail-table bsm-sales-item-detail-table"><thead><tr><th>Item / Description</th>'+(quotation?'<th class="bsm-sales-image-heading">Image</th>':'')+'<th>HSN / SAC</th><th class="num">Qty</th><th>Unit</th><th class="num">Rate</th><th class="num">Amount</th><th class="num">GST %</th><th class="num">GST</th><th class="num">Total</th></tr></thead><tbody>';
-  for(const x of (items||[])){
-    const gstTotal=Number(x.cgst_amount||0)+Number(x.sgst_amount||0)+Number(x.igst_amount||0);
-    const image=x.image_url||'',full=x.image_full_url||image;
-    const imageCell=quotation?`<td class="bsm-sales-image-cell">${image?`<a href="${esc(full)}" target="_blank" rel="noopener noreferrer" title="View item image"><img src="${esc(image)}" alt="Item image" loading="lazy"></a>`:''}</td>`:'';
-    h+=`<tr><td>${esc(labelFor('items',x.item_id)||x.description||'')}</td>${imageCell}<td>${esc(x.hsn_sac||'')}</td><td class="num">${Number(x.qty||0).toFixed(2)}</td><td>${esc(labelFor('units',x.unit_id)||'')}</td><td class="num">${moneyFmt(x.rate)}</td><td class="num">${moneyFmt(x.amount)}</td><td class="num">${Number(x.gst_rate||0).toFixed(2)}%</td><td class="num">${moneyFmt(gstTotal)}</td><td class="num">${moneyFmt(x.total_amount)}</td></tr>`;
-  }
-  if(!(items||[]).length)h+=`<tr><td colspan="${quotation?10:9}" class="bsm-empty">No item data found.</td></tr>`;
-  return h+'</tbody></table></div></div>';
-}
-async function toggleSalesDetails($row){const id=Number($row.data('id')||0),module=$row.data('module');if(!id||!module)return;const $e=$row.next('.bsm-sales-details-row');if($e.length){const open=$e.is(':visible');$e.toggle(!open);$row.attr('aria-expanded',String(!open));return;}const c=$row.children('td').length,$d=$(`<tr class="bsm-sales-details-row"><td colspan="${c}"><div class="bsm-loading">Loading items…</div></td></tr>`);$row.after($d);const r=await ajax('bsm_get',{module,id});$d.find('td').html(r.success?salesDetailHtml(r.data?._items||[],module==='quotations'):'<div class="bsm-empty">Unable to load items.</div>');}
+function salesDetailHtml(items){let h='<div class="bsm-purchase-item-details"><div class="bsm-purchase-detail-wrap"><table class="bsm-purchase-detail-table"><thead><tr><th>Item / Description</th><th>HSN / SAC</th><th class="num">Qty</th><th>Unit</th><th class="num">Rate</th><th class="num">Amount</th><th class="num">GST %</th><th class="num">GST</th><th class="num">Total</th></tr></thead><tbody>';for(const x of (items||[])){const gstTotal=Number(x.cgst_amount||0)+Number(x.sgst_amount||0)+Number(x.igst_amount||0);h+=`<tr><td>${esc(labelFor('items',x.item_id)||x.description||'')}</td><td>${esc(x.hsn_sac||'')}</td><td class="num">${Number(x.qty||0).toFixed(2)}</td><td>${esc(labelFor('units',x.unit_id)||'')}</td><td class="num">${moneyFmt(x.rate)}</td><td class="num">${moneyFmt(x.amount)}</td><td class="num">${Number(x.gst_rate||0).toFixed(2)}%</td><td class="num">${moneyFmt(gstTotal)}</td><td class="num">${moneyFmt(x.total_amount)}</td></tr>`;}if(!(items||[]).length)h+='<tr><td colspan="10" class="bsm-empty">No item data found.</td></tr>';return h+'</tbody></table></div></div>';}
+async function toggleSalesDetails($row){const id=Number($row.data('id')||0),module=$row.data('module');if(!id||!module)return;const $e=$row.next('.bsm-sales-details-row');if($e.length){const open=$e.is(':visible');$e.toggle(!open);$row.attr('aria-expanded',String(!open));return;}const c=$row.children('td').length,$d=$(`<tr class="bsm-sales-details-row"><td colspan="${c}"><div class="bsm-loading">Loading items…</div></td></tr>`);$row.after($d);const r=await ajax('bsm_get',{module,id});$d.find('td').html(r.success?salesDetailHtml(r.data?._items||[]):'<div class="bsm-empty">Unable to load items.</div>');}
 async function prepareSalesForm(key,row={}){
   const $form=$('#bsm-form'),$fields=$('#bsm-form-fields');$form.data('sales-company-state','');
   try{const r=await ajax('bsm_list',{module:'company_settings',page:1,search:'',export_all:'1',visible_columns:'[]'});if(r.success&&r.data?.rows?.[0]){$form.data('sales-company-state',String(r.data.rows[0].state_id||''));}}catch(e){}
@@ -969,7 +1155,7 @@ function recalcSalesDocument(){bsmApplyInvoiceGstColumns();const key=$('#bsm-for
 
 async function renderPendingInvoiceCopy(){
   setTitle('Pending Invoice Copy');
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-pending-invoice-search" class="bsm-search" placeholder="Search..."><div class="bsm-spacer"></div>${excelButton('bsm-pending-invoice-export')}</div><div id="bsm-pending-invoice-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-pending-invoice-search" class="bsm-search" placeholder="Search Pending Invoice Copy"><div class="bsm-spacer"></div>${excelButton('bsm-pending-invoice-export')}</div><div id="bsm-pending-invoice-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   await loadPendingInvoiceCopy();
 }
 async function loadPendingInvoiceCopy(){
@@ -999,7 +1185,7 @@ $(document).on('click','#bsm-pending-invoice-export',exportPendingInvoiceCopy);
 
 async function renderPendingContractorBillCopy(){
   setTitle('Pending Bill Copy');
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-pending-contractor-bill-search" class="bsm-search" placeholder="Search..."><div class="bsm-spacer"></div></div><div id="bsm-pending-contractor-bill-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-pending-contractor-bill-search" class="bsm-search" placeholder="Search Pending Labour Contractor Bill Copy"><div class="bsm-spacer"></div></div><div id="bsm-pending-contractor-bill-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   await loadPendingContractorBillCopy();
 }
 async function loadPendingContractorBillCopy(){
@@ -1022,7 +1208,7 @@ async function renderAllowanceForm(){
   const employeeRecord=(App.options.users||[]).find(x=>String(x.id)===employeeId);
   const employeeName=employeeRecord?.label||BSM.currentUser?.name||'';
   const employeeField=`<label>Employee<input id="allowance_employee_name" value="${esc(employeeName)}" readonly placeholder="Employee profile not linked"><input type="hidden" id="allowance_employee" value="${esc(employeeId)}"></label>`;
-  $('#bsm-content').html(`<div class="bsm-panel"><form id="bsm-allowance-form" enctype="multipart/form-data"><div class="bsm-form-grid">${employeeField}<label>Date<input type="date" class="bsm-date-input bsm-native-date" id="allowance_date" value="${esc(BSM.today||'')}" required></label>${selectHtml('allowance_type','Allowance Type','allowance_types','',true)}${selectHtml('allowance_site','Site Name','sites','',true)}<label>Customer Name<input type="text" id="allowance_customer_name" readonly placeholder="Auto from Site"></label><input type="hidden" id="allowance_customer_id"><label>Amount<input type="number" id="allowance_amount" step="0.01" required></label><div class="bsm-allowance-limit-box wide" id="bsm-allowance-limit-box" style="display:none"></div><label class="wide">Purpose<textarea id="allowance_purpose" required></textarea></label><label class="wide"><span class="bsm-field-label">Supporting Document</span><input type="file" id="allowance_document" accept="application/pdf,image/jpeg,image/png,image/webp"><small class="bsm-small-muted">Optional: bill, receipt or screenshot (PDF/JPG/PNG/WebP, max 10 MB).</small></label></div><div class="bsm-form-actions"><button type="submit" class="bsm-btn bsm-btn-primary">Submit</button></div></form></div>`);
+  $('#bsm-content').html(`<div class="bsm-panel"><form id="bsm-allowance-form" enctype="multipart/form-data"><div class="bsm-form-grid">${employeeField}<label>Date<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="allowance_date" value="${esc(BSM.today||'')}" required></label>${selectHtml('allowance_type','Allowance Type','allowance_types','',true)}${selectHtml('allowance_site','Site Name','sites','',true)}<label>Customer Name<input type="text" id="allowance_customer_name" readonly placeholder="Auto from Site"></label><input type="hidden" id="allowance_customer_id"><label>Amount<input type="number" id="allowance_amount" step="0.01" required></label><div class="bsm-allowance-limit-box wide" id="bsm-allowance-limit-box" style="display:none"></div><label class="wide">Purpose<textarea id="allowance_purpose" required></textarea></label><label class="wide"><span class="bsm-field-label">Supporting Document</span><input type="file" id="allowance_document" accept="application/pdf,image/jpeg,image/png,image/webp"><small class="bsm-small-muted">Optional: bill, receipt or screenshot (PDF/JPG/PNG/WebP, max 10 MB).</small></label></div><div class="bsm-form-actions"><button type="submit" class="bsm-btn bsm-btn-primary">Submit</button></div></form></div>`);
   if(!employeeId||!employeeRecord){$('#bsm-allowance-form button[type="submit"]').prop('disabled',true);$('#bsm-allowance-form .bsm-form-grid').prepend('<div class="wide bsm-error-list">Your login is not linked to an active Employee record. Please contact the administrator.</div>');}
   bsmSyncAllowanceCustomer();
 }
@@ -1038,7 +1224,7 @@ function bsmSyncAllowanceCustomer(){
 async function renderEmployeeAllowanceLimits(){
   setTitle('Employee Allowance Limit');
   const filters=`<div id="bsm-allowance-limit-filters" class="bsm-filters" style="display:none">${selectHtml('allowance_limit_employee','Employee','users','')}${selectHtml('allowance_limit_type','Allowance Type','allowance_types','')}<label>Status<select id="allowance_limit_status"><option value="">Select</option><option value="active">Active</option><option value="inactive">Inactive</option></select></label><button class="bsm-icon-btn bsm-payment-clear" id="allowance_limit_clear" title="Clear">×</button></div>`;
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-allowance-limit-search" class="bsm-search" placeholder="Search..."><button id="bsm-allowance-limit-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-allowance-limit-export')}<button id="bsm-add-allowance-limit" class="bsm-btn bsm-btn-primary">+</button></div>${filters}<div id="bsm-allowance-limit-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-allowance-limit-search" class="bsm-search" placeholder="Search"><button id="bsm-allowance-limit-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-allowance-limit-export')}<button id="bsm-add-allowance-limit" class="bsm-btn bsm-btn-primary">+</button></div>${filters}<div id="bsm-allowance-limit-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   await loadEmployeeAllowanceLimits();
 }
 async function loadEmployeeAllowanceLimits(exportAll=false){
@@ -1056,8 +1242,8 @@ async function exportEmployeeAllowanceLimits(){const rows=await loadEmployeeAllo
 async function renderAllowanceQueue(mode){
   const isAll=mode==='all';
   setTitle(isAll?'Allowance Master':(mode==='approval'?'Pending Allowance Approval':'Pending Allowance Payment'));
-  const filters=`<div id="bsm-allowance-filters" class="bsm-filters" style="display:none"><label>Date From<input type="date" class="bsm-date-input bsm-native-date" id="allowance_date_from"></label><label>Date To<input type="date" class="bsm-date-input bsm-native-date" id="allowance_date_to"></label>${selectHtml('allowance_filter_employee','Employee','users','')}${selectHtml('allowance_filter_type','Allowance Type','allowance_types','')}<button class="bsm-icon-btn bsm-payment-clear" id="allowance_clear" title="Clear">×</button></div>`;
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-allowance-search" class="bsm-search" placeholder="Search..."><button id="bsm-allowance-filter-toggle" class="bsm-icon-btn">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-allowance-export')}</div>${filters}<div id="bsm-allowance-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  const filters=`<div id="bsm-allowance-filters" class="bsm-filters" style="display:none"><label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="allowance_date_from"></label><label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="allowance_date_to"></label>${selectHtml('allowance_filter_employee','Employee','users','')}${selectHtml('allowance_filter_type','Allowance Type','allowance_types','')}<button class="bsm-icon-btn bsm-payment-clear" id="allowance_clear" title="Clear">×</button></div>`;
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-allowance-search" class="bsm-search" placeholder="Search"><button id="bsm-allowance-filter-toggle" class="bsm-icon-btn">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-allowance-export')}</div>${filters}<div id="bsm-allowance-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   App.allowanceMode=mode;await loadAllowanceQueue();
 }
 async function loadAllowanceQueue(exportAll=false){
@@ -1133,7 +1319,7 @@ async function openSalaryPayment(id){
 }
 
 async function renderDashboard(siteId=''){
-  setTitle('Site Dashboard','HO control panel');
+  setTitle('Dashboard','HO control panel');
   $('#bsm-content').html('<div class="bsm-loading">Loading…</div>');
   const r=await ajax('bsm_dashboard',{site_id:siteId||''});
   if(!r.success){$('#bsm-content').html('<div class="bsm-empty">Unable to load Dashboard.</div>');return;}
@@ -1338,26 +1524,24 @@ async function saveCompanySettings(){
 async function renderModule(key){
   const cfg=App.configs[key]; setTitle(cfg.title);
   const isMaster=masterModules.includes(key);
-  let toolbar=`<div class="bsm-toolbar"><input id="bsm-search" class="bsm-search" placeholder="Search..." value="${esc(App.search)}">${isMaster?'':`<button id="bsm-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button>`}<div class="bsm-spacer"></div>${excelButton()}<button id="bsm-add" class="bsm-btn bsm-btn-primary">+</button></div>`;
+  let toolbar=`<div class="bsm-toolbar"><input id="bsm-search" class="bsm-search" placeholder="Search" value="${esc(App.search)}">${isMaster?'':`<button id="bsm-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button>`}<div class="bsm-spacer"></div>${excelButton()}${key==='material_requisitions'?'':'<button id="bsm-add" class="bsm-btn bsm-btn-primary">+</button>'}</div>`;
   let filters=isMaster?'':`<div id="bsm-filters" class="bsm-filters ${key==='vendor_payments'?'bsm-payment-filters':''}" style="display:none">${commonFilters(key)}<button class="bsm-btn bsm-clear ${key==='vendor_payments'?'bsm-payment-clear':''}">Clear</button></div>`;
   $('#bsm-content').html(toolbar+filters+'<div id="bsm-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>'); await loadList(key);
 }
 function commonFilters(key){
   let h=''; if(['labour_attendance','material_requisitions','material_dispatches','site_receipts','site_consumptions','material_returns','site_opening_stock','site_fund_allocations','site_expenses','customer_receipts','vendor_payments','contractor_bills','contractor_payments','gst_invoices'].includes(key)) h+=selectHtml('filter_site','Site','sites','');
-  if(key==='customer_receipts') h+=selectHtml('filter_customer','Customer','customers','');
-  if(key==='customer_receipts') h+=selectHtml('filter_bank','Bank','receipt_banks','');
   if(key==='vendor_payments'){const allowanceOpts=(App.options.allowance_types||[]).map(x=>`<option value="allowance_${x.id}">${esc(x.label)}</option>`).join('');h+=`<label>Payment Type<select id="filter_payment_type"><option value="">Select</option><option value="head_office_vendor">Head Office Vendor Payment</option><option value="site_vendor">Vendor Payment for Site</option><option value="site_fund">Site Petty Cash Transfer</option><option value="contractor_payment">Labour Contractor Payment</option><option value="contractor_advance">Labour Contractor Advance</option><option value="salary">Salary</option>${allowanceOpts}</select></label>`;}
   if(['material_inwards'].includes(key)) h+=selectHtml('filter_vendor','Vendor','vendors','');
   if(['labour_attendance','contractor_bills','contractor_payments'].includes(key)) h+=selectHtml('filter_contractor','Contractor','contractors','');
   if(['material_inwards','material_dispatches'].includes(key)) h+=selectHtml('filter_warehouse','Warehouse','warehouses','');
   if(!['customers','sites','vendors','labour_contractors','item_categories','units','gst_rates','items','warehouses','expense_categories','company_settings'].includes(key)){
-    if(key==='vendor_payments') h+=`<label>Date From<input type="date" class="bsm-date-input bsm-native-date" id="filter_date_from"></label><label>Date To<input type="date" class="bsm-date-input bsm-native-date" id="filter_date_to"></label>`;
-    else h+=`<label>Date From<input type="date" class="bsm-date-input bsm-native-date" id="filter_date_from"></label><label>Date To<input type="date" class="bsm-date-input bsm-native-date" id="filter_date_to"></label>`;
+    if(key==='vendor_payments') h+=`<label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="filter_date_from"></label><label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="filter_date_to"></label>`;
+    else h+=`<label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="filter_date_from"></label><label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="filter_date_to"></label>`;
   }
   return h;
 }
 
-function currentListRequest(key,exportAll=false){const cfg=App.configs[key]||{};return {module:key,page:App.page,search:App.search,visible_columns:JSON.stringify((cfg.columns||[]).map(c=>({key:c.key,type:c.type||'text'}))),site_id:$('#filter_site').val()||'',vendor_id:$('#filter_vendor').val()||'',contractor_id:$('#filter_contractor').val()||'',customer_id:key==='customer_receipts'?($('#filter_customer').val()||''):'',bank_account_id:key==='customer_receipts'?($('#filter_bank').val()||''):'',warehouse_id:$('#filter_warehouse').val()||'',payment_type:$('#filter_payment_type').val()||'',date_from:dateSql($('#filter_date_from').val()||''),date_to:dateSql($('#filter_date_to').val()||''),export_all:exportAll?'1':''};}
+function currentListRequest(key,exportAll=false){const cfg=App.configs[key]||{};return {module:key,page:App.page,search:App.search,visible_columns:JSON.stringify((cfg.columns||[]).map(c=>({key:c.key,type:c.type||'text'}))),site_id:$('#filter_site').val()||'',vendor_id:$('#filter_vendor').val()||'',contractor_id:$('#filter_contractor').val()||'',warehouse_id:$('#filter_warehouse').val()||'',payment_type:$('#filter_payment_type').val()||'',date_from:dateSql($('#filter_date_from').val()||''),date_to:dateSql($('#filter_date_to').val()||''),export_all:exportAll?'1':''};}
 async function exportCurrentList(){
   if(App.current==='purchase_register'){
     const cfg=App.configs.material_inwards;
@@ -1390,6 +1574,13 @@ async function loadList(key){
 function selectHtml(id,label,type,val,required=false){ const arr=App.options[type]||[]; return `<label>${esc(label)}<select id="${id}" ${required?'required':''}><option value="">Select</option>${arr.map(x=>`<option value="${x.id}" ${String(x.id)===String(val)?'selected':''}>${esc(x.label)}</option>`).join('')}</select></label>`; }
 function fieldHtml(f,val=''){
   const req=f.required?'required':''; const ro=f.readonly?'readonly':''; const dis=f.readonly?'disabled':''; const wide=f.wide?'wide':''; const v=val==null?'':val; let input='';
+  if(f.type==='site_sections') {
+    const selected=new Set(String(v||'').split(',').map(x=>x.trim()).filter(Boolean));
+    const opts=(App.options.sections||[]);
+    const options=opts.map(o=>`<label class="bsm-site-section-option"><input type="checkbox" value="${esc(o.label)}" ${selected.has(String(o.label))?'checked':''}><span>${esc(o.label)}</span></label>`).join('');
+    const old=[...selected].filter(x=>!opts.some(o=>String(o.label)===x)).map(x=>`<label class="bsm-site-section-option"><input type="checkbox" value="${esc(x)}" checked><span>${esc(x)} (Existing)</span></label>`).join('');
+    return `<div class="bsm-site-section-field"><span class="bsm-field-label">Section</span><div class="bsm-site-section-multi"><button type="button" class="bsm-site-section-toggle">${selected.size?esc([...selected].join(', ')):'Select Sections'} <span>⌄</span></button><div class="bsm-site-section-menu"><input class="bsm-site-section-search" type="text" placeholder="Search Sections" autocomplete="off">${options}${old}${!opts.length&&!old?'<div class="bsm-site-section-empty">Add Sections in Section Master first.</div>':''}</div></div><input type="hidden" name="site_sections" value="${esc([...selected].join(', '))}"></div>`;
+  }
   if(f.type==='hidden') return `<input type="hidden" name="${f.name}" value="${esc(v)}">`;
   if(f.type==='display') input=`<input type="text" class="bsm-display-field bsm-display-${esc(f.name)}" value="${esc(v)}" readonly tabindex="-1" data-display-name="${esc(f.name)}">`;
   else if(f.type==='textarea')input=`<textarea name="${f.name}" ${req} ${ro}>${esc(v)}</textarea>`;
@@ -1398,7 +1589,7 @@ function fieldHtml(f,val=''){
     const select=`<select${nativeClass} name="${f.name}" ${req} ${dis}><option value="">Select</option>${bsmOptionsForRef(f.ref).map(x=>`<option value="${x.id}" ${(String(x.id)===String(v)||Number(x.id)===Number(v))?'selected':''}>${esc(x.label)}</option>`).join('')}</select>`;
     input=f.addMaster?`<div class="bsm-select-add">${select}<button type="button" class="bsm-quick-add" data-master="${esc(f.addMaster)}" data-target="${esc(f.name)}" title="Add new">+</button></div>`:select;
   } else if(f.type==='select') input=`<select name="${f.name}" ${req} ${dis}>${(f.options||[]).map(x=>`<option value="${esc(x[0])}" ${String(x[0])===String(v)?'selected':''}>${esc(x[1])}</option>`).join('')}</select>`;
-  else if(f.type==='date') input=`<input type="date" class="bsm-date-input bsm-native-date" name="${f.name}" value="${esc(normalizeDateInput(v))}" ${req} ${ro}>`;
+  else if(f.type==='date') input=`<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" name="${f.name}" value="${esc(normalizeDateInput(v))}" ${req} ${ro}>`;
   else {
     const isMobile=(f.name==='mobile'||f.name.endsWith('_mobile'));
     input=`<input type="${f.type||'text'}" name="${f.name}" value="${esc(v)}" ${req} ${ro} ${f.step?`step="${f.step}"`:''} ${f.min!=null?`min="${f.min}"`:''} ${isMobile?'inputmode="numeric" maxlength="10" pattern="[0-9]{10}" autocomplete="tel"':''}>`;
@@ -1468,7 +1659,6 @@ async function openForm(key,id=0){
   $('#bsm-form').attr('data-module',key).data('module',key);
   let row={}; if(id){const r=await ajax('bsm_get',{module:key,id});if(!r.success)return showToast(r.data?.message||'Not found',true);row=r.data;}
   $('#bsm-form-fields').removeClass('bsm-approval-summary bsm-requisition-summary bsm-dispatch-summary bsm-contractor-summary'); $('#bsm-modal-title').text((id?'Edit ':'Add ')+cfg.title.replace(/s$/,'')); const formFields=(!id&&(masterModules.includes(key)||key==='material_requisitions'))?cfg.fields.filter(f=>f.name!=='status'):cfg.fields; $('#bsm-form-fields').html(formFields.map(f=>fieldHtml(f,row[f.name]??defaultValue(f))).join(''));
-  if(key==='customer_receipts') refreshCustomerReceiptCustomer();
   if(key==='site_consumptions'){
     const entryBy=id?(row.created_by_name||BSM.currentUser?.name||''):(BSM.currentUser?.name||'');
     $('#bsm-form-fields .bsm-display-created_by_display').val(entryBy);
@@ -1578,6 +1768,49 @@ async function openForm(key,id=0){
   $('#bsm-modal').fadeIn(100);
 }
 
+
+// BOQ-restricted requisition items. BOQ quantity is informative; requisition
+// quantity is the existing requested_qty persisted by the original backend.
+let requisitionBoqItems = new Map();
+let requisitionBoqSite = '';
+let requisitionBoqRevision = 0;
+function applyRequisitionBoqRow($row){
+  if($('#bsm-form').data('module')!=='material_requisitions'||App.current!=='requisition_form') return;
+  const $select=$row.find('select[name="item_id"]');
+  if(!$select.length)return;
+  const chosen=String($select.val()||'');
+  $select.find('option').each(function(){
+    const id=String(this.value||'');
+    $(this).prop('disabled',Boolean(id)&&!requisitionBoqItems.has(id));
+  });
+  if(chosen&&!requisitionBoqItems.has(chosen))$select.val('');
+  const selected=String($select.val()||'');
+  const row=requisitionBoqItems.get(selected);
+  $row.find('.bsm-display-boq_qty_display').val(row && Number.isFinite(Number(row.qty)) ? Number(row.qty).toFixed(2) : '');
+  $row.find('.bsm-display-already_req_qty_display').val(row && Number.isFinite(Number(row.already)) ? Number(row.already).toFixed(2) : '');
+  bsmRefreshSearchableSelect($select[0]);
+  if(chosen!==selected)autoSelectUnitFromItem($row);
+}
+async function refreshRequisitionBoqItems(){
+  if($('#bsm-form').data('module')!=='material_requisitions'||App.current!=='requisition_form')return;
+  const site=String($('#bsm-form-fields select[name="site_id"]').val()||'');
+  const revision=++requisitionBoqRevision;
+  requisitionBoqSite=site;
+  requisitionBoqItems=new Map();
+  if(site){
+    const response=await ajax('bsm_requisition_boq_items',{site_id:site});
+    if(revision!==requisitionBoqRevision)return;
+    if(response.success){
+      (response.data.items||[]).forEach(row=>requisitionBoqItems.set(String(row.item_id),{qty:row.boq_qty,already:row.already_req_qty}));
+    }else showToast(response.data?.message||'Could not load BOQ items',true);
+  }
+  if(revision!==requisitionBoqRevision)return;
+  $('#bsm-lines-body .bsm-line').each(function(){applyRequisitionBoqRow($(this));});
+  if(site&&!requisitionBoqItems.size)showToast('No BOQ items found for this Site. Create a BOQ first.',true);
+}
+$(document).on('change','#bsm-form[data-module="material_requisitions"] #bsm-form-fields select[name="site_id"]',refreshRequisitionBoqItems);
+$(document).on('change','#bsm-form[data-module="material_requisitions"] #bsm-lines-body select[name="item_id"]',function(){applyRequisitionBoqRow($(this).closest('tr'));});
+
 function defaultValue(f){if(f.name.endsWith('_date')||['attendance_date','requisition_date','inward_date','dispatch_date','receipt_date','consumption_date','return_date','fund_date','expense_date','payment_date','bill_date','invoice_date'].includes(f.name))return BSM.today; if(f.name==='status')return 'active'; if(f.name==='paid_by')return 'HEAD_OFFICE'; return '';}
 function renderItems(cfg,items){
   const lineClass=(cfg===App.configs.material_requisitions)?' bsm-requisition-lines':((cfg===App.configs.material_inwards)?' bsm-purchase-lines':'');
@@ -1603,14 +1836,17 @@ function bsmSetSalesGstValue($tr,raw){
   });
   $gst.val(match||wanted);
 }
+// Let the Requisition Remarks cell grow vertically while typing; never change the column width.
+function bsmResizeRequisitionRemarks(el){
+  if(!el)return;
+  el.style.height='36px';
+  el.style.height=Math.max(36,Math.min(el.scrollHeight+2,220))+'px';
+}
+$(document).on('input change','#bsm-form[data-module="material_requisitions"] .bsm-requisition-lines textarea[name="remarks"]',function(){bsmResizeRequisitionRemarks(this);});
 function addLine(cfg,it={}){
   const hasActionColumn=(cfg!==App.configs.site_receipts);
   const consumptionDocumentCell=(cfg===App.configs.site_consumptions)?`<td class="bsm-col-document"><div class="bsm-consumption-doc-cell"><input type="file" class="bsm-consumption-document-file" accept="image/*,.pdf">${it.document_url?`<a class="bsm-consumption-doc-link" href="${esc(it.document_url)}" target="_blank" title="${esc(it.document_name||'View Document')}">View</a>`:''}</div></td>`:'';
   let h='<tr class="bsm-line">'+cfg.items.map(f=>{
-    if(cfg===App.configs.quotations && f.name==='image_attachment_id'){
-      const img=it.image_url||'';const full=it.image_full_url||img;
-      return `<td class="bsm-col-image_attachment_id"><div class="bsm-quote-image"><input type="hidden" name="image_attachment_id" value="${esc(it.image_attachment_id||'')}"><input type="hidden" name="id" value="${esc(it.id||'')}"><input class="bsm-quote-file" type="file" accept="image/jpeg,image/png,image/webp" hidden><button type="button" class="bsm-quote-choose" title="Upload or replace image">&#128247;</button><a class="bsm-quote-preview" href="${esc(full)}" target="_blank" ${img?'':'hidden'}>${img?`<img src="${esc(img)}" alt="Item image">`:''}</a><button type="button" class="bsm-quote-remove" title="Remove image" ${img?'':'hidden'}>×</button></div></td>`;
-    }
     // Return receipts must render their saved Unit as text, not a disabled/enhanced dropdown.
     // Keep its ID in a hidden input for the existing serialization process.
     if(cfg===App.configs.material_inwards && f.name==='unit_id' && it.return_qty!==undefined){
@@ -1623,6 +1859,7 @@ function addLine(cfg,it={}){
     return f.type==='hidden'?fieldHtml(f,it[f.name]??''):`<td class="bsm-col-${esc(f.name)}">${fieldHtml(Object.assign({},f,{label:''}),it[f.name]??'').replace('<label class="">','<label class="line-field">').replace('</label>','</label>')}</td>`;
   }).join('')+consumptionDocumentCell+(hasActionColumn?'<td class="bsm-line-actions"><button type="button" class="bsm-add-line-inline" title="Add Row">+</button><button type="button" class="bsm-remove-line" title="Remove Row">×</button></td>':'')+'</tr>';
   $('#bsm-lines-body').append(h);const $tr=$('#bsm-lines-body .bsm-line').last();
+  if(cfg===App.configs.material_requisitions){ applyRequisitionBoqRow($tr); bsmResizeRequisitionRemarks($tr.find('textarea[name="remarks"]')[0]); }
   bsmEnhanceSearchableSelects($tr[0]);
   const isSalesLine=(cfg===App.configs.quotations||cfg===App.configs.tax_invoices);
   if(isSalesLine)bsmSetSalesGstValue($tr,it.gst_rate);
@@ -1649,26 +1886,18 @@ function addLine(cfg,it={}){
   }
   if(cfg===App.configs.material_inwards){
     syncPurchaseItemPrice($tr);
-    // PO-linked receipts must use their saved PO item GST rate, not the Item Master rate.
-    // The saved rate can be absent from GST Rates Master; insert a matching option so
-    // the underlying select remains valid for calculation and form serialization.
+    // Purchase GST % is driven by Item Master. Keep the real select for saving/calculation,
+    // but show a simple read-only field so users cannot change it manually.
     const $gst=$tr.find('select[name="gst_rate"]');
     if($gst.length){
-      if(Number(it.purchase_order_item_id||0) && it.gst_rate!==null && it.gst_rate!==undefined && String(it.gst_rate).trim()!==''){
-        const wanted=Number(it.gst_rate);
-        let matched='';
-        $gst.find('option').each(function(){const v=String($(this).val()||'').trim();if(v!=='' && Number(v)===wanted){matched=v;return false;}});
-        if(!matched){matched=String(wanted);$gst.append($('<option>').val(matched).text(`${wanted}%`));}
-        $gst.val(matched);
-      }
       $gst.prop('disabled',false).addClass('bsm-purchase-gst-native');
       const $label=$gst.closest('label');
       $label.find('.bsm-searchable-select').hide();
       if(!$label.find('.bsm-purchase-gst-display').length){
         $label.append('<input type="text" class="bsm-purchase-gst-display" readonly tabindex="-1" aria-label="GST %">');
       }
-      const val=String($gst.val()??'').trim();
-      $label.find('.bsm-purchase-gst-display').val(val!==''?`${Number(val)}%`:'');
+      const val=String(it.gst_rate??'').trim();
+      if(val!=='') $label.find('.bsm-purchase-gst-display').val(`${Number(val)}%`);
     }
     // SGST: keep the real input for serialization, but use a dedicated readonly
     // display control. This avoids the recurring browser/UI issue where the real
@@ -1682,9 +1911,9 @@ function addLine(cfg,it={}){
       }
     }
 
-    // For PO-linked purchase lines preserve the GST % saved on that PO item.
-    // Do not overwrite it with the current Item Master rate during line rendering.
-    if(!Number(it.purchase_order_item_id||0)) syncPurchaseItemGst($tr);
+    // GST % is source-controlled by Item Master. This is important for PO-prefilled
+    // Purchase Forms because the Item dropdown is disabled and no change event fires.
+    syncPurchaseItemGst($tr);
     applyMaterialInwardGSTType($('#bsm-form').data('vendor-gst-type')||'no_gst');
     recalcMaterialInwardRow($tr);
   }
@@ -1888,10 +2117,8 @@ async function loadMaterialInwardVendorGST(vendorId){
   const r=await ajax('bsm_get',{module:'vendors',id:vendorId});
   applyMaterialInwardGSTType(r.success?(r.data?.gst_type||'no_gst'):'no_gst');
   $('#bsm-lines-body .bsm-line').each(function(){
-    const $tr=$(this);
-    // Vendor GST type changes affect tax split, not the saved PO GST percentage.
-    if(!Number($tr.find('[name="purchase_order_item_id"]').val()||0)) syncPurchaseItemGst($tr);
-    recalcMaterialInwardRow($tr);
+    syncPurchaseItemGst($(this));
+    recalcMaterialInwardRow($(this));
   });
 }
 function recalcMaterialInwardRow($tr){
@@ -1903,20 +2130,13 @@ function recalcMaterialInwardRow($tr){
   if(qtyRaw==='' || rateRaw===''){
     $tr.find('[name="taxable_amount"],[name="cgst_amount"],[name="sgst_amount"],[name="igst_amount"],[name="total_amount"]').val('');
     $tr.find('.bsm-purchase-sgst-display').val('');
+    if(type==='no_gst')$tr.find('[name="gst_rate"]').val('');
     recalcMaterialInwardTotals();
     return;
   }
   const qty=Number(qtyRaw), rate=Number(rateRaw);
   const taxable=Math.round(qty*rate*100)/100;
-  let gstRaw=String($tr.find('[name="gst_rate"]').val()||'').trim();
-  if(gstRaw==='' && Number($tr.find('[name="purchase_order_item_id"]').val()||0)){
-    const displayed=String($tr.find('.bsm-purchase-gst-display').val()||'').replace('%','').trim();
-    if(displayed!=='' && Number.isFinite(Number(displayed))){
-      const $sel=$tr.find('select[name="gst_rate"]');
-      gstRaw=displayed;
-      $sel.append($('<option>').val(displayed).text(`${Number(displayed)}%`)).val(displayed);
-    }
-  }
+  const gstRaw=String($tr.find('[name="gst_rate"]').val()||'').trim();
   let gst=type==='no_gst'?0:Number(gstRaw||0);
   let cgst=0,sgst=0,igst=0;
   if(type==='intra_state'){cgst=Math.round(taxable*gst/2)/100;sgst=cgst;}
@@ -1933,9 +2153,8 @@ function recalcMaterialInwardRow($tr){
       if(ov!=='' && Number(ov)===gst){ matched=ov; return false; }
     });
     $gst.val(matched || gstRaw);
-    $tr.find('.bsm-purchase-gst-display').val(`${Number(gst)}%`);
   }
-  // Preserve original PO GST rate even for a no-GST vendor; tax amounts remain zero.
+  else if(type==='no_gst')$tr.find('[name="gst_rate"]').val('');
   const setAmountField=(name,value)=>{
     const shown=value!==0?Number(value).toFixed(2):'';
     const $f=$tr.find(`[name="${name}"]`);
@@ -2140,7 +2359,6 @@ function syncPurchaseItemPrice($tr,force=false){
 
 function syncPurchaseItemGst($tr){
   if($('#bsm-form').data('module')!=='material_inwards') return;
-  if(Number($tr.find('[name="purchase_order_item_id"]').val()||0)) return;
   const itemId=String($tr.find('select[name="item_id"]').val()||'');
   const item=(App.options.items||[]).find(x=>String(x.id)===itemId);
   const $gst=$tr.find('select[name="gst_rate"]');
@@ -2356,21 +2574,14 @@ async function refreshAllConsumptionAvailability(){
 async function saveForm(){
   if(!validateMobileFields($('#bsm-form'))) return;
   const key=$('#bsm-form').data('module'),cfg=App.configs[key], data={id:App.editId}; $('#bsm-form-fields').find('input,select,textarea').each(function(){if(!this.name)return;data[this.name]=isDateFieldName(this.name)?dateSql($(this).val()):$(this).val();}); if(key==='material_inwards'){const $bottomRemarks=$('#bsm-line-items .bsm-inward-bottom-remarks textarea[name="remarks"]');if($bottomRemarks.length)data.remarks=$bottomRemarks.val();} if(!App.editId&&masterModules.includes(key))data.status='active'; if(!App.editId&&key==='material_requisitions')data.status='pending_approval'; if(key==='site_consumptions')data.status='approved';
-  if(key==='items'){
-    for(const [field,label] of [['item_name','Item Name'],['category_id','Category'],['unit_id','Unit']]){
-      if(!String(data[field]||'').trim()){
-        const $input=$('#bsm-form-fields [name="'+field+'"]').first();
-        $input.addClass('bsm-invalid').prop('required',true).trigger('focus');
-        showToast(field==='item_name'?'Please enter Item Name':'Please select '+label,true);
-        return;
-      }
-    }
-  }
   if(key==='material_inwards' && String(data.inward_type||'purchase')==='purchase' && !Number(data.purchase_order_id||0)){
     showToast('PO No. is required. Purchase cannot be entered without a Purchase Order.',true);
     return;
   }
   if(key==='material_requisitions'){
+    const site=String(data.site_id||'');
+    if(!site||site!==requisitionBoqSite){showToast('Select a Site and wait for BOQ items to load.',true);return;}
+    for(const item of (data._items||[])){if(!requisitionBoqItems.has(String(item.item_id||''))){showToast('Only items from this Site BOQ can be requisitioned.',true);return;}}
     const today=String(BSM.today||'');
     for(const nm of ['requisition_date','required_date']){
       const val=String(data[nm]||'');
@@ -2408,15 +2619,6 @@ async function saveForm(){
   const siteReceiptChallanFile=(key==='site_receipts')?($('#bsm-site-receipt-challan-file')[0]?.files?.[0]||null):null;
   const consumptionItemDocs=[];
   if(key==='site_consumptions'){$('#bsm-lines-body .bsm-line').each(function(){const file=$(this).find('.bsm-consumption-document-file')[0]?.files?.[0]||null;const itemId=$(this).find('[name="item_id"]').val()||'';if(file&&itemId)consumptionItemDocs.push({item_id:String(itemId),file});});}
-  if(key==='quotations'){
-    const imageRows=$('#bsm-lines-body .bsm-line');
-    for(let i=0;i<imageRows.length;i++){
-      const $r=$(imageRows[i]),file=$r.find('.bsm-quote-file')[0]?.files?.[0];if(!file)continue;
-      if(file.size>2097152 || !/image\/(jpeg|png|webp)/.test(file.type)){showToast('Only JPG, PNG or WebP images up to 2 MB are allowed.',true);return;}
-      const fd=new FormData();fd.append('action','bsm_quotation_image_upload');fd.append('nonce',BSM.nonce);fd.append('file',file);
-      try{const up=await $.ajax({url:BSM.ajax,method:'POST',data:fd,processData:false,contentType:false});if(!up.success){showToast(up.data?.message||'Image upload failed',true);return;}data._items[i].image_attachment_id=up.data.id;}catch(e){showToast('Image upload failed. Quotation was not saved.',true);return;}
-    }
-  }
   const r=await ajax('bsm_save',{module:key,data:JSON.stringify(data)}); if(r.success){
     let uploadFailed=false;
     if(paymentDocumentFile && r.data?.id){
@@ -2505,32 +2707,32 @@ async function saveForm(){
 
 
 function officeAttendanceRowHtml(x){const st=String(x.attendance_status||'').toUpperCase();return `<tr data-user-id="${x.user_id}"><td>${esc(x.name||'')}</td><td>${esc(x.designation||'')}</td><td><div class="bsm-attendance-actions"><div class="bsm-pa-toggle"><button type="button" class="bsm-pa-btn ${st==='P'?'active':''}" data-value="P">P</button><button type="button" class="bsm-pa-btn ${st==='A'?'active':''}" data-value="A">A</button><input type="hidden" class="bsm-pa-value" value="${esc(st)}"></div></div></td></tr>`;}
-async function renderOfficeDailyAttendance(){setTitle('Daily Attendance');const t=new Date(),today=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;$('#bsm-content').html(`<div class="bsm-panel bsm-office-attendance-panel"><div class="bsm-toolbar bsm-office-att-toolbar"><label class="bsm-inline-date-label">Date<input type="date" class="bsm-date-input bsm-native-date" id="bsm-office-att-date" value="${today}"></label><button type="button" class="bsm-btn" id="bsm-office-mark-all-p">Mark All P</button><div class="bsm-spacer"></div><button type="button" class="bsm-btn bsm-btn-primary" id="bsm-office-att-submit">Submit</button></div><div id="bsm-office-att-list"><div class="bsm-loading">Loading…</div></div></div>`);await loadOfficeDailyAttendance();}
+async function renderOfficeDailyAttendance(){setTitle('Daily Attendance');const t=new Date(),today=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;$('#bsm-content').html(`<div class="bsm-panel bsm-office-attendance-panel"><div class="bsm-toolbar bsm-office-att-toolbar"><label class="bsm-inline-date-label">Date<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="bsm-office-att-date" value="${today}"></label><button type="button" class="bsm-btn" id="bsm-office-mark-all-p">Mark All P</button><div class="bsm-spacer"></div><button type="button" class="bsm-btn bsm-btn-primary" id="bsm-office-att-submit">Submit</button></div><div id="bsm-office-att-list"><div class="bsm-loading">Loading…</div></div></div>`);await loadOfficeDailyAttendance();}
 async function loadOfficeDailyAttendance(){const r=await ajax('bsm_office_attendance_day',{date:$('#bsm-office-att-date').val()||''});if(!r.success){$('#bsm-office-att-list').html('<div class="bsm-empty">Unable to load attendance.</div>');return;}const rows=r.data.rows||[];let h='<div class="bsm-table-wrap"><table class="bsm-office-att-table"><thead><tr><th>User</th><th>Designation</th><th>Attendance</th></tr></thead><tbody>';rows.forEach(x=>h+=officeAttendanceRowHtml(x));if(!rows.length)h+='<tr><td colspan="3" class="bsm-empty">No active employees found.</td></tr>';h+='</tbody></table></div>';$('#bsm-office-att-list').html(h);}
 async function saveOfficeDailyAttendance(){const rows=[];let missing=false;$('#bsm-office-att-list tbody tr[data-user-id]').each(function(){const userId=Number($(this).data('user-id'));const st=$(this).find('.bsm-pa-value').val();if(!st)missing=true;rows.push({user_id:userId,status:st});});if(missing){showToast('Please mark Present or Absent for every employee.',true);return;}if(!rows.length){showToast('No attendance users found.',true);return;}const r=await ajax('bsm_office_attendance_save',{date:$('#bsm-office-att-date').val()||'',rows:JSON.stringify(rows)});if(r.success){showToast(r.data.message||'Attendance saved');await loadOfficeDailyAttendance();}else showToast(r.data?.message||'Unable to save attendance',true);}
-async function renderOfficeAttendanceMaster(){setTitle('Attendance Master');const filters=`<div id="bsm-office-att-master-filters" class="bsm-filters" style="display:none"><label>Date From<input type="date" class="bsm-date-input bsm-native-date" id="office_att_date_from"></label><label>Date To<input type="date" class="bsm-date-input bsm-native-date" id="office_att_date_to"></label>${selectHtml('office_att_user','User','users','')}<label>Status<select id="office_att_status"><option value="">Select</option><option value="P">Present</option><option value="A">Absent</option></select></label><button class="bsm-icon-btn bsm-purchase-clear-btn" id="office_att_clear" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button></div>`;$('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-office-att-search" class="bsm-search" placeholder="Search..."><button id="bsm-office-att-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-office-att-export')}</div>${filters}<div id="bsm-office-att-master-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);await loadOfficeAttendanceMaster();}
+async function renderOfficeAttendanceMaster(){setTitle('Attendance Master');const filters=`<div id="bsm-office-att-master-filters" class="bsm-filters" style="display:none"><label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="office_att_date_from"></label><label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="office_att_date_to"></label>${selectHtml('office_att_user','User','users','')}<label>Status<select id="office_att_status"><option value="">Select</option><option value="P">Present</option><option value="A">Absent</option></select></label><button class="bsm-icon-btn bsm-purchase-clear-btn" id="office_att_clear" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button></div>`;$('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-office-att-search" class="bsm-search" placeholder="Search Attendance"><button id="bsm-office-att-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-office-att-export')}</div>${filters}<div id="bsm-office-att-master-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);await loadOfficeAttendanceMaster();}
 async function loadOfficeAttendanceMaster(exportAll=false){const r=await ajax('bsm_office_attendance_master',{page:exportAll?1:App.page,export_all:exportAll?'1':'',search:$('#bsm-office-att-search').val()||'',date_from:dateSql($('#office_att_date_from').val()||''),date_to:dateSql($('#office_att_date_to').val()||''),user_id:$('#office_att_user').val()||'',status:$('#office_att_status').val()||''});if(!r.success){if(!exportAll)$('#bsm-office-att-master-list').html('<div class="bsm-empty">Unable to load Attendance Master.</div>');return null;}if(exportAll)return r.data.rows||[];const rows=r.data.rows||[];let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>Date</th><th>User</th><th>Designation</th><th>Attendance</th></tr></thead><tbody>';rows.forEach((x,i)=>{h+=`<tr><td>${(r.data.page-1)*20+i+1}</td><td>${dateFmt(x.attendance_date)}</td><td>${esc(x.name||'')}</td><td>${esc(x.designation||'')}</td><td><span class="bsm-pill">${x.attendance_status==='P'?'Present':'Absent'}</span></td></tr>`});if(!rows.length)h+='<tr><td colspan="5" class="bsm-empty">No attendance records found.</td></tr>';h+='</tbody></table></div>';if(r.data.pages>1)h+=`<div class="bsm-pagination"><button class="bsm-btn page-prev" ${r.data.page<=1?'disabled':''}>Previous</button><span>Page ${r.data.page} of ${r.data.pages}</span><button class="bsm-btn page-next" ${r.data.page>=r.data.pages?'disabled':''}>Next</button></div>`;$('#bsm-office-att-master-list').html(h);return rows;}
 async function exportOfficeAttendanceMaster(){const rows=await loadOfficeAttendanceMaster(true);if(!rows)return;downloadExcelFile('Attendance Master',['Sl','Date','User','Designation','Attendance'],rows.map((x,i)=>[i+1,dateFmt(x.attendance_date),x.name||'',x.designation||'',x.attendance_status==='P'?'Present':'Absent']));}
 async function renderOfficeMonthlySalary(){setTitle('Monthly Salary');const n=new Date(),month=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;$('#bsm-content').html(`<div class="bsm-toolbar"><label class="bsm-inline-date-label">Month<input type="month" id="bsm-salary-month" value="${month}"></label><div class="bsm-spacer"></div>${excelButton('bsm-salary-export')}</div><div class="bsm-panel"><div class="bsm-salary-note">Payable Salary = applicable Monthly Salary ÷ calendar days in the selected month × Present Days. Salary effective date is applied day-wise.</div><div id="bsm-salary-list"><div class="bsm-loading">Loading…</div></div></div>`);await loadOfficeMonthlySalary();}
-async function loadOfficeMonthlySalary(exportOnly=false){const r=await ajax('bsm_monthly_salary',{month:$('#bsm-salary-month').val()||'',page:exportOnly?1:bsmPage('office_monthly_salary'),export_all:exportOnly?'1':''});if(!r.success){if(!exportOnly)$('#bsm-salary-list').html('<div class="bsm-empty">Unable to calculate salary.</div>');return null;}const rows=r.data.rows||[];if(exportOnly)return rows;let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>User</th><th>Designation</th><th class="num">Monthly Salary</th><th class="num">Present Days</th><th class="num">Absent Days</th><th class="num">Marked Days</th><th class="num">Payable Salary</th></tr></thead><tbody>';rows.forEach((x,i)=>h+=`<tr><td>${(r.data.page-1)*20+i+1}</td><td>${esc(x.name||'')}</td><td>${esc(x.designation||'')}</td><td class="num">${moneyFmt(x.monthly_salary)}</td><td class="num">${x.present_days}</td><td class="num">${x.absent_days}</td><td class="num">${x.marked_days}</td><td class="num">${moneyFmt(x.payable_salary)}</td></tr>`);if(!rows.length)h+='<tr><td colspan="9" class="bsm-empty">No attendance-applicable users found.</td></tr>';h+='</tbody></table></div>'+bsmPager('office_monthly_salary',r.data);$('#bsm-salary-list').html(h);return rows;}
+async function loadOfficeMonthlySalary(exportOnly=false){const r=await ajax('bsm_monthly_salary',{month:$('#bsm-salary-month').val()||''});if(!r.success){if(!exportOnly)$('#bsm-salary-list').html('<div class="bsm-empty">Unable to calculate salary.</div>');return null;}const rows=r.data.rows||[];if(exportOnly)return rows;let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>User</th><th>Designation</th><th class="num">Monthly Salary</th><th class="num">Present Days</th><th class="num">Absent Days</th><th class="num">Marked Days</th><th class="num">Payable Salary</th></tr></thead><tbody>';rows.forEach((x,i)=>h+=`<tr><td>${i+1}</td><td>${esc(x.name||'')}</td><td>${esc(x.designation||'')}</td><td class="num">${moneyFmt(x.monthly_salary)}</td><td class="num">${x.present_days}</td><td class="num">${x.absent_days}</td><td class="num">${x.marked_days}</td><td class="num">${moneyFmt(x.payable_salary)}</td></tr>`);if(!rows.length)h+='<tr><td colspan="9" class="bsm-empty">No attendance-applicable users found.</td></tr>';h+='</tbody></table></div>';$('#bsm-salary-list').html(h);return rows;}
 async function exportOfficeMonthlySalary(){const rows=await loadOfficeMonthlySalary(true);if(!rows)return;downloadExcelFile('Monthly Salary '+($('#bsm-salary-month').val()||''),['Sl','User','Designation','Monthly Salary','Present Days','Absent Days','Marked Days','Payable Salary'],rows.map((x,i)=>[i+1,x.name||'',x.designation||'',x.monthly_salary||0,x.present_days||0,x.absent_days||0,x.marked_days||0,x.payable_salary||0]));}
 
 function userRoleLabel(role){return role==='bsm_employee'?'Employee':'Admin';}
 async function renderUsers(){
   setTitle('Users');
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-user-search" class="bsm-search" placeholder="Search..." value="${esc(App.search)}"><div class="bsm-spacer"></div>${excelButton('bsm-user-export-excel')}<button id="bsm-user-add" class="bsm-btn bsm-btn-primary">+</button></div><div id="bsm-user-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-user-search" class="bsm-search" placeholder="Search Users" value="${esc(App.search)}"><div class="bsm-spacer"></div>${excelButton('bsm-user-export-excel')}<button id="bsm-user-add" class="bsm-btn bsm-btn-primary">+</button></div><div id="bsm-user-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   await loadUserList();
 }
 async function loadUserList(){
   const $list=$('#bsm-user-list');
   if(!$list.length)return;
-  const r=await ajax('bsm_user_list',{search:App.search,page:bsmPage('users')});
+  const r=await ajax('bsm_user_list',{search:App.search});
   if(!r.success){const msg=r.data?.message||'Unable to load users';$list.html(`<div class="bsm-empty">${esc(msg)}</div>`);showToast(msg,true);return;}
   App.userRows=r.data.rows||[];
   let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>User ID</th><th>Name</th><th>Email</th><th>Role</th><th>Designation</th><th>Mobile</th><th>Attendance</th><th class="num">Salary</th><th>Effective Date</th><th>Status</th><th>Action</th></tr></thead><tbody>';
-  (r.data.rows||[]).forEach((x,i)=>h+=`<tr><td>${(r.data.page-1)*20+i+1}</td><td>${esc(x.user_id)}</td><td>${esc(x.name)}</td><td>${esc(x.email)}</td><td>${esc(userRoleLabel(x.role))}</td><td>${esc(x.designation)}</td><td>${esc(x.mobile||'')}</td><td>${Number(x.attendance_applicable||0)===1?'Yes':'No'}</td><td class="num">${Number(x.attendance_applicable||0)===1?moneyFmt(x.salary):''}</td><td>${Number(x.attendance_applicable||0)===1?dateFmt(x.salary_effective_date):''}</td><td><span class="bsm-pill">${esc(x.status)}</span></td><td class="bsm-actions"><button class="bsm-user-edit" data-row='${esc(JSON.stringify(x))}' title="Edit">✎</button><button class="bsm-user-delete bsm-action-delete" data-id="${x.id}" title="Delete"><img class="bsm-delete-icon" src="${BSM.deleteIcon}" alt="Delete"></button></td></tr>`);
-  if(!(r.data.rows||[]).length)h+='<tr><td colspan="13" class="bsm-empty">No records found.</td></tr>';
-  h+='</tbody></table></div>'+bsmPager('users',r.data);
+  (r.data.rows||[]).forEach((x,i)=>h+=`<tr><td>${i+1}</td><td>${esc(x.user_id)}</td><td>${esc(x.name)}</td><td>${esc(x.email)}</td><td>${esc(userRoleLabel(x.role))}</td><td>${esc(x.designation)}</td><td>${esc(x.mobile||'')}</td><td>${Number(x.attendance_applicable||0)===1?'Yes':'No'}</td><td class="num">${Number(x.attendance_applicable||0)===1?moneyFmt(x.salary):''}</td><td>${Number(x.attendance_applicable||0)===1?dateFmt(x.salary_effective_date):''}</td><td><span class="bsm-pill">${esc(x.status)}</span></td><td class="bsm-actions"><button class="bsm-user-edit" data-row='${esc(JSON.stringify(x))}' title="Edit">✎</button><button class="bsm-user-delete bsm-action-delete" data-id="${x.id}" title="Delete"><img class="bsm-delete-icon" src="${BSM.deleteIcon}" alt="Delete"></button></td></tr>`);
+  if(!(r.data.rows||[]).length)h+='<tr><td colspan="12" class="bsm-empty">No records found.</td></tr>';
+  h+='</tbody></table></div>';
   $list.html(h);
 }
 async function openUserForm(row={}){
@@ -2566,10 +2768,8 @@ function renderUserAccess(row={}){
   const allowedSaved=parseJsonArray(row.allowed_views);const allowed=new Set((allowedSaved.length?allowedSaved:allUserViews().map(v=>v.key)).map(String));
   const siteRows=(App.options.sites||[]);
   const siteHtml=`<div class="bsm-access-sites"><span class="bsm-field-label">Site</span><div class="bsm-multiselect" id="bsm-user-sites"><div class="bsm-multiselect-control"><input type="text" class="bsm-multiselect-search" placeholder="Search and select Sites" autocomplete="off"><span>⌄</span></div><div class="bsm-multiselect-menu">${siteRows.map(s=>`<label class="bsm-multiselect-option"><input type="checkbox" value="${esc(s.id)}" ${selectedSites.has(String(s.id))?'checked':''}><span>${esc(s.label)}</span></label>`).join('')}</div><div class="bsm-multiselect-selected"></div></div></div>`;
-  const groupedViews=new Map();
-  allUserViews().forEach(v=>{if(!groupedViews.has(v.group))groupedViews.set(v.group,[]);groupedViews.get(v.group).push(v);});
-  const viewHtml=`<div class="bsm-permissions-heading">View Permissions</div><div class="bsm-access-groups">${Array.from(groupedViews,([group,views],index)=>`<section class="bsm-access-section" data-permission-group="${index}"><div class="bsm-access-section-head"><span>${esc(group)}</span><label class="bsm-access-group-toggle" title="Select or deselect all views in ${esc(group)}"><input type="checkbox" class="bsm-access-select-all" aria-label="Select all ${esc(group)} views" ${views.every(v=>allowed.has(v.key))?'checked':''}></label></div><div class="bsm-access-section-items">${views.map(v=>`<label class="bsm-access-view"><span>${esc(v.label)}</span><input type="checkbox" class="bsm-view-permission" value="${esc(v.key)}" ${allowed.has(v.key)?'checked':''}></label>`).join('')}</div></section>`).join('')}</div>`;
-  $box.html(siteHtml+viewHtml).show();updateUserSiteChips();syncAccessGroupCheckboxes();
+  const viewHtml=`<div class="bsm-access-table"><table><thead><tr><th>View</th><th>Action</th></tr></thead><tbody>${allUserViews().map(v=>`<tr><td><span class="bsm-access-group">${esc(v.group)}</span> - ${esc(v.label)}</td><td><input type="checkbox" class="bsm-view-permission" value="${esc(v.key)}" ${allowed.has(v.key)?'checked':''}></td></tr>`).join('')}</tbody></table></div>`;
+  $box.html(siteHtml+viewHtml).show();updateUserSiteChips();
 }
 function updateUserSiteChips(){const names=[];$('#bsm-user-sites input[type="checkbox"]:checked').each(function(){names.push($(this).closest('label').find('span').text())});$('#bsm-user-sites .bsm-multiselect-selected').text(names.length?names.join(', '):'');}
 async function saveUser(){
@@ -2585,17 +2785,6 @@ async function saveUser(){
 $(document).on('change','#bsm-form[data-module="users"] select[name="role"]',function(){renderUserAccess({assigned_sites:'[]',allowed_views:'[]'});});
 $(document).on('click','.bsm-multiselect-control',function(e){$(this).parent().toggleClass('open');$(this).find('input').trigger('focus');});
 $(document).on('input','.bsm-multiselect-search',function(){const q=$(this).val().toLowerCase();$(this).closest('.bsm-multiselect').find('.bsm-multiselect-option').each(function(){$(this).toggle($(this).text().toLowerCase().includes(q));});});
-function syncAccessGroupCheckboxes(){
-  $('#bsm-user-access .bsm-access-section').each(function(){
-    const boxes=$(this).find('.bsm-view-permission');const checked=boxes.filter(':checked').length;
-    $(this).find('.bsm-access-select-all').prop('checked',checked===boxes.length).prop('indeterminate',checked>0&&checked<boxes.length);
-  });
-}
-$(document).on('change','#bsm-user-access .bsm-access-select-all',function(){
-  $(this).closest('.bsm-access-section').find('.bsm-view-permission').prop('checked',this.checked);
-  syncAccessGroupCheckboxes();
-});
-$(document).on('change','#bsm-user-access .bsm-view-permission',syncAccessGroupCheckboxes);
 $(document).on('change','#bsm-user-sites input[type="checkbox"]',updateUserSiteChips);
 $(document).on('click',function(e){if(!$(e.target).closest('.bsm-multiselect').length)$('.bsm-multiselect').removeClass('open');});
 
@@ -2607,8 +2796,8 @@ function quickAddMaster(master,target){
     $('#bsm-quick-title').text('Add Item');
     const body=`<div class="bsm-form-grid bsm-quick-item-grid">
       ${fieldHtml(F('item_name','Item Name',{required:true}), '')}
-      ${fieldHtml(F('category_id','Category',Object.assign({required:true},ref('categories'))), '')}
-      ${fieldHtml(F('unit_id','Unit',Object.assign({required:true},ref('units'))), '')}
+      ${fieldHtml(F('category_id','Category',ref('categories')), '')}
+      ${fieldHtml(F('unit_id','Unit',ref('units')), '')}
       ${fieldHtml(F('hsn_code','HSN Code'), '')}
       ${fieldHtml(F('gst_rate','GST Rate %',ref('gst_rates')), '')}
       ${fieldHtml(F('opening_qty','Opening Qty',qty), '')}
@@ -2640,12 +2829,6 @@ async function saveQuickMaster(){
     label='Item';type='items';
     $('#bsm-quick-body').find('input,select,textarea').each(function(){data[this.name]=$(this).val();});
     if(!String(data.item_name||'').trim()){ $('#bsm-quick-msg').text('Item Name is required'); return; }
-    for(const [field,label] of [['category_id','Category'],['unit_id','Unit']]){
-      if(!String(data[field]||'').trim()){
-        $('#bsm-quick-body [name="'+field+'"]').addClass('bsm-invalid').trigger('focus');
-        $('#bsm-quick-msg').text('Please select '+label);return;
-      }
-    }
     data.status='active';
   }else if(master==='gst_rates'){
     label='GST Rate';type='gst_rates';
@@ -2716,14 +2899,14 @@ function requisitionItemsSyncCategoryFromItem(){
 async function renderMaterialRequisitionItem(){
   setTitle('Requisition Item Master');
   const filters=`<div id="bsm-requisition-items-filters" class="bsm-filters" style="display:none">
-    <label>Date From<input type="date" class="bsm-date-input bsm-native-date" id="requisition_items_date_from"></label>
-    <label>Date To<input type="date" class="bsm-date-input bsm-native-date" id="requisition_items_date_to"></label>
+    <label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="requisition_items_date_from"></label>
+    <label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="requisition_items_date_to"></label>
     ${selectHtml('requisition_items_site','Site','sites','')}
     ${selectHtml('requisition_items_category','Item Category','categories','')}
     ${selectHtml('requisition_items_item','Item','items','')}
     <button class="bsm-icon-btn bsm-purchase-clear-btn" id="requisition_items_clear_filters" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button>
   </div>`;
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-requisition-items-search" class="bsm-search" placeholder="Search..."><button id="bsm-requisition-items-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-requisition-items-export')}</div>${filters}<div id="bsm-requisition-items-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-requisition-items-search" class="bsm-search" placeholder="Search Requisition Item Master"><button id="bsm-requisition-items-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-requisition-items-export')}</div>${filters}<div id="bsm-requisition-items-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   requisitionItemsFilterItemOptions();await loadMaterialRequisitionItem();
 }
 async function loadMaterialRequisitionItem(exportAll=false){
@@ -2751,7 +2934,7 @@ async function exportMaterialRequisitionItem(){
 
 function drawPendingApproval(){const rows=filterVisibleRows(App.pendingApprovalRows||[],['requisition_no',x=>dateFmt(x.requisition_date),'site_name',x=>dateFmt(x.required_date),'requested_by_name','item_count'],App.specialSearch||'');let h='<div class="bsm-table-wrap"><table id="bsm-pending-approval-table"><thead><tr><th>Sl</th><th>Req. No.</th><th>Date</th><th>Site</th><th>Required Date</th><th>Requested By</th><th>Items</th><th>Action</th></tr></thead><tbody>';rows.forEach((x,i)=>h+=`<tr class="bsm-pending-approval-row" data-id="${x.id}" tabindex="0" aria-expanded="false" title="Click to view requisition items"><td>${i+1}</td><td>${esc(x.requisition_no)}</td><td>${dateFmt(x.requisition_date)}</td><td>${esc(x.site_name)}</td><td>${dateFmt(x.required_date)}</td><td>${esc(x.requested_by_name)}</td><td>${esc(x.item_count)}</td><td><button class="bsm-btn bsm-btn-small bsm-btn-success bsm-review-req" data-id="${x.id}">Approve</button></td></tr>`);if(!rows.length)h+='<tr><td colspan="9" class="bsm-empty">No requisitions pending approval.</td></tr>';h+='</tbody></table></div>';$('#bsm-pending-approval').html(h);}
 async function renderPendingApproval(){
-  setTitle('Pending Approval');App.specialSearch='';$('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-special-search" class="bsm-search" placeholder="Search..."><div class="bsm-spacer"></div>${excelButton('bsm-pending-approval-excel')}</div><div id="bsm-pending-approval" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  setTitle('Pending Approval');App.specialSearch='';$('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-special-search" class="bsm-search" placeholder="Search"><div class="bsm-spacer"></div>${excelButton('bsm-pending-approval-excel')}</div><div id="bsm-pending-approval" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   const r=await ajax('bsm_pending_approval');if(!r.success)return;App.pendingApprovalRows=r.data.rows||[];drawPendingApproval();
 }
 async function openApprovalForm(id){
@@ -2782,23 +2965,12 @@ $(document).on('click','#bsm-site-stock-popup',function(e){if(e.target===this)$(
 $(document).on('keydown',function(e){if(e.key==='Escape'&&$('#bsm-site-stock-popup').length){e.stopPropagation();$('#bsm-site-stock-popup').remove();}});
 
 async function saveApproval(){
-  const items=[];let invalid=false;
-  // v0.1.502: Use the HO stock displayed for each approval item. Only
-  // navigate to Pending PO if an approved item exceeds its HO stock.
-  const stockByItemId=new Map((App.approvalStockItems||[]).map(it=>[String(it.id),Number(it.current_ho_stock||0)]));
-  let needsPurchaseOrder=false;
-  $('#bsm-approval-lines tr').each(function(){
-    const rq=Number($(this).data('requested')||0),$inp=$(this).find('.bsm-approved-qty'),aq=Number($inp.val()||0);
-    const itemId=String($(this).data('id'));
-    if(!Number.isFinite(aq)||aq<0||aq>rq){$inp.addClass('bsm-invalid');invalid=true;}
-    items.push({id:itemId,approved_qty:aq});
-    if(aq>0.0001&&stockByItemId.has(itemId)&&aq>stockByItemId.get(itemId)+0.0001)needsPurchaseOrder=true;
-  });
+  const items=[];let invalid=false;$('#bsm-approval-lines tr').each(function(){const rq=Number($(this).data('requested')||0),$inp=$(this).find('.bsm-approved-qty'),aq=Number($inp.val()||0);if(aq<0||aq>rq){$inp.addClass('bsm-invalid');invalid=true;}items.push({id:$(this).data('id'),approved_qty:aq});});
   if(invalid){showToast('Approved Qty cannot exceed Requested Qty',true);return;}
   const decidedId=App.editId;
   const r=await ajax('bsm_requisition_approval_save',{id:decidedId,items:JSON.stringify(items)});
   if(r.success){
-    showToast('Requisition approved successfully.');
+    showToast(r.data.message);
     $('#bsm-modal').hide();
     // A decided requisition must disappear from Pending Approval immediately.
     App.pendingApprovalRows=(App.pendingApprovalRows||[]).filter(x=>String(x.id)!==String(decidedId));
@@ -2808,9 +2980,8 @@ async function saveApproval(){
       $('#bsm-pending-approval tbody').html('<tr><td colspan="9" class="bsm-empty">No requisitions pending approval.</td></tr>');
     }
     delete App.options.requisitions;
-    // If any approved quantity exceeds displayed HO stock, open the pending
-    // purchase-order view; otherwise return to the approval queue.
-    await openView(needsPurchaseOrder?'pending_po_items':'pending_requisition_approval');
+    // Continue the requisition workflow to procurement shortage review.
+    await openView('pending_po_items');
   }else showToast(r.data?.message||'Unable to save approval',true);
 }
 
@@ -2856,7 +3027,7 @@ async function toggleConsumptionDetails($row){
 }
 function drawPendingDispatch(){const rows=filterVisibleRows(App.pendingDispatchRows||[],['requisition_no','site_name',x=>dateFmt(x.required_date),'approved_qty','dispatched_qty','pending_qty'],App.specialSearch||'');let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>Req. No.</th><th>Site</th><th>Required Date</th><th class="num">Approved Qty</th><th class="num">Dispatched Qty</th><th class="num">Pending Qty</th><th>Action</th></tr></thead><tbody>';rows.forEach((x,i)=>h+=`<tr class="bsm-pending-dispatch-row" data-id="${x.id}" tabindex="0" aria-expanded="false" title="Click to view pending dispatch items"><td>${i+1}</td><td>${esc(x.requisition_no)}</td><td>${esc(x.site_name)}</td><td>${dateFmt(x.required_date)}</td><td class="num">${Number(x.approved_qty||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</td><td class="num">${Number(x.dispatched_qty||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</td><td class="num">${Number(x.pending_qty||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</td><td><button class="bsm-btn bsm-btn-small bsm-btn-dispatch bsm-dispatch-req" data-id="${x.id}">Dispatch</button></td></tr>`);if(!rows.length)h+='<tr><td colspan="9" class="bsm-empty">No approved material pending dispatch.</td></tr>';h+='</tbody></table></div>';$('#bsm-pending-dispatch').html(h);}
 async function renderPendingDispatch(){
-  setTitle('Pending Dispatch');App.specialSearch='';$('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-special-search" class="bsm-search" placeholder="Search..."><div class="bsm-spacer"></div>${excelButton('bsm-pending-dispatch-excel')}</div><div id="bsm-pending-dispatch" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  setTitle('Pending Dispatch');App.specialSearch='';$('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-special-search" class="bsm-search" placeholder="Search"><div class="bsm-spacer"></div>${excelButton('bsm-pending-dispatch-excel')}</div><div id="bsm-pending-dispatch" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   const r=await ajax('bsm_pending_dispatch');if(!r.success)return;App.pendingDispatchRows=r.data.rows||[];drawPendingDispatch();
 }
 async function openDispatchFromRequisition(id){
@@ -2908,7 +3079,7 @@ function drawPendingMaterialReceipt(){
 }
 async function renderPendingMaterialReceipt(){
   setTitle('Pending Site Return Approval');App.specialSearch='';
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-special-search" class="bsm-search" placeholder="Search..."><div class="bsm-spacer"></div>${excelButton('bsm-pending-material-receipt-excel')}</div><div id="bsm-pending-material-receipt" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-special-search" class="bsm-search" placeholder="Search"><div class="bsm-spacer"></div>${excelButton('bsm-pending-material-receipt-excel')}</div><div id="bsm-pending-material-receipt" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   const r=await ajax('bsm_pending_material_returns',{search:''});
   App.pendingMaterialReceiptRows=r.success?(r.data.rows||[]):[];drawPendingMaterialReceipt();
 }
@@ -2927,8 +3098,8 @@ function drawPendingSiteReceipt(){
   h+='</tbody></table></div>';$('#bsm-pending-site-receipt').html(h);
 }
 async function renderPendingSiteReceipt(){
-  setTitle('Pending Site Material Receipt');App.specialSearch='';
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-special-search" class="bsm-search" placeholder="Search..."><div class="bsm-spacer"></div>${excelButton('bsm-pending-site-receipt-excel')}</div><div id="bsm-pending-site-receipt" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  setTitle('Ordered but Not Received');App.specialSearch='';
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-special-search" class="bsm-search" placeholder="Search"><div class="bsm-spacer"></div>${excelButton('bsm-pending-site-receipt-excel')}</div><div id="bsm-pending-site-receipt" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   // Pending means: dispatched, but there is NO Site Receipt record against that dispatch.
   // We deliberately check the receipt table instead of trusting dispatch.status so legacy
   // dispatches received before the status-sync logic was introduced are also excluded.
@@ -2971,14 +3142,14 @@ function siteReceiptItemsSyncCategoryFromItem(){
 async function renderSiteMaterialItemReceipt(){
   setTitle('Material Receipts Item Master');
   const filters=`<div id="bsm-site-receipt-items-filters" class="bsm-filters" style="display:none">
-    <label>Date From<input type="date" class="bsm-date-input bsm-native-date" id="site_receipt_items_date_from"></label>
-    <label>Date To<input type="date" class="bsm-date-input bsm-native-date" id="site_receipt_items_date_to"></label>
+    <label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="site_receipt_items_date_from"></label>
+    <label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="site_receipt_items_date_to"></label>
     ${selectHtml('site_receipt_items_site','Site','sites','')}
     ${selectHtml('site_receipt_items_category','Item Category','categories','')}
     ${selectHtml('site_receipt_items_item','Item','items','')}
     <button class="bsm-icon-btn bsm-purchase-clear-btn" id="site_receipt_items_clear_filters" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button>
   </div>`;
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-site-receipt-items-search" class="bsm-search" placeholder="Search..."><button id="bsm-site-receipt-items-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-site-receipt-items-export')}</div>${filters}<div id="bsm-site-receipt-items-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-site-receipt-items-search" class="bsm-search" placeholder="Search Material Receipts Item Master"><button id="bsm-site-receipt-items-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-site-receipt-items-export')}</div>${filters}<div id="bsm-site-receipt-items-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   siteReceiptItemsFilterItemOptions();
   await loadSiteMaterialItemReceipt();
 }
@@ -3023,14 +3194,14 @@ function consumptionItemsSyncCategoryFromItem(){
 async function renderConsumptionItemsRegister(){
   setTitle('Consumption Items Master');
   const filters=`<div id="bsm-consumption-items-filters" class="bsm-filters" style="display:none">
-    <label>Date From<input type="date" class="bsm-date-input bsm-native-date" id="consumption_items_date_from"></label>
-    <label>Date To<input type="date" class="bsm-date-input bsm-native-date" id="consumption_items_date_to"></label>
+    <label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="consumption_items_date_from"></label>
+    <label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="consumption_items_date_to"></label>
     ${selectHtml('consumption_items_site','Site','sites','')}
     ${selectHtml('consumption_items_category','Item Category','categories','')}
     ${selectHtml('consumption_items_item','Item','items','')}
     <button class="bsm-icon-btn bsm-purchase-clear-btn" id="consumption_items_clear_filters" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button>
   </div>`;
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-consumption-items-search" class="bsm-search" placeholder="Search..."><button id="bsm-consumption-items-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-consumption-items-export')}</div>${filters}<div id="bsm-consumption-items-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-consumption-items-search" class="bsm-search" placeholder="Search Consumption Items"><button id="bsm-consumption-items-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-consumption-items-export')}</div>${filters}<div id="bsm-consumption-items-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   consumptionItemsFilterItemOptions();
   await loadConsumptionItemsRegister();
 }
@@ -3091,13 +3262,13 @@ function returnReceiptItemSyncCategory(){
 async function renderReturnReceiptMaster(){
   setTitle('Return Receipt Master');
   const filters=`<div id="bsm-return-receipt-filters" class="bsm-filters" style="display:none">
-    <label>Date From<input type="date" class="bsm-date-input bsm-native-date" id="return_receipt_date_from"></label>
-    <label>Date To<input type="date" class="bsm-date-input bsm-native-date" id="return_receipt_date_to"></label>
+    <label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="return_receipt_date_from"></label>
+    <label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="return_receipt_date_to"></label>
     ${selectHtml('return_receipt_site','Site','sites','')}
     ${selectHtml('return_receipt_warehouse','Warehouse','warehouses','')}
     <button class="bsm-icon-btn bsm-purchase-clear-btn" id="return_receipt_clear_filters" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button>
   </div>`;
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-return-receipt-search" class="bsm-search" placeholder="Search..."><button id="bsm-return-receipt-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-return-receipt-export')}</div>${filters}<div id="bsm-return-receipt-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-return-receipt-search" class="bsm-search" placeholder="Search Return Receipt Master"><button id="bsm-return-receipt-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-return-receipt-export')}</div>${filters}<div id="bsm-return-receipt-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   await loadReturnReceiptMaster();
 }
 async function loadReturnReceiptMaster(exportAll=false){
@@ -3126,15 +3297,15 @@ async function exportReturnReceiptMaster(){
 async function renderReturnReceiptItemMaster(){
   setTitle('Return Receipt Item Master');
   const filters=`<div id="bsm-return-receipt-item-filters" class="bsm-filters" style="display:none">
-    <label>Date From<input type="date" class="bsm-date-input bsm-native-date" id="return_receipt_item_date_from"></label>
-    <label>Date To<input type="date" class="bsm-date-input bsm-native-date" id="return_receipt_item_date_to"></label>
+    <label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="return_receipt_item_date_from"></label>
+    <label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="return_receipt_item_date_to"></label>
     ${selectHtml('return_receipt_item_site','Site','sites','')}
     ${selectHtml('return_receipt_item_warehouse','Warehouse','warehouses','')}
     ${selectHtml('return_receipt_item_category','Item Category','categories','')}
     ${selectHtml('return_receipt_item_item','Item','items','')}
     <button class="bsm-icon-btn bsm-purchase-clear-btn" id="return_receipt_item_clear_filters" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button>
   </div>`;
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-return-receipt-item-search" class="bsm-search" placeholder="Search..."><button id="bsm-return-receipt-item-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-return-receipt-item-export')}</div>${filters}<div id="bsm-return-receipt-item-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-return-receipt-item-search" class="bsm-search" placeholder="Search Return Receipt Item Master"><button id="bsm-return-receipt-item-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-return-receipt-item-export')}</div>${filters}<div id="bsm-return-receipt-item-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   returnReceiptItemFilterOptions();
   await loadReturnReceiptItemMaster();
 }
@@ -3150,7 +3321,7 @@ async function loadReturnReceiptItemMaster(exportAll=false){
   const rows=r.data.rows||[];const num=v=>Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:2});
   let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>Receipt No.</th><th>Date</th><th>Return No.</th><th>Site</th><th>Warehouse</th><th>Received By</th><th>Item Category</th><th>Item</th><th class="num">Return Qty</th><th class="num">Received Qty</th><th>Unit</th></tr></thead><tbody>';
   rows.forEach((x,i)=>{h+=`<tr><td>${(r.data.page-1)*20+i+1}</td><td>${esc(x.inward_no||'')}</td><td>${dateFmt(x.inward_date)}</td><td>${esc(x.return_no||'')}</td><td>${esc(x.site_name||'')}</td><td>${esc(x.warehouse_name||'')}</td><td>${esc(x.received_by_name||'-')}</td><td>${esc(x.category_name||'')}</td><td>${esc(x.item_name||'')}</td><td class="num">${num(x.return_qty)}</td><td class="num">${num(x.received_qty)}</td><td>${esc(x.unit_name||'')}</td></tr>`;});
-  if(!rows.length)h+='<tr><td colspan="13" class="bsm-empty">No return receipt item records found.</td></tr>';
+  if(!rows.length)h+='<tr><td colspan="12" class="bsm-empty">No return receipt item records found.</td></tr>';
   h+='</tbody></table></div>';
   if(r.data.pages>1)h+=`<div class="bsm-pagination"><button class="bsm-btn page-prev" ${r.data.page<=1?'disabled':''}>Previous</button><span>Page ${r.data.page} of ${r.data.pages}</span><button class="bsm-btn page-next" ${r.data.page>=r.data.pages?'disabled':''}>Next</button></div>`;
   $('#bsm-return-receipt-item-list').html(h);return rows;
@@ -3165,14 +3336,14 @@ async function exportReturnReceiptItemMaster(){
 async function renderMaterialReturnsItemMaster(){
   setTitle('Material Returns Item Master');
   const filters=`<div id="bsm-material-returns-items-filters" class="bsm-filters" style="display:none">
-    <label>Date From<input type="date" class="bsm-date-input bsm-native-date" id="material_returns_items_date_from"></label>
-    <label>Date To<input type="date" class="bsm-date-input bsm-native-date" id="material_returns_items_date_to"></label>
+    <label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="material_returns_items_date_from"></label>
+    <label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="material_returns_items_date_to"></label>
     ${selectHtml('material_returns_items_site','Site','sites','')}
     ${selectHtml('material_returns_items_category','Item Category','categories','')}
     ${selectHtml('material_returns_items_item','Item','items','')}
     <button class="bsm-icon-btn bsm-purchase-clear-btn" id="material_returns_items_clear_filters" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button>
   </div>`;
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-material-returns-items-search" class="bsm-search" placeholder="Search..."><button id="bsm-material-returns-items-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-material-returns-items-export')}</div>${filters}<div id="bsm-material-returns-items-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-material-returns-items-search" class="bsm-search" placeholder="Search Material Returns Items"><button id="bsm-material-returns-items-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-material-returns-items-export')}</div>${filters}<div id="bsm-material-returns-items-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   materialReturnsItemsFilterItemOptions();
   await loadMaterialReturnsItemMaster();
 }
@@ -3251,7 +3422,7 @@ function outwardGroupedHtml(rows){
 }
 async function renderDailyOutwardSummary(){
   setTitle('Daily Outward Summary');const today=String(BSM.today||'');
-  $('#bsm-content').html(`<div class="bsm-filters report"><label>Date From<input type="date" class="bsm-date-input bsm-native-date" id="outward_date_from" value="${esc(today)}"></label><label>Date To<input type="date" class="bsm-date-input bsm-native-date" id="outward_date_to" value="${esc(today)}"></label>${selectHtml('outward_site','Site','sites','')}${selectHtml('outward_item','Item','items','')}<label>Search<input type="text" id="outward_search" placeholder="Search"></label><button id="outward_clear" class="bsm-icon-btn bsm-purchase-clear-btn" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button>${excelButton('outward_export')}</div><div id="bsm-outward-summary" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);await loadDailyOutwardSummary();
+  $('#bsm-content').html(`<div class="bsm-filters report"><label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="outward_date_from" value="${esc(today)}"></label><label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="outward_date_to" value="${esc(today)}"></label>${selectHtml('outward_site','Site','sites','')}${selectHtml('outward_item','Item','items','')}<label>Search<input type="text" id="outward_search" placeholder="Search"></label><button id="outward_clear" class="bsm-icon-btn bsm-purchase-clear-btn" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button>${excelButton('outward_export')}</div><div id="bsm-outward-summary" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);await loadDailyOutwardSummary();
 }
 async function loadDailyOutwardSummary(){
   const r=await ajax('bsm_daily_outward_summary',{date_from:dateSql($('#outward_date_from').val()||''),date_to:dateSql($('#outward_date_to').val()||''),site_id:$('#outward_site').val()||'',item_id:$('#outward_item').val()||'',search:$('#outward_search').val()||''});if(!r.success)return showToast(r.data?.message||'Unable to load outward summary',true);App.outwardRows=r.data.rows||[];$('#bsm-outward-summary').html(outwardGroupedHtml(App.outwardRows));
@@ -3272,7 +3443,7 @@ function expenseSummaryGroupedHtml(rows){
 }
 async function renderDailyExpenseSummary(){
   setTitle('Daily Expense Summary');const today=String(BSM.today||'');
-  $('#bsm-content').html(`<div class="bsm-filters report"><label>Date From<input type="date" class="bsm-date-input bsm-native-date" id="expense_summary_date_from" value="${esc(today)}"></label><label>Date To<input type="date" class="bsm-date-input bsm-native-date" id="expense_summary_date_to" value="${esc(today)}"></label>${selectHtml('expense_summary_site','Site','sites','')}${selectHtml('expense_summary_category','Expense Category','expense_categories','')}${selectHtml('expense_summary_vendor','Vendor','vendors','')}<label>Search<input type="text" id="expense_summary_search" placeholder="Search"></label><button id="expense_summary_clear" class="bsm-icon-btn bsm-purchase-clear-btn" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button>${excelButton('expense_summary_export')}</div><div id="bsm-expense-summary" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  $('#bsm-content').html(`<div class="bsm-filters report"><label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="expense_summary_date_from" value="${esc(today)}"></label><label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="expense_summary_date_to" value="${esc(today)}"></label>${selectHtml('expense_summary_site','Site','sites','')}${selectHtml('expense_summary_category','Expense Category','expense_categories','')}${selectHtml('expense_summary_vendor','Vendor','vendors','')}<label>Search<input type="text" id="expense_summary_search" placeholder="Search"></label><button id="expense_summary_clear" class="bsm-icon-btn bsm-purchase-clear-btn" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button>${excelButton('expense_summary_export')}</div><div id="bsm-expense-summary" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   await loadDailyExpenseSummary();
 }
 async function loadDailyExpenseSummary(){
@@ -3285,7 +3456,7 @@ function exportDailyExpenseSummary(){
   downloadExcelFile('Daily Expense Summary',['Site','Expense','Date','Expense Category','Vendor / Paid To','Particulars','Payment Mode','Amount'],(App.expenseSummaryRows||[]).map(x=>[x.site_name||'',x.expense_no||'',dateFmt(x.expense_date),x.category_name||'',x.vendor_name||x.paid_to||'',x.particulars||'',x.payment_mode||'',x.amount||0]));
 }
 
-async function renderPendingSiteReceiveChallans(){setTitle('Pending Site Receive Challans');$('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-pending-challan-search" class="bsm-search" placeholder="Search..."><div class="bsm-spacer"></div></div><div id="bsm-pending-challan-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);await loadPendingSiteReceiveChallans();}
+async function renderPendingSiteReceiveChallans(){setTitle('Pending Site Receive Challans');$('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-pending-challan-search" class="bsm-search" placeholder="Search Pending Site Receive Challans"><div class="bsm-spacer"></div></div><div id="bsm-pending-challan-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);await loadPendingSiteReceiveChallans();}
 async function loadPendingSiteReceiveChallans(){
   const r=await ajax('bsm_pending_site_receive_challans',{page:App.page,search:$('#bsm-pending-challan-search').val()||''});if(!r.success){$('#bsm-pending-challan-list').html('<div class="bsm-empty">Unable to load pending challans.</div>');return;}const rows=r.data.rows||[];let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>Receipt</th><th>Date</th><th>Dispatch</th><th>Site</th><th>Upload Challan</th></tr></thead><tbody>';rows.forEach((x,i)=>h+=`<tr><td>${(r.data.page-1)*20+i+1}</td><td>${esc(x.receipt_no||'')}</td><td>${dateFmt(x.receipt_date)}</td><td>${esc(x.dispatch_no||'')}</td><td>${esc(x.site_name||'')}</td><td><div class="bsm-pending-invoice-upload"><input type="file" class="bsm-pending-receive-challan-file" accept="application/pdf,image/*"><button type="button" class="bsm-btn bsm-btn-primary bsm-upload-pending-receive-challan" data-id="${x.id}">Upload</button></div></td></tr>`);if(!rows.length)h+='<tr><td colspan="6" class="bsm-empty">No pending site receive challans.</td></tr>';h+='</tbody></table></div>';if(r.data.pages>1)h+=`<div class="bsm-pagination"><button class="bsm-btn page-prev" ${r.data.page<=1?'disabled':''}>Previous</button><span>Page ${r.data.page} of ${r.data.pages}</span><button class="bsm-btn page-next" ${r.data.page>=r.data.pages?'disabled':''}>Next</button></div>`;$('#bsm-pending-challan-list').html(h);
 }
@@ -3317,7 +3488,7 @@ async function loadMaterialStock(){
 }
 async function renderMaterialStock(){
   setTitle('Stock');
-  const f=`<div class="bsm-filters report bsm-stock-filters"><label>Search<input type="text" id="ms_search" placeholder="Search"></label>${selectHtml('ms_site','Site','sites','')}${selectHtml('ms_warehouse','Warehouse','warehouses','')}${selectHtml('ms_item','Item','items','')}<label>Date From<input type="date" class="bsm-date-input bsm-native-date" id="ms_date_from"></label><label>Date To<input type="date" class="bsm-date-input bsm-native-date" id="ms_date_to"></label><button id="ms_clear" class="bsm-btn bsm-clear">Clear</button>${excelButton('ms_export')}</div><div id="bsm-material-stock" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`;
+  const f=`<div class="bsm-filters report bsm-stock-filters"><label>Search<input type="text" id="ms_search" placeholder="Search"></label>${selectHtml('ms_site','Site','sites','')}${selectHtml('ms_warehouse','Warehouse','warehouses','')}${selectHtml('ms_item','Item','items','')}<label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="ms_date_from"></label><label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="ms_date_to"></label><button id="ms_clear" class="bsm-btn bsm-clear">Clear</button>${excelButton('ms_export')}</div><div id="bsm-material-stock" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`;
   $('#bsm-content').html(f);await loadMaterialStock();
 }
 function exportMaterialStock(){
@@ -3346,11 +3517,10 @@ async function renderReport(key){
   const cfg=reportConfigs[key];
   if(key==='contractor_advance_register') await ensureOptions(['sites','contractors','banks']);
   if(key==='report_contractor_outstanding') await ensureOptions(['sites','contractors']);
-  setTitle(cfg.title);let f=`<div class="bsm-filters report${key==='report_contractor_outstanding'?' bsm-contractor-filters':''}"><label>Search<input type="text" id="r_search" placeholder="Search"></label>`;if(cfg.filters.includes('date'))f+=`<label>Date From<input type="date" class="bsm-date-input bsm-native-date" id="r_date_from"></label><label>Date To<input type="date" class="bsm-date-input bsm-native-date" id="r_date_to"></label>`;if(cfg.filters.includes('site'))f+=selectHtml('r_site','Site','sites','');if(cfg.filters.includes('contractor'))f+=selectHtml('r_contractor','Contractor','contractors','');
+  setTitle(cfg.title);let f=`<div class="bsm-filters report${key==='report_contractor_outstanding'?' bsm-contractor-filters':''}"><label>Search<input type="text" id="r_search" placeholder="Search"></label>`;if(cfg.filters.includes('date'))f+=`<label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="r_date_from"></label><label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="r_date_to"></label>`;if(cfg.filters.includes('site'))f+=selectHtml('r_site','Site','sites','');if(cfg.filters.includes('contractor'))f+=selectHtml('r_contractor','Contractor','contractors','');
   if(key==='report_labour'||key==='report_contractor_outstanding') f+=`<button id="bsm-clear-report" class="bsm-icon-btn bsm-clear-report-btn" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button>${excelButton('bsm-report-export-excel')}`;
   else f+=excelButton('bsm-report-export-excel');
   if(key==='report_contractor_outstanding')f+='<div id="bsm-contractor-filter-totals" class="bsm-contractor-outstanding-totals" aria-live="polite" aria-label="Filtered Contractor Outstanding Totals"></div>';
-
   f+='</div><div id="bsm-report" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>';$('#bsm-content').html(f);
   if(key==='report_labour'){const today=String(BSM.today||'');$('#r_date_from,#r_date_to').val(today);}
   await loadReport(key);
@@ -3358,10 +3528,6 @@ async function renderReport(key){
 function drawReportRows(key){
   const cfg=reportConfigs[key],q=$('#r_search').val()||'';
   const rows=filterVisibleRows(App.reportRows||[],cfg.columns.map(c=>x=>plainCell(x,c)),q);
-  if(key==='report_profitability'){
-    const sum=(name)=>rows.reduce((a,x)=>a+(Number(x[name])||0),0);const workOrder=sum('work_order_value'), receipts=sum('received'), cost=sum('total_cost'), profit=receipts-cost, margin=receipts?100*profit/receipts:null;
-    App.profitSummary=`<div class="bsm-profit-summary"><div>Work Order Value<strong>${moneyFmt(workOrder)}</strong></div><div>Customer Receipts<strong>${moneyFmt(receipts)}</strong></div><div>Total Cost<strong>${moneyFmt(cost)}</strong></div><div>Estimated Profit / Loss<strong class="${profit<0?'bsm-profit-negative':''}">${moneyFmt(profit)}</strong></div><div>Margin<strong class="${margin!==null&&margin<0?'bsm-profit-negative':''}">${margin===null?'—':margin.toFixed(2)+'%'}</strong></div></div>`;
-  }
   if(key==='report_contractor_outstanding'){
     let h='<div class="bsm-table-wrap"><table id="bsm-report-table"><thead><tr>'+cfg.columns.map(c=>`<th class="${c.type==='money'||c.type==='number'||c.type==='percent'?'num':''}">${esc(c.label)}</th>`).join('')+'<th>Action</th></tr></thead><tbody>';
     rows.forEach(x=>{h+='<tr>'+cfg.columns.map(c=>`<td class="${c.type==='money'||c.type==='number'||c.type==='percent'?'num':''}">${renderCell(x,c)}</td>`).join('')+`${Number(x.outstanding||0)>0?`<td><button type="button" class="bsm-btn bsm-btn-primary bsm-btn-small bsm-contractor-outstanding-payment" data-contractor-id="${esc(x.contractor_id||'')}" data-site-id="${esc(x.site_id||'')}" data-outstanding="${Number(x.outstanding||0).toFixed(2)}">Pay</button></td>`:`<td>-</td>`}</tr>`;});
@@ -3403,10 +3569,10 @@ function drawReportRows(key){
     return;
   }
   let h='<div class="bsm-table-wrap"><table id="bsm-report-table"><thead><tr>'+cfg.columns.map(c=>`<th class="${c.type==='money'||c.type==='number'||c.type==='percent'?'num':''}">${esc(c.label)}</th>`).join('')+'</tr></thead><tbody>';
-  rows.forEach(x=>h+='<tr>'+cfg.columns.map(c=>{const neg=key==='report_profitability'&&(c.key==='profit_margin'||c.key==='estimated_profit')&&Number(x[c.key])<0;const emptyMargin=key==='report_profitability'&&c.key==='profit_margin'&&Number(x.received)===0;return `<td class="${c.type==='money'||c.type==='number'||c.type==='percent'?'num':''}${neg?' bsm-profit-negative':''}">${emptyMargin?'—':renderCell(x,c)}</td>`;}).join('')+'</tr>');
+  rows.forEach(x=>h+='<tr>'+cfg.columns.map(c=>`<td class="${c.type==='money'||c.type==='number'||c.type==='percent'?'num':''}">${renderCell(x,c)}</td>`).join('')+'</tr>');
   if(!rows.length)h+=`<tr><td colspan="${cfg.columns.length}" class="bsm-empty">No data.</td></tr>`;
   h+='</tbody></table></div>';
-  $('#bsm-report').html((key==='report_profitability'?(App.profitSummary||''):'')+h);
+  $('#bsm-report').html(h);
 }
 async function loadReport(key){const cfg=reportConfigs[key];const r=await ajax('bsm_report',{report:cfg.report,site_id:$('#r_site').val()||'',contractor_id:$('#r_contractor').val()||'',date_from:dateSql($('#r_date_from').val()||''),date_to:dateSql($('#r_date_to').val()||'')});if(!r.success)return;App.reportRows=r.data.rows||[];drawReportRows(key);}
 function exportReportExcel(){const headers=$('#bsm-report-table thead th').map(function(){return $(this).text();}).get();const rows=[];$('#bsm-report-table tbody tr').each(function(){if($(this).find('.bsm-empty').length)return;rows.push($(this).find('td').map(function(){return $(this).text();}).get());});downloadExcelFile(reportConfigs[App.current]?.title||'Report',headers,rows);}
@@ -3495,12 +3661,12 @@ function bsmOpenSearchable($wrap){
   if(poVendorSelect && rect && $menu.length){
     const vw=document.documentElement.clientWidth||window.innerWidth;
     const vh=document.documentElement.clientHeight||window.innerHeight;
-    const width=Math.min(240,Math.max(150,Math.min(rect.width+20,vw-16)));
+    const width=Math.min(Math.max(300,rect.width),Math.max(160,vw-16));
     const left=Math.max(8,Math.min(rect.left,vw-width-8));
     const below=vh-rect.bottom-8;
     const above=rect.top-8;
     const dropUp=below<150 && above>below;
-    const height=Math.max(65,Math.min(220,(dropUp?above:below)-8));
+    const height=Math.max(80,Math.min(250,(dropUp?above:below)-8));
     const top=dropUp?Math.max(8,rect.top-height-4):rect.bottom+4;
     $wrap.addClass('bsm-po-vendor-dropdown-open').toggleClass('drop-up',dropUp);
     $menu.css({position:'fixed',top:top+'px',bottom:'auto',left:left+'px',right:'auto',width:width+'px',maxHeight:height+'px'});
@@ -3718,26 +3884,7 @@ $(document).on('change','#bsm-form[data-module="material_inwards"] select[name="
 $(document).on('input change','#bsm-lines-body [name="qty"],#bsm-lines-body [name="rate"],#bsm-lines-body [name="gst_rate"]',function(){if($('#bsm-form').data('module')==='material_inwards')recalcMaterialInwardRow($(this).closest('.bsm-line'));});
 $(document).on('input change','#bsm-form[data-module="material_inwards"] #bsm-form-fields [name="other_expenses"], #bsm-form[data-module="material_inwards"] #bsm-form-fields [name="other_expense_gst"], #bsm-form[data-module="material_inwards"] #bsm-form-fields [name="round_off"]',function(){recalcMaterialInwardTotals();});
 $(document).on('click keydown','.po-pending-summary-row',function(e){if(e.type==='keydown'&&e.key!=='Enter'&&e.key!==' ')return;if($(e.target).closest('select,input,button,.bsm-searchable-select').length)return;e.preventDefault();const $row=$(this),item=$row.data('item'),$detail=$(`.po-pending-detail-row[data-detail-for="${item}"]`);const open=$row.attr('aria-expanded')==='true';$row.attr('aria-expanded',open?'false':'true');$detail.toggle(!open);});
-
-// Recalculate PO item GST using the item rate and selected Vendor GST Type.
-function bsmRecalcPendingPoGst(row){
-  const type=(App.pendingPoVendorGstTypes||{})[String(row.find('.po-row-vendor').val())]||'no_gst';
-  const qty=Math.max(0,Number(row.find('.po-row-qty').val()||0));
-  const rate=Math.max(0,Number(row.find('.po-row-rate').val()||0));
-  const gst=Math.max(0,Number(row.find('.po-row-gst-rate').val()||0));
-  const taxable=Math.round(qty*rate*100)/100;
-  const tax=Math.round(taxable*gst)/100;
-  const igst=type==='inter_state'?tax:0;
-  const cgst=type==='intra_state'?Math.round(tax*50)/100:0;
-  const sgst=type==='intra_state'?Math.round((tax-cgst)*100)/100:0;
-  ['igst','cgst','sgst'].forEach(k=>{
-    const allowed=(type==='inter_state'&&k==='igst')||(type==='intra_state'&&(k==='cgst'||k==='sgst'));
-    row.find('.po-row-'+k).prop('disabled',!allowed).prop('readonly',!allowed).val(allowed?({igst,cgst,sgst}[k]).toFixed(2):'');
-  });
-}
-$(document).on('change','#po_pending_list .po-row-vendor',function(){bsmRecalcPendingPoGst($(this).closest('tr'));});
-$(document).on('input change','#po_pending_list .po-row-qty,#po_pending_list .po-row-rate,#po_pending_list .po-row-gst-rate',function(){bsmRecalcPendingPoGst($(this).closest('tr'));});
-$(document).on('click','#po_create_selected',async function(){const items=[];let missingRate=false;$('#po_pending_list tbody tr[data-item]').each(function(){const vendor=$(this).find('.po-row-vendor').val()||'',qty=Number($(this).find('.po-row-qty').val()||0),rateRaw=$(this).find('.po-row-rate').val(),rate=Number(rateRaw||0);if(vendor&&qty>0){if(rateRaw===''||rate<0){missingRate=true;return;}items.push({item_id:$(this).data('item'),vendor_id:vendor,po_qty:qty,rate:rate,gst_rate:Number($(this).find('.po-row-gst-rate').val()||0),igst_amount:Number($(this).find('.po-row-igst').val()||0),cgst_amount:Number($(this).find('.po-row-cgst').val()||0),sgst_amount:Number($(this).find('.po-row-sgst').val()||0)});}});if(missingRate)return showToast('Enter Rate for every selected PO item',true);if(!items.length)return showToast('Select Vendor for at least one Item',true);const r=await ajax('bsm_purchase_order_create',{warehouse_id:App.pendingPoWarehouse||'',items:JSON.stringify(items)});if(r.success){showToast(r.data.message||'PO created');await loadPendingPoItems();}else showToast(r.data?.message||'Unable to create PO',true);});
+$(document).on('click','#po_create_selected',async function(){const items=[];let missingRate=false;$('#po_pending_list tbody tr[data-item]').each(function(){const vendor=$(this).find('.po-row-vendor').val()||'',qty=Number($(this).find('.po-row-qty').val()||0),rateRaw=$(this).find('.po-row-rate').val(),rate=Number(rateRaw||0);if(vendor&&qty>0){if(rateRaw===''||rate<0){missingRate=true;return;}items.push({item_id:$(this).data('item'),vendor_id:vendor,po_qty:qty,rate:rate});}});if(missingRate)return showToast('Enter Rate for every selected PO item',true);if(!items.length)return showToast('Select Vendor for at least one Item',true);const r=await ajax('bsm_purchase_order_create',{warehouse_id:App.pendingPoWarehouse||'',items:JSON.stringify(items)});if(r.success){showToast(r.data.message||'PO created');await loadPendingPoItems();}else showToast(r.data?.message||'Unable to create PO',true);});
 
 $(document).on('click','.po-direct-add',function(){
   const $row=$(this).closest('tr');
@@ -3749,7 +3896,7 @@ $(document).on('click','.po-direct-remove',function(){
   if($rows.length<=1){
     const $r=$(this).closest('tr');
     $r.find('.po-direct-item').val('');
-    $r.find('.po-direct-qty,.po-direct-fixed-price,.po-direct-rate,.po-direct-igst,.po-direct-cgst,.po-direct-sgst').val('');$r.find('.po-direct-gst-rate').val('0');
+    $r.find('.po-direct-qty,.po-direct-fixed-price,.po-direct-rate').val('');
     $r.find('.po-direct-unit').text('-');
     $r.find('.po-direct-amount').text('0.00');
     return;
@@ -3757,8 +3904,7 @@ $(document).on('click','.po-direct-remove',function(){
   $(this).closest('tr').remove();
 });
 $(document).on('change','.po-direct-item',function(){refreshDirectPoItemRow($(this).closest('tr'));});
-$(document).on('input change','.po-direct-qty,.po-direct-rate,.po-direct-gst-rate',function(){updateDirectPoAmount($(this).closest('tr'));});
-$(document).on('change','#po_direct_vendor',function(){$('#po_direct_items .po-direct-row').each(function(){updateDirectPoAmount($(this));});});
+$(document).on('input','.po-direct-qty,.po-direct-rate',function(){updateDirectPoAmount($(this).closest('tr'));});
 $(document).on('click','#po_direct_clear',async function(){await renderPurchaseOrderForm();});
 $(document).on('click','#po_direct_save',async function(){
   const vendor_id=$('#po_direct_vendor').val();
@@ -3779,7 +3925,7 @@ $(document).on('click','#po_direct_save',async function(){
     const rate=Number($(this).find('.po-direct-rate').val()||0);
     if(!item_id && po_qty<=0)return;
     if(!item_id || po_qty<=0){invalid=true;return;}
-    items.push({item_id,po_qty,fixed_price,rate,gst_rate:Number($(this).find('.po-direct-gst-rate').val()||0),igst_amount:Number($(this).find('.po-direct-igst').val()||0),cgst_amount:Number($(this).find('.po-direct-cgst').val()||0),sgst_amount:Number($(this).find('.po-direct-sgst').val()||0)});
+    items.push({item_id,po_qty,fixed_price,rate});
   });
   if(invalid)return showToast('Select Item and enter valid PO Qty for every row',true);
   if(!items.length)return showToast('Add at least one PO item',true);
@@ -3803,52 +3949,23 @@ $(document).on('change','#bsm-purchase-required-po',async function(){
   await openView('purchase_form');
 });
 $(document).on('click','.po-receive-po',async function(e){e.stopPropagation();await openPurchaseFormFromPO($(this).data('po'));});
-$(document).on('input','#po_master_search',function(){clearTimeout(App.poms);App.poms=setTimeout(()=>{bsmResetPage('purchase_order_master');loadPurchaseOrderMaster();},350);});
-$(document).on('change','#po_master_vendor,#po_master_status',()=>{bsmResetPage('purchase_order_master');return loadPurchaseOrderMaster();});
+$(document).on('input','#po_master_search',function(){clearTimeout(App.poms);App.poms=setTimeout(()=>loadPurchaseOrderMaster(),350);});
+$(document).on('change','#po_master_vendor,#po_master_status',()=>loadPurchaseOrderMaster());
 $(document).on('click','.po-pdf',async function(e){e.stopPropagation();const r=await ajax('bsm_purchase_order_pdf',{id:$(this).data('id')});if(r.success&&r.data?.url)window.open(r.data.url,'_blank');else showToast(r.data?.message||'Unable to generate PO PDF',true);});
 $(document).on('click','.po-edit',async function(e){
   e.stopPropagation();const id=$(this).data('id');await ensureOptions(['vendors','warehouses']);const r=await ajax('bsm_purchase_order_get',{id});if(!r.success)return showToast(r.data?.message||'Unable to load PO',true);const h=r.data.head||{},items=r.data.items||[],locked=Number(h.received_qty||0)>0.009;
   App.editId=id;$('#bsm-modal').removeClass('bsm-purchase-edit-modal bsm-site-receipt-modal');$('#bsm-modal-title').text('Edit Purchase Order');$('#bsm-form').data('module','purchase_order_edit');
   const vendorOpts=(App.options.vendors||[]).map(x=>`<option value="${x.id}" ${String(x.id)===String(h.vendor_id)?'selected':''}>${esc(x.label||x.vendor_name||x.name||'')}</option>`).join('');const whOpts=(App.options.warehouses||[]).map(x=>`<option value="${x.id}" ${String(x.id)===String(h.warehouse_id)?'selected':''}>${esc(x.label||x.warehouse_name||x.name||'')}</option>`).join('');
-  $('#bsm-form-fields').html(`<label><span class="bsm-field-label">PO No.</span><input value="${esc(h.po_no||'')}" readonly></label><label><span class="bsm-field-label">PO Date</span><input type="date" name="po_date" value="${esc(h.po_date||'')}"></label><label><span class="bsm-field-label">Vendor</span><select name="vendor_id" ${locked?'disabled':''}>${vendorOpts}</select></label><label><span class="bsm-field-label">Warehouse</span><select name="warehouse_id" ${locked?'disabled':''}>${whOpts}</select></label><label><span class="bsm-field-label">Required Date</span><input type="date" name="required_date" value="${esc(h.required_date||'')}"></label><label class="wide"><span class="bsm-field-label">Remarks</span><textarea name="remarks">${esc(h.remarks||'')}</textarea></label>`);
+  $('#bsm-form-fields').html(`<label><span class="bsm-field-label">PO No.</span><input value="${esc(h.po_no||'')}" readonly></label><label><span class="bsm-field-label">PO Date</span><input type="date" lang="en-GB" name="po_date" value="${esc(h.po_date||'')}"></label><label><span class="bsm-field-label">Vendor</span><select name="vendor_id" ${locked?'disabled':''}>${vendorOpts}</select></label><label><span class="bsm-field-label">Warehouse</span><select name="warehouse_id" ${locked?'disabled':''}>${whOpts}</select></label><label><span class="bsm-field-label">Required Date</span><input type="date" lang="en-GB" name="required_date" value="${esc(h.required_date||'')}"></label><label class="wide"><span class="bsm-field-label">Remarks</span><textarea name="remarks">${esc(h.remarks||'')}</textarea></label>`);
   let ih='<div class="bsm-table-wrap"><table><thead><tr><th>Item</th><th>Unit</th><th class="num">Received Qty</th><th class="num">PO Qty</th><th class="num">Fixed Price</th><th class="num">Rate</th></tr></thead><tbody>';items.forEach(it=>{ih+=`<tr data-id="${it.id}"><td>${esc(it.item_name||'')}</td><td>${esc(it.unit_name||'')}</td><td class="num">${Number(it.received_qty||0).toFixed(2)}</td><td><input class="po-edit-qty num" type="number" min="${Number(it.received_qty||0)}" step="0.01" value="${Number(it.po_qty||0).toFixed(2)}"></td><td class="num">${Number(it.fixed_price||0).toFixed(2)}</td><td><input class="po-edit-rate num" type="number" min="0" step="0.01" value="${Number(it.rate||0).toFixed(2)}"></td></tr>`;});ih+='</tbody></table></div>';$('#bsm-line-items').html(ih);$('#bsm-documents').empty();$('#bsm-modal').show();
 });
 $(document).on('submit','#bsm-form',async function(e){if($(this).data('module')!=='purchase_order_edit')return;e.preventDefault();const data={po_date:$('#bsm-form-fields [name="po_date"]').val(),vendor_id:$('#bsm-form-fields [name="vendor_id"]').val(),warehouse_id:$('#bsm-form-fields [name="warehouse_id"]').val(),required_date:$('#bsm-form-fields [name="required_date"]').val(),remarks:$('#bsm-form-fields [name="remarks"]').val()};const items=[];$('#bsm-line-items tbody tr').each(function(){items.push({id:$(this).data('id'),po_qty:$(this).find('.po-edit-qty').val(),rate:$(this).find('.po-edit-rate').val()});});const r=await ajax('bsm_purchase_order_update',{id:App.editId,data:JSON.stringify(data),items:JSON.stringify(items)});if(r.success){showToast(r.data.message||'PO updated');$('#bsm-modal').hide();loadPurchaseOrderMaster();}else showToast(r.data?.message||'Unable to update PO',true);});
-function showAdminDependencyModal(data){
-  $('#bsm-admin-dependency-modal').remove();
-  const $overlay=$('<div id="bsm-admin-dependency-modal" class="bsm-admin-dependency-overlay" role="presentation"></div>');
-  const $box=$('<section class="bsm-admin-dependency-box" role="alertdialog" aria-modal="true" aria-labelledby="bsm-admin-dependency-title"></section>');
-  $box.append($('<h3 id="bsm-admin-dependency-title"></h3>').text('Cannot Delete '+(data.kind==='purchase_orders'?'Purchase Order':'Purchase')));
-  $box.append($('<p></p>').text('Reference: '+(data.reference||'')));
-  const $details=$('<div class="bsm-admin-dependency-details"></div>');
-  (data.dependencies||[]).forEach(x=>$details.append($('<div class="bsm-admin-dependency-row"></div>').append($('<span></span>').text(x.label)).append($('<b></b>').text(x.count))));
-  const nums=Array.isArray(data.linked_purchase_numbers)?data.linked_purchase_numbers:[];
-  if(nums.length){$details.append($('<strong></strong>').text('Linked Purchase Numbers'));const $ul=$('<ul></ul>');nums.forEach(n=>$ul.append($('<li></li>').text(n)));$details.append($ul);}
-  $box.append($details).append($('<p></p>').text(data.message||'Deletion blocked to protect linked records.'));
-  const $close=$('<button type="button" class="bsm-btn bsm-btn-primary">OK</button>');
-  $close.on('click',()=>{$overlay.remove();});
-  $box.append($('<div class="bsm-admin-dependency-footer"></div>').append($close));
-  $overlay.append($box).on('click',function(e){if(e.target===this)$overlay.remove();});$('body').append($overlay);$close.trigger('focus');
-}
-$(document).on('click','.po-admin-delete',async function(e){
-  e.stopImmediatePropagation();
-  const id=$(this).data('id');
-  const preview=await ajax('bsm_admin_delete_preview',{kind:'purchase_orders',id});
-  if(!preview.success){showToast(preview.data?.message||'Unable to check dependencies',true);return;}
-  const d=preview.data;
-  const details=(d.dependencies||[]).map(x=>`${x.label}: ${x.count}`).join('\n');
-  if(!d.can_delete){showAdminDependencyModal(d);return;}
-  if(!confirm(`Delete ${d.reference}?\n${details}\n\n${d.message}`))return;
-  const r=await ajax('bsm_admin_delete_po',{id});
-  if(r.success){showToast(r.data?.message||'Deleted');loadPurchaseOrderMaster();}
-  else showToast(r.data?.message||'Unable to delete PO',true);
-});
 $(document).on('click','.po-cancel',async function(){if(!confirm('Cancel this PO?'))return;const r=await ajax('bsm_purchase_order_cancel',{id:$(this).data('id')});if(r.success){showToast('PO cancelled');loadPurchaseOrderMaster();}else showToast(r.data?.message||'Unable to cancel PO',true);});
-$(document).on('input','#po_items_search',function(){clearTimeout(App.poims);App.poims=setTimeout(()=>{bsmResetPage('purchase_order_items_master');return loadPurchaseOrderItemsMaster();},350);});
-$(document).on('change','#po_items_vendor',()=>{bsmResetPage('purchase_order_items_master');return loadPurchaseOrderItemsMaster();});
+$(document).on('input','#po_items_search',function(){clearTimeout(App.poims);App.poims=setTimeout(()=>loadPurchaseOrderItemsMaster(),350);});
+$(document).on('change','#po_items_vendor',()=>loadPurchaseOrderItemsMaster());
 $(document).on('click','#po_pending_export',async function(){const rows=await loadPendingPoItems(true);if(!rows)return;downloadExcelFile('Pending PO Items',['Sl','Site','Item','Unit','Approved Qty','Current Stock','Pending PO Qty'],rows.map((x,i)=>[i+1,x.site_name||'',x.item_name||'',x.unit_name||'',x.approved_qty||0,x.current_stock||0,x.pending_po_qty||0]));});
-$(document).on('click','#po_master_export',async function(){const rows=await loadPurchaseOrderMaster(true);if(!rows)return;downloadExcelFile('PO Master',['Sl','PO No.','PO Date','Vendor','Warehouse','Required Date','Items','PO Qty','Received','Pending','Total','IGST','CGST','SGST','Status','Created By'],rows.map((x,i)=>[i+1,x.po_no||'',dateFmt(x.po_date),x.vendor_name||'',x.warehouse_name||'',dateFmt(x.required_date),x.item_count||0,x.po_qty||0,x.received_qty||0,x.pending_qty||0,x.total_amount||0,x.igst_amount||0,x.cgst_amount||0,x.sgst_amount||0,x.status||'',x.created_by_name||'']));});
-$(document).on('click','#po_items_export',async function(){const rows=await loadPurchaseOrderItemsMaster(true);if(!rows)return;downloadExcelFile('PO Items Master',['Sl','PO No.','PO Date','Vendor','Item','Unit','Fixed Price','Rate','PO Qty','Received Qty','Pending Qty','Amount','IGST','CGST','SGST','Status'],rows.map((x,i)=>[i+1,x.po_no||'',dateFmt(x.po_date),x.vendor_name||'',x.item_name||'',x.unit_name||'',x.fixed_price||0,x.rate||0,x.po_qty||0,x.received_qty||0,x.pending_qty||0,Number(x.po_qty||0)*Number(x.rate||0),x.igst_amount||0,x.cgst_amount||0,x.sgst_amount||0,x.status||'']));});
+$(document).on('click','#po_master_export',async function(){const rows=await loadPurchaseOrderMaster(true);if(!rows)return;downloadExcelFile('PO Master',['Sl','PO No.','PO Date','Vendor','Warehouse','Required Date','Items','PO Qty','Received','Pending','Total','Status','Created By'],rows.map((x,i)=>[i+1,x.po_no||'',dateFmt(x.po_date),x.vendor_name||'',x.warehouse_name||'',dateFmt(x.required_date),x.item_count||0,x.po_qty||0,x.received_qty||0,x.pending_qty||0,x.total_amount||0,x.status||'',x.created_by_name||'']));});
+$(document).on('click','#po_items_export',async function(){const rows=await loadPurchaseOrderItemsMaster(true);if(!rows)return;downloadExcelFile('PO Items Master',['Sl','PO No.','PO Date','Vendor','Item','Unit','Fixed Price','Rate','PO Qty','Received Qty','Pending Qty','Amount','Status'],rows.map((x,i)=>[i+1,x.po_no||'',dateFmt(x.po_date),x.vendor_name||'',x.item_name||'',x.unit_name||'',x.fixed_price||0,x.rate||0,x.po_qty||0,x.received_qty||0,x.pending_qty||0,Number(x.po_qty||0)*Number(x.rate||0),x.status||'']));});
 
 $(document).on('click','#bsm-add',()=>openForm(App.current));
 $(document).on('click','.bsm-contractor-payment-edit',function(e){
@@ -3863,23 +3980,10 @@ $(document).on('click','.bsm-contractor-payment-delete',async function(e){
   else showToast(r.data?.message||'Unable to delete Contractor Payment',true);
 });
 
-// Dependency details: server supplies real linked document numbers and internal paths.
-function bsmShowLinkedError(message){
-  const raw=String(message||'This record is locked.');
-  if(!raw.includes('[[')) return showToast(raw,true);
-  const escaped=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const fragments=[];let last=0;const regex=/\[\[([^|\]<>]+)\|([^|\]<>]+)\|(\/site-management\/[a-z0-9\-]+\/\?bsm_record=\d+)\]\]/g;let match;
-  while((match=regex.exec(raw))){fragments.push(escaped(raw.slice(last,match.index)));fragments.push('<a href="'+escaped(match[3])+'" target="_blank" rel="noopener noreferrer" style="color:#1461cf;text-decoration:underline;font-weight:600">'+escaped(match[1])+': '+escaped(match[2])+' ↗</a>');last=regex.lastIndex;}
-  fragments.push(escaped(raw.slice(last)));
-  const html='<div class="bsm-linked-modal" style="position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,.52);display:flex;align-items:center;justify-content:center;padding:18px"><div role="alertdialog" aria-modal="true" aria-label="Linked record restriction" style="max-width:620px;width:100%;background:white;color:#182338;border-radius:12px;padding:24px;box-shadow:0 20px 60px #0004"><h3 style="margin:0 0 14px;color:#bd2424">Action Blocked — Linked Records</h3><div style="line-height:1.8;overflow-wrap:anywhere">'+fragments.join('')+'</div><div style="text-align:right;margin-top:20px"><button type="button" class="bsm-linked-close" style="background:#174981;color:white;border:0;padding:9px 22px;border-radius:7px;cursor:pointer">OK</button></div></div></div>';
-  $('.bsm-linked-modal').remove();$('body').append(html);$('.bsm-linked-close').trigger('focus');
-}
-$(document).on('click','.bsm-linked-close',function(){$('.bsm-linked-modal').remove();});
-$(document).on('click','.bsm-linked-modal',function(e){if(e.target===this)$(this).remove();});
 $(document).on('click','.bsm-action-edit',function(){
   if($(this).hasClass('bsm-contractor-payment-edit')) return;
   const allowed=String($(this).attr('data-allowed')??'1')!=='0';
-  if(!allowed) return bsmShowLinkedError($(this).attr('data-message')||'This record cannot be edited.');
+  if(!allowed) return showToast($(this).attr('data-message')||'This record cannot be edited.',true);
   const module=$(this).attr('data-module')||App.current;
   openForm(module,$(this).data('id'));
 });
@@ -3894,7 +3998,7 @@ $(document).on('click','.bsm-user-delete',async function(e){
 $(document).on('click','.bsm-action-delete',async function(){
   if($(this).hasClass('bsm-user-delete')||$(this).hasClass('bsm-contractor-payment-delete')) return;
   const allowed=String($(this).attr('data-allowed')??'1')!=='0';
-  if(!allowed) return bsmShowLinkedError($(this).attr('data-message')||'This record cannot be deleted.');
+  if(!allowed) return showToast($(this).attr('data-message')||'This record cannot be deleted.',true);
   if(!confirm('Delete this record?'))return;
   const module=$(this).attr('data-module')||App.current;
   const r=await ajax('bsm_delete',{module,id:$(this).data('id')});
@@ -3953,7 +4057,7 @@ $(document).on('click','#material_returns_items_clear_filters',function(){$('#bs
 $(document).on('input','#bsm-material-returns-items-search',function(){const el=this;clearTimeout(App.mris);App.mris=setTimeout(()=>{App.page=1;loadMaterialReturnsItemMaster();},600);});
 $(document).on('click','#bsm-material-returns-items-export',exportMaterialReturnsItemMaster);
 $(document).on('change','#bsm-filters input,#bsm-filters select',()=>{App.page=1;loadList(App.current);});
-$(document).on('click','.bsm-clear',function(){$('#bsm-filters input,#bsm-filters select').val('');bsmSyncAllSearchables($('#bsm-filters'));App.page=1;loadList(App.current);});
+$(document).on('click','.bsm-clear',function(){$('#bsm-filters input,#bsm-filters select').val('');bsmSyncAllSearchables($('#bsm-filters'));loadList(App.current);});
 $(document).on('click','.bsm-action-dispatch-slip',async function(e){e.stopPropagation();const id=$(this).data('id');const r=await ajax('bsm_dispatch_pdf',{id});if(r.success&&r.data?.url){window.open(r.data.url,'_blank','noopener');}else showToast(r.data?.message||'Unable to generate Dispatch Slip',true);});
 $(document).on('click','.page-prev',()=>{App.page--;if(App.current==='purchase_register')return loadPurchaseRegister();if(App.current==='purchase_items_register')return loadPurchaseItemsRegister();if(App.current==='dispatch_items_register')return loadDispatchItemsRegister();if(App.current==='office_attendance_master')return loadOfficeAttendanceMaster();if(App.current==='site_material_item_receipt')return loadSiteMaterialItemReceipt();if(App.current==='consumption_items_register')return loadConsumptionItemsRegister();if(App.current==='return_receipt_master')return loadReturnReceiptMaster();if(App.current==='return_receipt_item_master')return loadReturnReceiptItemMaster();if(App.current==='material_returns_item_master')return loadMaterialReturnsItemMaster();if(App.current==='pending_invoice_copy')return loadPendingInvoiceCopy();if(App.current==='pending_site_receive_challans')return loadPendingSiteReceiveChallans();if(App.current==='pending_contractor_bill_copy')return loadPendingContractorBillCopy();if(App.current==='material_requisition_item')return loadMaterialRequisitionItem();if(App.current==='employee_allowance_limits')return loadEmployeeAllowanceLimits();if(['quotation_master','quotation_items','invoice_master','invoice_items'].includes(App.current))return loadSalesRegister(App.current);loadList(App.current);});$(document).on('click','.page-next',()=>{App.page++;if(App.current==='purchase_register')return loadPurchaseRegister();if(App.current==='purchase_items_register')return loadPurchaseItemsRegister();if(App.current==='dispatch_items_register')return loadDispatchItemsRegister();if(App.current==='office_attendance_master')return loadOfficeAttendanceMaster();if(App.current==='site_material_item_receipt')return loadSiteMaterialItemReceipt();if(App.current==='consumption_items_register')return loadConsumptionItemsRegister();if(App.current==='return_receipt_master')return loadReturnReceiptMaster();if(App.current==='return_receipt_item_master')return loadReturnReceiptItemMaster();if(App.current==='material_returns_item_master')return loadMaterialReturnsItemMaster();if(App.current==='pending_invoice_copy')return loadPendingInvoiceCopy();if(App.current==='pending_site_receive_challans')return loadPendingSiteReceiveChallans();if(App.current==='pending_contractor_bill_copy')return loadPendingContractorBillCopy();if(App.current==='material_requisition_item')return loadMaterialRequisitionItem();if(App.current==='employee_allowance_limits')return loadEmployeeAllowanceLimits();if(['quotation_master','quotation_items','invoice_master','invoice_items'].includes(App.current))return loadSalesRegister(App.current);loadList(App.current);});
 $(document).on('click','#bsm-modal-close,#bsm-form-cancel',function(){if(directFormViews.has(App.current)&&$('.bsm-modal-panel').hasClass('bsm-inline-panel')){const destination=relatedMasterView(App.current,$('#bsm-form').data('module')||'');if(destination){openView(destination);return;}openView(App.current);return;}$('#bsm-modal').hide();});
@@ -3979,20 +4083,12 @@ $(document).on('click','#bsm-company-upi-qr-upload-btn',async function(){
 });
 
 $(document).on('input','#bsm-purchase-approval-search',function(){const el=this;clearTimeout(App.pas);App.pas=setTimeout(()=>{App.specialSearch=$(el).val();drawPurchasePendingApproval();},350);});
+$(document).on('click','.bsm-site-section-toggle',function(e){e.preventDefault();e.stopPropagation();$(this).closest('.bsm-site-section-multi').toggleClass('open');});
+$(document).on('input','.bsm-site-section-search',function(){const q=String($(this).val()).toLowerCase();$(this).closest('.bsm-site-section-menu').find('.bsm-site-section-option').each(function(){$(this).toggle($(this).text().toLowerCase().includes(q));});});
+$(document).on('change','.bsm-site-section-option input',function(){const $f=$(this).closest('.bsm-site-section-field'),names=$f.find('.bsm-site-section-option input:checked').map(function(){return $(this).val();}).get();$f.find('input[name="site_sections"]').val(names.join(', '));$f.find('.bsm-site-section-toggle').html(`${esc(names.length?names.join(', '):'Select Sections')} <span>⌄</span>`);});
+$(document).on('click',function(e){if(!$(e.target).closest('.bsm-site-section-multi').length)$('.bsm-site-section-multi').removeClass('open');});
 $(document).on('submit','#bsm-form',function(e){e.preventDefault();if($(this).data('module')==='users')saveUser();else if($(this).data('module')==='requisition_approval')saveApproval();else if($(this).data('module')==='purchase_approval')savePurchaseApproval();else saveForm();});
 $(document).on('change','#bsm-form[data-module="site_receipts"] select[name="dispatch_id"]',function(){fillSiteReceiptFromDispatch($(this).val());});
-
-function refreshCustomerReceiptCustomer(){
-  if($('#bsm-form').data('module')!=='customer_receipts')return;
-  const siteId=String($('#bsm-form-fields select[name="site_id"]').val()||'');
-  const site=(App.options.sites||[]).find(x=>String(x.id)===siteId);
-  const customerId=String(site?.customer_id||'');
-  const customer=(App.options.customers||[]).find(x=>String(x.id)===customerId);
-  const customerName=siteId?(customer?.label||'No customer linked to selected Site'):'';
-  $('#bsm-form-fields .bsm-display-customer_id').val(customerName);
-}
-$(document).on('change','#bsm-form[data-module="customer_receipts"] select[name="site_id"]',refreshCustomerReceiptCustomer);
-
 $(document).on('change','#bsm-form[data-module="site_consumptions"] select[name="site_id"]',function(){refreshConsumptionItemOptions();});
 $(document).on('change','#bsm-lines-body select[name="item_id"]',function(){const $tr=$(this).closest('tr');autoSelectUnitFromItem($tr);syncPurchaseItemPrice($tr,true);syncPurchaseItemGst($tr);});
 $(document).on('change','#bsm-form[data-module="site_consumptions"] #bsm-lines-body select[name="item_id"]',function(){
@@ -4294,12 +4390,6 @@ $(document).on('change','.bsm-pay-select',function(){const $tr=$(this).closest('
 $(document).on('click','#bsm-save-vendor-payment',saveVendorPayment);
 $(document).on('click','#bsm-cancel-vendor-payment',function(){openView('report_vendor_outstanding');});
 
-// Quotation item image actions; files remain attached in Media Library when removed from a row.
-$(document).on('click','.bsm-quote-choose',function(){$(this).closest('.bsm-quote-image').find('.bsm-quote-file').trigger('click');});
-$(document).on('change','.bsm-quote-file',function(){const f=this.files?.[0];if(!f)return;if(f.size>2097152|| !/image\/(jpeg|png|webp)/.test(f.type)){showToast('Use JPG, PNG or WebP (maximum 2 MB)',true);this.value='';return;}const $wrap=$(this).closest('.bsm-quote-image');const url=URL.createObjectURL(f);$wrap.find('.bsm-quote-preview').attr('href',url).html(`<img alt="Item image" src="${url}">`).prop('hidden',false);$wrap.find('.bsm-quote-remove').prop('hidden',false);});
-$(document).on('click','.bsm-quote-remove',function(){const $w=$(this).closest('.bsm-quote-image');$w.find('[name="image_attachment_id"]').val('');$w.find('.bsm-quote-file').val('');$w.find('.bsm-quote-preview').prop('hidden',true).empty();$(this).prop('hidden',true);});
-
 })(jQuery);
 
 jQuery(document).on('click','.bsm-contractor-outstanding-payment',function(){window.openContractorOutstandingPayment(jQuery(this).data('contractor-id'),jQuery(this).data('site-id'),jQuery(this).data('outstanding'));});
-

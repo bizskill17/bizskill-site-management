@@ -8,7 +8,7 @@ if ($bsm_company_name === '') {
     $bsm_company_name = get_bloginfo('name') ?: 'Company';
 }
 ?>
-<div id="bsm-app" class="bsm-app">
+<div id="bsm-app" class="bsm-app" lang="en-GB">
     <div id="bsm-login" class="bsm-login-card" style="display:none">
         <?php if ($bsm_company_logo !== ''): ?>
             <div class="bsm-login-logo-wrap">
@@ -45,8 +45,7 @@ if ($bsm_company_name === '') {
                 <button id="bsm-sidebar-toggle" class="bsm-icon-btn bsm-desktop-sidebar-toggle" type="button" title="Collapse Menu" aria-label="Collapse Menu">☰</button>
                 <button id="bsm-menu-open" class="bsm-icon-btn mobile-only">☰</button>
                 <div>
-                    <h1 id="bsm-page-title">Site Dashboard</h1>
-                    <div id="bsm-react-header" aria-live="polite"></div>
+                    <h1 id="bsm-page-title">Dashboard</h1>
                 </div>
                 <div class="bsm-topbar-spacer"></div>
                 <?php if ($bsm_company_logo !== ''): ?>
