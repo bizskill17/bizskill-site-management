@@ -2703,3 +2703,12 @@ html,body{
 /* Site Tracker: align Search text and hint typography with filter dropdowns. */
 .tracker-single-toolbar input#tracker-detail-search{font-size:13px!important;font-weight:400!important;line-height:normal;color:#173052!important;}
 .tracker-single-toolbar input#tracker-detail-search::placeholder{font-size:13px!important;font-weight:400!important;color:#173052!important;opacity:1;}
+
+/* Site Tracker: different background colour per Task */
+.tracker-flat-table tbody tr.tracker-task-band-0 td{background:#eef4ff}
+.tracker-flat-table tbody tr.tracker-task-band-1 td{background:#fff4e6}
+.tracker-flat-table tbody tr.tracker-task-band-2 td{background:#ecfdf3}
+.tracker-flat-table tbody tr.tracker-task-band-3 td{background:#f5efff}
+.tracker-flat-table tbody tr.tracker-task-band-4 td{background:#fff0f3}
+.tracker-flat-table tbody tr.tracker-task-band-5 td{background:#e9fbfb}
+.tracker-flat-table tbody tr[class*="tracker-task-band-"]:hover td{filter:brightness(.97)}

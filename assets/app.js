@@ -437,21 +437,24 @@ function trackerDraw(){
   const detailSearch=String(App.trackerDetailSearch||'').toLowerCase().trim();
   html+=`<div class="tracker-head tracker-single-toolbar"><button type="button" class="bsm-btn tracker-back-icon" id="tracker-back" title="All Sites" aria-label="Back to All Sites">←</button><input type="text" class="bsm-search tracker-detail-search" id="tracker-detail-search" placeholder="Search" value="${esc(App.trackerDetailSearch||'')}"><label class="tracker-toolbar-label">Section<span class="tracker-select-wrap"><select id="tracker-filter-section"><option value="">All Sections</option>${sectionOpts}</select>${sectionFilter?'<button type="button" class="tracker-clear-filter" data-filter="section" title="Clear Section filter" aria-label="Clear Section filter">×</button>':''}</span></label><label class="tracker-toolbar-label">Task<span class="tracker-select-wrap"><select id="tracker-filter-task"><option value="">All Tasks</option>${taskOpts}</select>${taskFilter?'<button type="button" class="tracker-clear-filter" data-filter="task" title="Clear Task filter" aria-label="Clear Task filter">×</button>':''}</span></label><div class="bsm-spacer"></div>${excelButton('tracker-excel')}<button type="button" class="bsm-icon-btn bsm-btn-primary tracker-add-task-icon" id="tracker-add-task-main" title="Add Task" aria-label="Add Task">+</button></div>`;
   html+='<div class="bsm-table-wrap tracker-flat-wrap"><table class="tracker-flat-table"><thead><tr><th>Section</th><th>Task</th><th>Sub-task</th><th>Progress %</th><th>Action</th></tr></thead><tbody>';
-  let count=0;
+  let count=0,band=-1;
   (site.sections||[]).filter(section=>!sectionFilter||section===sectionFilter).forEach(section=>{
     const tasks=(site.tasks||[]).filter(t=>t.section===section&&(!taskFilter||String(t.id)===String(taskFilter)));
     tasks.forEach(t=>{
       const ss=t.subtasks||[];
+      // Each Task gets its own background colour (cycles through a palette).
+      const startCount=count;band++;const bandCls=`tracker-task-band-${band%6}`;
       if(!ss.length){
         const matches=!detailSearch||[section,t.task_name,'Add Sub-task','—'].some(v=>String(v||'').toLowerCase().includes(detailSearch));
-        if(matches){count++;html+=`<tr><td>${esc(section)}</td><td><strong>${esc(t.task_name)}</strong></td><td><button class="tracker-inline tracker-add-subtask" data-task="${t.id}" title="Add Sub-task">+ Add Sub-task</button></td><td>—</td><td>${trackerActions(t.id,0)}</td></tr>`;}
+        if(matches){count++;html+=`<tr class="${bandCls}"><td>${esc(section)}</td><td><strong>${esc(t.task_name)}</strong></td><td><button class="tracker-inline tracker-add-subtask" data-task="${t.id}" title="Add Sub-task">+ Add Sub-task</button></td><td>—</td><td>${trackerActions(t.id,0)}</td></tr>`;}
       }
       ss.forEach(sub=>{
         const pct=Number(sub.completion)||0;
         const matches=!detailSearch||[section,t.task_name,sub.subtask_name,pct===0?'':String(pct),pct===0?'%':`${pct}%`].some(v=>String(v||'').toLowerCase().includes(detailSearch));
         if(!matches)return;
-        count++;html+=`<tr><td>${esc(section)}</td><td><strong>${esc(t.task_name)}</strong></td><td>${esc(sub.subtask_name)}</td><td><div class="tracker-edit"><input type="number" min="0" max="100" step="0.01" class="tracker-value" data-id="${sub.id}" value="${pct===0?'':pct}" placeholder=""><span>%</span></div></td><td>${trackerActions(t.id,sub.id)}</td></tr>`;
+        count++;html+=`<tr class="${bandCls}"><td>${esc(section)}</td><td><strong>${esc(t.task_name)}</strong></td><td>${esc(sub.subtask_name)}</td><td><div class="tracker-edit"><input type="number" min="0" max="100" step="0.01" class="tracker-value" data-id="${sub.id}" value="${pct===0?'':pct}" placeholder=""><span>%</span></div></td><td>${trackerActions(t.id,sub.id)}</td></tr>`;
       });
+      if(count===startCount)band--; // task hidden by search: don't use up a colour
     });
   });
   if(!count)html+='<tr><td colspan="5">No matching Tasks or Sub-tasks found.</td></tr>';
