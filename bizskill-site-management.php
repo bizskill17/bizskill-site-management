@@ -2,14 +2,14 @@
 /**
  * Plugin Name: BizSkill Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.1.515
+ * Version: 0.1.516
  * Author: BizSkill
  */
 
 if (!defined('ABSPATH')) exit;
 
 final class BSM_Site_Management {
-    const VERSION = '0.1.515';
+    const VERSION = '0.1.516';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -1340,6 +1340,11 @@ final class BSM_Site_Management {
                 // Hide the WordPress front-end admin toolbar only on these app pages.
                 show_admin_bar(false);
                 add_filter('show_admin_bar', '__return_false', 999);
+                // The app page holds per-user login data and must always be fresh,
+                // so stop LiteSpeed / other page caches and the browser from storing it.
+                if (!defined('DONOTCACHEPAGE')) define('DONOTCACHEPAGE', true);
+                do_action('litespeed_control_set_nocache', 'BizSkill Site Management app page');
+                if (!headers_sent()) nocache_headers();
                 return plugin_dir_path(__FILE__) . 'templates/app.php';
             }
         }
