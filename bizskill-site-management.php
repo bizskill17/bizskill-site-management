@@ -2,14 +2,14 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.060
+ * Version: 0.0.061
  * Author: BizSkill
  */
 
 if (!defined('ABSPATH')) exit;
 
 final class BSM_Site_Management {
-    const VERSION = '0.0.060';
+    const VERSION = '0.0.061';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -33,6 +33,7 @@ final class BSM_Site_Management {
         add_action('init', [$this, 'maybe_upgrade']);
 
         add_action('wp_ajax_bsm_project_tracker', [$this, 'ajax_project_tracker']);
+        add_action('wp_ajax_bsm_save_view_visibility', [$this, 'ajax_save_view_visibility']);
         add_action('wp_ajax_bsm_project_tracker_save', [$this, 'ajax_project_tracker_save']);
         add_action('wp_ajax_bsm_boq_list', [$this, 'ajax_boq_list']);
         add_action('wp_ajax_bsm_boq_pdf', [$this, 'ajax_boq_pdf']);
@@ -317,6 +318,7 @@ final class BSM_Site_Management {
             'invoice_master' => ['Invoice Master', 'invoice-master'],
             'invoice_items' => ['Invoice Items Master', 'invoice-items'],
             'company_settings' => ['Company Settings', 'company-settings'],
+            'view_settings' => ['Show / Hide Views', 'view-settings'],
         ];
     }
 
@@ -1551,6 +1553,7 @@ final class BSM_Site_Management {
             'initialView' => get_post_meta($post->ID, '_bsm_view_key', true) ?: 'dashboard',
             'pages' => $this->page_urls(),
             'deleteIcon' => plugin_dir_url(__FILE__) . 'assets/delete-icon.png',
+            'hiddenViews' => $this->hidden_views(),
         ]);
     }
 
@@ -1558,6 +1561,29 @@ final class BSM_Site_Management {
         ob_start();
         include plugin_dir_path(__FILE__) . 'templates/app-shell.php';
         return ob_get_clean();
+    }
+
+    // Views that can never be hidden, so an admin can always reach Settings again.
+    private const PROTECTED_VIEWS = ['company_settings', 'view_settings'];
+
+    // Views switched off in Settings > Show / Hide Views (applies to every user).
+    private function hidden_views() {
+        $hidden = get_option('bsm_hidden_views', []);
+        if (!is_array($hidden)) $hidden = [];
+        $hidden = array_map('sanitize_key', $hidden);
+        return array_values(array_unique(array_diff($hidden, self::PROTECTED_VIEWS)));
+    }
+
+    public function ajax_save_view_visibility() {
+        $this->verify_ajax();
+        global $wpdb;
+        $role = (string)$wpdb->get_var($wpdb->prepare("SELECT role FROM {$this->prefix}users WHERE wp_user_id=%d LIMIT 1", get_current_user_id()));
+        $is_admin = current_user_can('manage_options') || ($role !== '' && $role !== 'bsm_employee');
+        if (!$is_admin) wp_send_json_error(['message' => 'Only administrators can change view visibility.'], 403);
+        $hidden = isset($_POST['hidden']) && is_array($_POST['hidden']) ? wp_unslash($_POST['hidden']) : [];
+        $hidden = array_values(array_unique(array_diff(array_filter(array_map('sanitize_key', $hidden)), self::PROTECTED_VIEWS)));
+        update_option('bsm_hidden_views', $hidden, false);
+        wp_send_json_success(['hidden' => $hidden, 'message' => 'Saved']);
     }
 
     private function verify_ajax($require_login = true) {

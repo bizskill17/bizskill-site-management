@@ -25,7 +25,7 @@ const App = {
     {group:'Payment', items:[['report_vendor_outstanding','Vendor Outstanding'],['pending_allowance_payment','Pending Allowance Payment'],['report_contractor_outstanding','Contractor Outstanding'],['pending_salary_payment','Pending Salary Payment'],['vendor_payments','Payment Master']]},
     {group:'Quotation', items:[['quotation_form','Quotation Form'],['quotation_master','Quotation Master'],['quotation_items','Quotation Items Master']]},
     {group:'Tax Invoice', items:[['invoice_form','Invoice Form'],['invoice_master','Invoice Master'],['invoice_items','Invoice Items Master']]},
-    {group:'Settings', items:[['company_settings','Company Settings']]}
+    {group:'Settings', items:[['company_settings','Company Settings'],['view_settings','Show / Hide Views']]}
   ],
   configs: {}
 };
@@ -188,14 +188,62 @@ function restoreNavScroll(){
   requestAnimationFrame(()=>{nav.scrollTop=y;requestAnimationFrame(()=>{nav.scrollTop=y;});});
 }
 
+// ---- Show / Hide Views (Settings) ----
+const BSM_PROTECTED_VIEWS=['company_settings','view_settings'];
+function bsmHiddenSet(){return new Set((BSM.hiddenViews||[]).filter(k=>!BSM_PROTECTED_VIEWS.includes(k)));}
+function isViewHidden(k){return bsmHiddenSet().has(k);}
+function firstVisibleView(){
+  const allowed=(BSM.currentUser&&BSM.currentUser.is_admin)?null:new Set((BSM.currentUser&&BSM.currentUser.allowed_views)||[]);
+  for(const g of App.nav){if(allowed!==null&&['Masters','Settings'].includes(g.group))continue;for(const [k] of g.items){if(isViewHidden(k))continue;if(allowed===null||allowed.has(k)||k==='my_salary_slips')return k;}}
+  return '';
+}
+function renderViewSettings(){
+  setTitle('Show / Hide Views');
+  if(!(BSM.currentUser&&BSM.currentUser.is_admin)){$('#bsm-content').html('<div class="bsm-empty">Only administrators can change this setting.</div>');return;}
+  const hidden=bsmHiddenSet();
+  let h='<div class="bsm-panel bsm-viewvis"><p class="bsm-viewvis-help">Ticked views are visible in the menu. Untick a view to hide it for all users. A menu group with no ticked views is hidden completely.</p>';
+  h+='<div class="bsm-viewvis-tools"><button type="button" class="bsm-btn" id="bsm-viewvis-all">Tick All</button><button type="button" class="bsm-btn" id="bsm-viewvis-none">Untick All</button><div class="bsm-spacer"></div><button type="button" class="bsm-btn bsm-btn-primary" id="bsm-viewvis-save">Save</button></div><div class="bsm-viewvis-grid">';
+  App.nav.forEach((g,gi)=>{
+    const items=g.items.filter(([k])=>!(g.group==='Payment'&&k==='payment_form'));
+    if(!items.length)return;
+    const title=g.group==='Main'?'Dashboard':g.group;
+    h+=`<div class="bsm-viewvis-group"><label class="bsm-viewvis-group-head"><input type="checkbox" class="bsm-viewvis-group-cb" data-group="${gi}"><span>${esc(title)}</span></label><div class="bsm-viewvis-items">`;
+    items.forEach(([k,l])=>{
+      const locked=BSM_PROTECTED_VIEWS.includes(k);
+      h+=`<label class="bsm-viewvis-item${locked?' is-locked':''}"><input type="checkbox" class="bsm-viewvis-cb" data-group="${gi}" value="${esc(k)}" ${hidden.has(k)?'':'checked'} ${locked?'disabled title="Always visible"':''}><span>${esc(l)}</span>${locked?'<small>always visible</small>':''}</label>`;
+    });
+    h+='</div></div>';
+  });
+  h+='</div></div>';
+  $('#bsm-content').html(h);
+  syncViewVisGroups();
+}
+function syncViewVisGroups(){
+  $('.bsm-viewvis-group-cb').each(function(){
+    const cbs=$(`.bsm-viewvis-cb[data-group="${$(this).data('group')}"]`),on=cbs.filter(':checked').length;
+    this.checked=on===cbs.length;this.indeterminate=on>0&&on<cbs.length;
+  });
+}
+// The same view can appear in two groups (e.g. Payment). Keep its boxes in step.
+$(document).on('change','.bsm-viewvis-cb',function(){$(`.bsm-viewvis-cb[value="${this.value}"]`).not(':disabled').prop('checked',this.checked);syncViewVisGroups();});
+$(document).on('change','.bsm-viewvis-group-cb',function(){const on=this.checked;$(`.bsm-viewvis-cb[data-group="${$(this).data('group')}"]`).not(':disabled').each(function(){$(`.bsm-viewvis-cb[value="${this.value}"]`).not(':disabled').prop('checked',on);});syncViewVisGroups();});
+$(document).on('click','#bsm-viewvis-all,#bsm-viewvis-none',function(){$('.bsm-viewvis-cb').not(':disabled').prop('checked',this.id==='bsm-viewvis-all');syncViewVisGroups();});
+$(document).on('click','#bsm-viewvis-save',async function(){
+  const btn=$(this),hidden=[...new Set($('.bsm-viewvis-cb').not(':disabled').not(':checked').map(function(){return this.value;}).get())];
+  btn.prop('disabled',true).text('Saving…');
+  try{const r=await ajax('bsm_save_view_visibility',{hidden});if(!r.success)return showToast(r.data?.message||'Unable to save',true);BSM.hiddenViews=r.data.hidden||[];buildNav();$('.bsm-nav-item[data-view="view_settings"]').addClass('active');showToast('Saved. Menu updated.');}
+  catch(e){showToast('Unable to save. Please try again.',true);}
+  finally{btn.prop('disabled',false).text('Save');}
+});
+
 function buildNav(){
   const groupIcons={'Project Tracker':'▥',BOQ:'▤',Main:'⌂',Masters:'▦',Purchase:'↓','Site Requisition':'≡',Dispatch:'→','Site Material Receipt':'✓',Consumption:'−','Material Return':'↩','Labour Attendance':'♟',Contractor:'▤','HO Receipts and Payments':'₹','Employee Allowance':'₹',Salary:'₹',Inventory:'▥','Contractor Outstanding':'₹',Sites:'▥',Settings:'⚙'};
-  const itemIcons={project_tracker:'▤',boq_form:'+',boq_master:'▤',boq_items:'▥',boq_monitoring:'◫',dashboard:'⌂',bank_accounts:'₹',users:'●',designations:'◆',customers:'▤',sites:'⌖',vendors:'▣',labour_contractors:'♟',states:'⌖',item_categories:'▦',units:'◢',items:'◇',warehouses:'⌂',expense_categories:'▤',purchase_form:'+',payment_form:'₹',purchase_pending_approval:'✓',purchase_register:'▤',purchase_items_register:'▥',pending_invoice_copy:'▧',purchase_order_form:'+',pending_po_items:'✓',purchase_order_pending_receipt:'↓',purchase_order_master:'▤',purchase_order_items_master:'▥',pending_contractor_bill_copy:'▧',requisition_form:'+',material_requisitions:'≡',material_requisition_item:'▥',pending_requisition_approval:'✓',pending_material_receipt:'✓',material_inwards:'↓',material_dispatches:'→',pending_material_dispatch:'⇢',dispatch_items_register:'▥',pending_site_receipt:'✓',site_receipts:'✓',site_material_item_receipt:'▥',pending_site_receive_challans:'▧',ho_inventory:'▥',site_inventory:'▥',site_opening_stock:'+',daily_outward_summary:'→',consumption_form:'+',site_consumptions:'−',consumption_items_register:'▥',return_form:'+',material_returns:'↩',material_returns_item_master:'▥',material_stock:'▥',labour_attendance:'♟',office_daily_attendance:'✓',office_attendance_master:'▤',office_monthly_salary:'₹',allowance_form:'+',pending_allowance_approval:'✓',pending_allowance_payment:'₹',allowance_master:'▤',employee_allowance_limits:'▥',allowance_types:'▤',monthly_salary_upload:'↑',salary_slips:'▤',pending_salary_payment:'₹',my_salary_slips:'▤',site_fund_allocations:'₹',site_expenses:'₹',daily_expense_summary:'▤',customer_receipts:'↓',vendor_payments:'↑',contractor_form:'+',contractor_advance:'₹',contractor_advance_register:'▤',pending_contractor_payment:'₹',contractor_bills:'▤',contractor_payments:'↑',gst_invoices:'▤',report_stock:'▥',report_site_fund:'▥',report_site_cost:'▥',report_labour:'▥',report_labour_summary:'▥',report_customer_outstanding:'▥',report_vendor_outstanding:'▥',report_contractor_outstanding:'▥',quotation_form:'+',quotation_master:'▤',quotation_items:'▥',invoice_form:'+',invoice_master:'▤',invoice_items:'▥',company_settings:'⚙'};
+  const itemIcons={view_settings:'☑',project_tracker:'▤',boq_form:'+',boq_master:'▤',boq_items:'▥',boq_monitoring:'◫',dashboard:'⌂',bank_accounts:'₹',users:'●',designations:'◆',customers:'▤',sites:'⌖',vendors:'▣',labour_contractors:'♟',states:'⌖',item_categories:'▦',units:'◢',items:'◇',warehouses:'⌂',expense_categories:'▤',purchase_form:'+',payment_form:'₹',purchase_pending_approval:'✓',purchase_register:'▤',purchase_items_register:'▥',pending_invoice_copy:'▧',purchase_order_form:'+',pending_po_items:'✓',purchase_order_pending_receipt:'↓',purchase_order_master:'▤',purchase_order_items_master:'▥',pending_contractor_bill_copy:'▧',requisition_form:'+',material_requisitions:'≡',material_requisition_item:'▥',pending_requisition_approval:'✓',pending_material_receipt:'✓',material_inwards:'↓',material_dispatches:'→',pending_material_dispatch:'⇢',dispatch_items_register:'▥',pending_site_receipt:'✓',site_receipts:'✓',site_material_item_receipt:'▥',pending_site_receive_challans:'▧',ho_inventory:'▥',site_inventory:'▥',site_opening_stock:'+',daily_outward_summary:'→',consumption_form:'+',site_consumptions:'−',consumption_items_register:'▥',return_form:'+',material_returns:'↩',material_returns_item_master:'▥',material_stock:'▥',labour_attendance:'♟',office_daily_attendance:'✓',office_attendance_master:'▤',office_monthly_salary:'₹',allowance_form:'+',pending_allowance_approval:'✓',pending_allowance_payment:'₹',allowance_master:'▤',employee_allowance_limits:'▥',allowance_types:'▤',monthly_salary_upload:'↑',salary_slips:'▤',pending_salary_payment:'₹',my_salary_slips:'▤',site_fund_allocations:'₹',site_expenses:'₹',daily_expense_summary:'▤',customer_receipts:'↓',vendor_payments:'↑',contractor_form:'+',contractor_advance:'₹',contractor_advance_register:'▤',pending_contractor_payment:'₹',contractor_bills:'▤',contractor_payments:'↑',gst_invoices:'▤',report_stock:'▥',report_site_fund:'▥',report_site_cost:'▥',report_labour:'▥',report_labour_summary:'▥',report_customer_outstanding:'▥',report_vendor_outstanding:'▥',report_contractor_outstanding:'▥',quotation_form:'+',quotation_master:'▤',quotation_items:'▥',invoice_form:'+',invoice_master:'▤',invoice_items:'▥',company_settings:'⚙'};
   let h='';
   const allowed=(BSM.currentUser&&BSM.currentUser.is_admin)?null:new Set((BSM.currentUser&&BSM.currentUser.allowed_views)||[]);
   App.nav.forEach((g,idx)=>{
     if(allowed!==null && ['Masters','Settings'].includes(g.group)) return;
-    const visibleItems=(allowed===null?g.items:g.items.filter(([k])=>allowed.has(k)||k==='my_salary_slips')).filter(([k])=>!(g.group==='Payment'&&k==='payment_form'));
+    const visibleItems=(allowed===null?g.items:g.items.filter(([k])=>allowed.has(k)||k==='my_salary_slips')).filter(([k])=>!(g.group==='Payment'&&k==='payment_form')).filter(([k])=>!isViewHidden(k));
     if(!visibleItems.length) return;
 
     // Dashboard is a standalone first-level menu item. Do not show the old "Main" section.
@@ -555,9 +603,11 @@ $(document).on('click','#tracker-excel',function(){const sites=(App.trackerSites
 
 async function openView(key){
   const allowed=(BSM.currentUser&&BSM.currentUser.is_admin)?null:new Set((BSM.currentUser&&BSM.currentUser.allowed_views)||[]);
-  if(allowed!==null && key!=='my_salary_slips' && (key==='company_settings' || !allowed.has(key))){ showToast('You do not have permission to access this view.',true); return; }
+  if(allowed!==null && key!=='my_salary_slips' && (key==='company_settings' || key==='view_settings' || !allowed.has(key))){ showToast('You do not have permission to access this view.',true); return; }
+  if(isViewHidden(key)){const fb=firstVisibleView();if(fb&&fb!==key)return openView(fb);$('#bsm-content').html('<div class="bsm-empty">This view is hidden. An administrator can turn it on in Settings → Show / Hide Views.</div>');return;}
   exitInlineFormMode();
   App.current=key;App.page=1;App.search=''; $('.bsm-nav-item').removeClass('active');$(`.bsm-nav-item[data-view="${key}"]`).addClass('active');$('.bsm-sidebar').removeClass('open');
+  if(key==='view_settings')return renderViewSettings();
   if(key==='project_tracker')return renderProjectTracker();
   if(key==='dashboard'){await ensureOptions(['sites']);return renderDashboard();}
   if(key.startsWith('boq_')){await ensureOptions(['sites','items','units','sections']);return key==='boq_form'?renderBoqForm():renderBoqListing(key);}

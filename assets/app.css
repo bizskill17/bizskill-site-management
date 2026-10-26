@@ -2715,3 +2715,15 @@ html,body{
 /* Site Tracker: keep Progress % column narrow; free space goes to Task / Sub-task */
 .tracker-flat-table th:nth-child(4),.tracker-flat-table td:nth-child(4){width:1%;white-space:nowrap}
 .tracker-flat-table .tracker-edit input{width:72px}
+
+/* Settings > Show / Hide Views */
+.bsm-viewvis-help{margin:0 0 12px;color:#41556f;font-size:14px}
+.bsm-viewvis-tools{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}.bsm-viewvis-tools .bsm-spacer{flex:1}
+.bsm-viewvis-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.bsm-viewvis-group{border:1px solid #c9d8ef;border-radius:10px;background:#fff;overflow:hidden}
+.bsm-viewvis-group-head{display:flex;gap:8px;align-items:center;padding:10px 12px;background:#123b68;color:#fff;font-weight:700;cursor:pointer}
+.bsm-viewvis-items{display:flex;flex-direction:column;padding:6px 12px 10px}
+.bsm-viewvis-item{display:flex;gap:8px;align-items:center;padding:6px 0;font-size:14px;cursor:pointer;border-bottom:1px dashed #e3eaf5}
+.bsm-viewvis-item:last-child{border-bottom:0}
+.bsm-viewvis-item.is-locked{opacity:.7;cursor:default}.bsm-viewvis-item small{margin-left:auto;color:#6b7c93;font-size:11px}
+.bsm-viewvis input[type=checkbox]{width:16px;height:16px;flex:0 0 16px;margin:0}
