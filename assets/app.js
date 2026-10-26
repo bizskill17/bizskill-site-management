@@ -488,7 +488,7 @@ function trackerModal({mode='task',taskId=0,section='',taskName='' }={}){
   $('body').append(modal);
   $('#tracker-entry-form input[name="task_name"],#tracker-entry-form input[name="subtask_names[]"]').first().trigger('focus');
 }
-$(document).on('click','.tracker-add-task',function(){trackerModal({mode:'task'});});
+$(document).on('click','.tracker-add-task,#tracker-add-task-main',function(){trackerModal({mode:'task'});});
 $(document).on('click','.tracker-add-subtask',function(){const id=Number($(this).data('task'));const site=(App.trackerSites||[]).find(s=>+s.id===+trackerSite);const task=(site?.tasks||[]).find(t=>+t.id===id);if(!task)return showToast('Task not found',true);trackerModal({mode:'subtask',taskId:id,section:task.section,taskName:task.task_name});});
 
 $(document).on('click','.tracker-action-edit',function(){
