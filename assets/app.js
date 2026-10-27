@@ -3682,7 +3682,7 @@ function bsmRenderSearchableOptions($select,$wrap,query='',filter=true){
 function bsmCloseSearchable($wrap,restore=true){
   if(!$wrap || !$wrap.length) return;
   $wrap.removeClass('open drop-up invoice-item-open bsm-item-dropdown-open bsm-po-vendor-dropdown-open');
-  $wrap.find('.bsm-select-menu').css({top:'',left:'',right:'',width:'',maxHeight:''});
+  $wrap.find('.bsm-select-menu').css({position:'',top:'',bottom:'',left:'',right:'',width:'',minWidth:'',maxWidth:'',maxHeight:''});
   $wrap.find('.bsm-select-arrow').text('⌄');
   if(restore){
     const $select=$wrap.prev('select');
@@ -3734,7 +3734,9 @@ function bsmOpenSearchable($wrap){
     const height=Math.max(80,Math.min(250,(dropUp?above:below)-8));
     const top=dropUp?Math.max(8,rect.top-height-4):rect.bottom+4;
     $wrap.addClass('bsm-po-vendor-dropdown-open').toggleClass('drop-up',dropUp);
-    $menu.css({position:'fixed',top:top+'px',bottom:'auto',left:left+'px',right:'auto',width:width+'px',maxHeight:height+'px'});
+    // Override legacy Pending PO !important widths, which otherwise push the menu off-screen.
+    const menuStyle=$menu[0].style;
+    Object.entries({position:'fixed',top:top+'px',bottom:'auto',left:left+'px',right:'auto',width:width+'px','min-width':'0','max-width':width+'px','max-height':height+'px'}).forEach(([key,value])=>menuStyle.setProperty(key,value,'important'));
     return;
   }
   if(itemSelect && rect && $menu.length){
