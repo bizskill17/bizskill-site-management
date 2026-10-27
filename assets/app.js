@@ -3708,6 +3708,21 @@ function bsmOpenSearchable($wrap){
   // v456: PO Vendor menus must escape the horizontally scrolling PO table.
   // Keep the original select in place so PO creation still receives its Vendor ID.
   const poVendorSelect=$select.is('select.po-row-vendor,select#po_direct_vendor');
+  // BOQ selectors have class-based names and must escape the form/table scroll area.
+  if($select.closest('#bsm-boq-form').length && rect && $menu.length){
+    const vw=document.documentElement.clientWidth||window.innerWidth;
+    const vh=document.documentElement.clientHeight||window.innerHeight;
+    const width=Math.min(Math.max(rect.width,220),Math.max(0,vw-16));
+    const left=Math.max(8,Math.min(rect.left,vw-width-8));
+    const below=Math.max(0,vh-rect.bottom-12);
+    const above=Math.max(0,rect.top-12);
+    const dropUp=below<150 && above>below;
+    const height=Math.min(260,dropUp?above:below);
+    const top=dropUp?Math.max(8,rect.top-height-4):rect.bottom+4;
+    $wrap.addClass('bsm-item-dropdown-open').removeClass('drop-up');
+    $menu.css({position:'fixed',left:left+'px',right:'auto',top:top+'px',bottom:'auto',width:width+'px',maxHeight:height+'px'});
+    return;
+  }
   if(poVendorSelect && rect && $menu.length){
     const vw=document.documentElement.clientWidth||window.innerWidth;
     const vh=document.documentElement.clientHeight||window.innerHeight;
@@ -3824,7 +3839,7 @@ $(document).on('invalid','select.bsm-native-select',function(e){
 $(window).on('resize scroll',function(){
   $('.bsm-searchable-select.bsm-item-dropdown-open').each(function(){bsmCloseSearchable($(this),true);});
 });
-$(document).on('scroll','.bsm-lines .bsm-table-wrap, .bsm-quotation-lines .bsm-table-wrap, .bsm-purchase-lines .bsm-table-wrap',function(){
+$(document).on('scroll','.bsm-lines .bsm-table-wrap, .bsm-quotation-lines .bsm-table-wrap, .bsm-purchase-lines .bsm-table-wrap, .bsm-boq-table-wrap',function(){
   $('.bsm-searchable-select.bsm-item-dropdown-open').each(function(){bsmCloseSearchable($(this),true);});
 });
 $(document).on('click',function(e){
