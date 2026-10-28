@@ -1,4 +1,4 @@
-# Site Management 0.0.062
+# Site Management 0.0.063
 
 ## Upgrade
 
@@ -40,7 +40,15 @@ Rates are captured when unapproved time entries are saved. Update and resave ent
 
 - PHP syntax checks: main plugin and workforce/transfer trait.
 - JavaScript syntax check: `assets/app.js`.
-- `php tests/operations.php`: 39 standalone regression checks using PDO SQLite. Covers date applicability, effective holiday salary, duration/overlap checks, ownership, approvals, billing, duplicate prevention, draft/dispatch/partial receipt, damage, stock reconciliation and site permissions.
+- `php tests/operations.php`: 54 standalone regression checks using PDO SQLite. Covers date applicability, effective holiday salary, duration/overlap checks, ownership, approvals, billing, duplicate prevention, draft/dispatch/partial receipt, damage, stock reconciliation and site permissions.
 - Browser smoke checks with mocked AJAX: all seven views render, time entry duration/submission, contractor bill preview and partial/damaged receipt submission. Desktop and mobile Time Sheet layouts inspected.
 
 Live WordPress/MySQL migration and hosting deployment have not been exercised in this workspace. After deployment, verify the new pages, grant employee permissions, and run one contractor bill and one transfer through the site's normal workflow.
+
+## Contractor employee table (0.0.063)
+
+The Add/Edit Labour Contractor form includes an Employees grid: Name, Mobile, Address, Bank, IFSC, AC No. Add/remove rows and save the contractor once. Existing linked employees load on edit. Child updates retain their IDs and daily/hourly rates; removal deactivates employees already referenced by time entries, preserving their history. Employee account numbers are stored as text. HO/Admin access is required to save the employee grid. The standalone Contractor Employees view also displays and edits these contact/bank details alongside rates.
+
+## Time Sheet Master actions
+
+Status and Bill columns are removed from the table and Excel export. Each row provides Edit and Delete. Employees can change their own unapproved entries; HO/Admin can change unbilled entries. Billed entries remain locked. Edit recalculates duration and checks overlaps, including overnight intervals. For contractor entries, HO/Admin can approve billing in the Edit dialog.

@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) exit;
 /** Attendance, contractor billing and two-stage inter-site stock movements. */
 trait BSM_Workforce_Transfers {
     public function operations_upgrade() {
-        if (get_option('bsm_operations_version') === '1') return;
+        if (get_option('bsm_operations_version') === '2') return;
         global $wpdb; $p=$this->prefix; $c=$wpdb->get_charset_collate();
         require_once ABSPATH.'wp-admin/includes/upgrade.php';
         $schemas=[
@@ -20,6 +20,11 @@ trait BSM_Workforce_Transfers {
                 id bigint unsigned NOT NULL AUTO_INCREMENT,
                 contractor_id bigint unsigned NOT NULL,
                 employee_name varchar(190) NOT NULL,
+                mobile varchar(30) NOT NULL DEFAULT '',
+                address text NULL,
+                bank_name varchar(190) NOT NULL DEFAULT '',
+                ifsc varchar(20) NOT NULL DEFAULT '',
+                account_number varchar(60) NOT NULL DEFAULT '', 
                 daily_rate decimal(18,2) NOT NULL DEFAULT 0,
                 hourly_rate decimal(18,2) NOT NULL DEFAULT 0,
                 status varchar(20) NOT NULL DEFAULT 'active',
@@ -98,11 +103,15 @@ trait BSM_Workforce_Transfers {
             if(!$wpdb->get_var("SHOW COLUMNS FROM {$p}{$table} LIKE 'payment_basis'"))
                 $wpdb->query("ALTER TABLE {$p}{$table} ADD payment_basis varchar(30) NOT NULL DEFAULT 'direct'");
         }
+        foreach(['mobile'=>"varchar(30) NOT NULL DEFAULT ''",'address'=>'text NULL','bank_name'=>"varchar(190) NOT NULL DEFAULT ''",'ifsc'=>"varchar(20) NOT NULL DEFAULT ''",'account_number'=>"varchar(60) NOT NULL DEFAULT ''"] as $column=>$definition){
+            if(!$wpdb->get_var("SHOW COLUMNS FROM {$p}contractor_employees LIKE '$column'"))$wpdb->query("ALTER TABLE {$p}contractor_employees ADD $column $definition");
+        }
         $ready=true; foreach(['holidays','contractor_employees','time_entries','site_transfers','site_transfer_items','site_transfer_receipts'] as $table) {
             if($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s',$wpdb->esc_like($p.$table)))!==$p.$table) $ready=false;
         }
         foreach(['labour_contractors','contractor_bills'] as $table)if(!$wpdb->get_var("SHOW COLUMNS FROM {$p}{$table} LIKE 'payment_basis'"))$ready=false;
-        if($ready) { $this->create_app_pages(); update_option('bsm_operations_version','1'); }
+        foreach(['mobile','address','bank_name','ifsc','account_number'] as $column)if(!$wpdb->get_var("SHOW COLUMNS FROM {$p}contractor_employees LIKE '$column'"))$ready=false;
+        if($ready) { $this->create_app_pages(); update_option('bsm_operations_version','2'); }
     }
     private function ops_user() {
         global $wpdb;
@@ -119,6 +128,40 @@ trait BSM_Workforce_Transfers {
     private function ops_date($value) {
         $v=sanitize_text_field($value); $d=DateTime::createFromFormat('!Y-m-d',$v);
         if(!$d || $d->format('Y-m-d')!==$v) throw new Exception('Select a valid date.'); return $v;
+    }
+    private function ops_worker_details($data) {
+        $name=trim(sanitize_text_field($data['employee_name']??''));if($name==='')throw new Exception('Employee Name is required.');
+        $mobile=trim(sanitize_text_field($data['mobile']??''));if($mobile!==''&&!preg_match('/^[0-9]{10}$/',$mobile))throw new Exception('Employee Mobile must contain 10 digits.');
+        $ifsc=strtoupper(trim(sanitize_text_field($data['ifsc']??'')));if($ifsc!==''&&!preg_match('/^[A-Z]{4}0[A-Z0-9]{6}$/',$ifsc))throw new Exception('Enter a valid Employee IFSC.');
+        $account=trim(sanitize_text_field($data['account_number']??''));if($account!==''&&!preg_match('/^[0-9]{1,60}$/',$account))throw new Exception('Employee AC No. must contain digits only.');
+        return ['employee_name'=>$name,'mobile'=>$mobile,'address'=>sanitize_textarea_field($data['address']??''),'bank_name'=>sanitize_text_field($data['bank_name']??''),'ifsc'=>$ifsc,'account_number'=>$account];
+    }
+    private function ops_save_contractor_employees($id,$parent,$employees) {
+        $this->ops_require_admin();global $wpdb;$p=$this->prefix;$lock=$this->ops_lock('contractor_'.($id?:'new'));
+        try {
+            $wpdb->query('START TRANSACTION');
+            if($id){if(!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}labour_contractors WHERE id=%d FOR UPDATE",$id)))throw new Exception('Contractor not found.');$this->ops_write($wpdb->update($p.'labour_contractors',$parent,['id'=>$id]));}
+            else{$this->ops_write($wpdb->insert($p.'labour_contractors',$parent));$id=(int)$wpdb->insert_id;}
+            $existing=$wpdb->get_results($wpdb->prepare("SELECT * FROM {$p}contractor_employees WHERE contractor_id=%d FOR UPDATE",$id),ARRAY_A);$saved=[];
+            foreach($employees as $employee){
+                if(!is_array($employee))throw new Exception('Invalid Employee row.');$eid=(int)($employee['id']??0);
+                if(!$eid && !array_filter(array_intersect_key($employee,array_flip(['employee_name','mobile','address','bank_name','ifsc','account_number'])),function($v){return trim((string)$v)!=='';}))continue;
+                if($eid && in_array($eid,$saved,true))throw new Exception('An Employee row cannot be repeated.');
+                $old=null;foreach($existing as $e)if((int)$e['id']===$eid)$old=$e;
+                if($eid&&!$old)throw new Exception('Employee does not belong to this Contractor.');
+                $row=$this->ops_worker_details($employee);$row['contractor_id']=$id;$row['status']='active';
+                if($eid)$this->ops_write($wpdb->update($p.'contractor_employees',$row,['id'=>$eid]));
+                else{$this->ops_write($wpdb->insert($p.'contractor_employees',$row));$eid=(int)$wpdb->insert_id;}
+                $saved[]=$eid;
+            }
+            foreach($existing as $e)if(!in_array((int)$e['id'],$saved,true)&&$e['status']==='active'){
+                // Preserve employee IDs referenced by historical time sheets/bills.
+                if($wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}time_entries WHERE worker_id=%d LIMIT 1",$e['id'])))$this->ops_write($wpdb->update($p.'contractor_employees',['status'=>'inactive'],['id'=>$e['id']]));
+                else $this->ops_write($wpdb->delete($p.'contractor_employees',['id'=>$e['id']]));
+            }
+            $wpdb->query('COMMIT');return $id;
+        }catch(Throwable $e){$wpdb->query('ROLLBACK');throw $e;}
+        finally{$wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)',$lock));}
     }
     private function ops_time_interval($date,$from,$to) {
         $start=strtotime($date.' '.substr($from,0,5).' UTC');
@@ -190,6 +233,7 @@ trait BSM_Workforce_Transfers {
                 $employees=$wpdb->get_results("SELECT id,name label FROM {$p}users WHERE status='active' ORDER BY name",ARRAY_A);
                 if(!$admin)$employees=array_values(array_filter($employees,function($e)use($user){return (int)$e['id']===(int)$user['id'];}));
                 $workers=$wpdb->get_results("SELECT w.*,w.employee_name label,c.contractor_name,c.payment_basis FROM {$p}contractor_employees w JOIN {$p}labour_contractors c ON c.id=w.contractor_id ORDER BY w.employee_name",ARRAY_A);
+                if(!$admin)foreach($workers as &$worker){unset($worker['mobile'],$worker['address'],$worker['bank_name'],$worker['ifsc'],$worker['account_number']);}unset($worker);
                 $destinations=$wpdb->get_results("SELECT id,site_name label FROM {$p}sites WHERE status='active' ORDER BY site_name",ARRAY_A);
                 $result=['destinations'=>$destinations,'admin'=>$admin,'employee_id'=>(int)$user['id'],'employees'=>$employees,'workers'=>$workers];break;
             case 'holiday_list':
@@ -209,7 +253,8 @@ trait BSM_Workforce_Transfers {
                 if(!$name||!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}labour_contractors WHERE id=%d",$cid)))throw new Exception('Contractor and Employee Name are required.');
                 if((float)($d['daily_rate']??0)<0||(float)($d['hourly_rate']??0)<0)throw new Exception('Rates cannot be negative.');
                 if($id && $wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}time_entries WHERE worker_id=%d LIMIT 1",$id)) && $cid!==(int)$wpdb->get_var($wpdb->prepare("SELECT contractor_id FROM {$p}contractor_employees WHERE id=%d",$id)))throw new Exception('A used Employee cannot be moved to another Contractor.');
-                $row=['contractor_id'=>$cid,'employee_name'=>$name,'daily_rate'=>round((float)($d['daily_rate']??0),2),'hourly_rate'=>round((float)($d['hourly_rate']??0),2),'status'=>($d['status']??'active')==='inactive'?'inactive':'active'];
+                $details=$this->ops_worker_details(array_merge((array)($id?$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}contractor_employees WHERE id=%d",$id),ARRAY_A):[]),$d));
+                $row=array_merge($details,['contractor_id'=>$cid,'employee_name'=>$name,'daily_rate'=>round((float)($d['daily_rate']??0),2),'hourly_rate'=>round((float)($d['hourly_rate']??0),2),'status'=>($d['status']??'active')==='inactive'?'inactive':'active']);
                 $this->ops_write($id?$wpdb->update($p.'contractor_employees',$row,['id'=>$id]):$wpdb->insert($p.'contractor_employees',$row));break;
             case 'time_list':$result=['rows'=>$this->ops_time_rows($d,$user)];break;
             case 'time_save':
@@ -246,6 +291,25 @@ trait BSM_Workforce_Transfers {
                 usort($intervals,function($a,$b){return $a[0]<=>$b[0];});for($i=1;$i<count($intervals);$i++)if($intervals[$i][0]<$intervals[$i-1][1])throw new Exception('Time entries cannot overlap for the same Employee.');
                 foreach($existing as $e)if(!in_array((int)$e['id'],array_map('intval',$saved),true))$this->ops_write($wpdb->delete($p.'time_entries',['id'=>$e['id']]));
                 $wpdb->query('COMMIT');break;
+            case 'time_update':case 'time_delete':
+                $id=(int)($d['id']??0);$entry=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}time_entries WHERE id=%d",$id),ARRAY_A);if(!$entry)throw new Exception('Time entry not found.');
+                $lock=$this->ops_lock('time_'.((int)$entry['worker_id']?'w'.$entry['worker_id']:'e'.$entry['employee_id']));$wpdb->query('START TRANSACTION');
+                $entry=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}time_entries WHERE id=%d FOR UPDATE",$id),ARRAY_A);if(!$entry)throw new Exception('Time entry not found.');
+                if((int)$entry['bill_id'])throw new Exception('Billed time entries cannot be edited or deleted.');
+                if(!$admin){
+                    $own=(int)$entry['worker_id']===0&&(int)$entry['employee_id']===(int)$user['id'];
+                    $delegated=(int)$entry['worker_id']>0&&(int)$entry['created_by']===$uid&&in_array('contractor_employees',json_decode($user['allowed_views']??'[]',true)?:[],true);
+                    if((!$own&&!$delegated)||$entry['status']!=='submitted')throw new Exception('Only your own unapproved entries can be edited or deleted.');
+                    if((int)$entry['site_id'])$this->ops_site((int)$entry['site_id']);
+                }
+                if($op==='time_delete'){$this->ops_write($wpdb->delete($p.'time_entries',['id'=>$id]));$wpdb->query('COMMIT');break;}
+                $from=sanitize_text_field($d['from_time']??'');$to=sanitize_text_field($d['to_time']??'');$activity=sanitize_textarea_field($d['activity']??'');
+                if(!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/',$from)||!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/',$to)||$from===$to||!$activity)throw new Exception('Enter Activity and different From and To times.');
+                $interval=$this->ops_time_interval($entry['work_date'],$from,$to);$previous=gmdate('Y-m-d',strtotime($entry['work_date'].' UTC')-86400);$next=gmdate('Y-m-d',strtotime($entry['work_date'].' UTC')+86400);
+                $others=$wpdb->get_results($wpdb->prepare("SELECT work_date,from_time,to_time FROM {$p}time_entries WHERE employee_id=%d AND worker_id=%d AND work_date BETWEEN %s AND %s AND id<>%d",$entry['employee_id'],$entry['worker_id'],$previous,$next,$id),ARRAY_A);
+                foreach($others as $other){$peer=$this->ops_time_interval($other['work_date'],$other['from_time'],$other['to_time']);if($interval[0]<$peer[1]&&$peer[0]<$interval[1])throw new Exception('Time entries cannot overlap for the same Employee.');}
+                $status=$admin&&(int)$entry['worker_id']>0&&!empty($d['approved'])?'approved':'submitted';
+                $this->ops_write($wpdb->update($p.'time_entries',['from_time'=>$from,'to_time'=>$to,'minutes'=>(int)(($interval[1]-$interval[0])/60),'activity'=>$activity,'status'=>$status,'approved_by'=>$status==='approved'?$uid:0,'updated_at'=>$now],['id'=>$id]));$wpdb->query('COMMIT');break;
             case 'time_status':
                 $this->ops_require_admin();$id=(int)($d['id']??0);$lock=$this->ops_lock('time_status');$wpdb->query('START TRANSACTION');
                 $e=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}time_entries WHERE id=%d FOR UPDATE",$id),ARRAY_A);if(!$e||(int)$e['bill_id'])throw new Exception('A billed entry is locked.');

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.062
+ * Version: 0.0.063
  * Author: BizSkill
  */
 
@@ -12,7 +12,7 @@ require_once __DIR__ . '/includes/workforce-transfers.php';
 
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
-    const VERSION = '0.0.062';
+    const VERSION = '0.0.063';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -2901,6 +2901,9 @@ final class BSM_Site_Management {
         $row=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$this->prefix}{$m['table']} WHERE id=%d",$id),ARRAY_A);
         if(!$row) wp_send_json_error(['message'=>'Record not found']);
         if(array_key_exists('site_id',$row)) $this->enforce_employee_site_value((int)$row['site_id']);
+        if($key==='labour_contractors'){
+            $row['_employees']=$this->ops_admin()?$wpdb->get_results($wpdb->prepare("SELECT * FROM {$this->prefix}contractor_employees WHERE contractor_id=%d AND status='active' ORDER BY id",$id),ARRAY_A):[];
+        }
         if($key==='site_consumptions'){
             $created_by=(int)($row['created_by']??0);
             $row['created_by_name']='';
@@ -2998,6 +3001,11 @@ final class BSM_Site_Management {
         }
         $items=isset($data['_items']) && is_array($data['_items']) ? $data['_items'] : []; unset($data['_items']);
         $id=intval($data['id']??0); unset($data['id']);
+        $contractor_employees_input=null;
+        if($key==='labour_contractors' && array_key_exists('_employees',$data)){
+            if(!is_array($data['_employees']))wp_send_json_error(['message'=>'Invalid Employee rows.']);
+            $contractor_employees_input=$data['_employees'];unset($data['_employees']);
+        }
         $requested_contractor_advance_adjustment=0;
         if($key==='customers' && array_key_exists('gst_type',$data)) {
             $gst_type=trim((string)$data['gst_type']);
@@ -3587,7 +3595,9 @@ final class BSM_Site_Management {
             unset($data['pdf_url']);
         }
         $row=$this->sanitize_row($m['table'],$data);
-        if($id){ $ok=$wpdb->update($table,$row,['id'=>$id]); if($ok===false) wp_send_json_error(['message'=>$wpdb->last_error]); }
+        if($key==='labour_contractors' && $contractor_employees_input!==null){
+            try{$id=$this->ops_save_contractor_employees($id,$row,$contractor_employees_input);}catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);}
+        }elseif($id){ $ok=$wpdb->update($table,$row,['id'=>$id]); if($ok===false) wp_send_json_error(['message'=>$wpdb->last_error]); }
         else { $ok=$wpdb->insert($table,$row); if(!$ok) wp_send_json_error(['message'=>$wpdb->last_error?:'Save failed']); $id=(int)$wpdb->insert_id; }
         if($key==='sites' && array_key_exists('site_sections',$data)) {
             $stored=(string)$wpdb->get_var($wpdb->prepare("SELECT site_sections FROM {$table} WHERE id=%d", $id));

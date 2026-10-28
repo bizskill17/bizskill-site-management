@@ -25,6 +25,7 @@ class Host {
     private function employee_site_scope(){return $GLOBALS['scope'];}
     private function site_available_stock($site,$item){return ['available_qty'=>($site===1?100:0)+$this->ops_stock_delta($site,$item),'rate'=>25];}
     function stock($site,$item){return (float)$this->site_available_stock($site,$item)['available_qty'];}
+    function saveContractor($id,$parent,$employees){return $this->ops_save_contractor_employees($id,$parent,$employees);}
     function holidayDates($employee,$a,$b){return $this->ops_holiday_dates($employee,$a,$b);}
 }
 $wpdb=new DB();$host=new Host();
@@ -121,4 +122,37 @@ $_POST=['month'=>'2026-10'];(new SalaryHost())->ajax_monthly_salary();$salary=$G
 check((float)$salary[0]['payable_salary']===1000.0,'Present day overlapping holiday is paid once');
 check((float)$salary[1]['payable_salary']===2000.0,'Unmarked applicable holidays are payable at effective salary');
 check((int)$salary[0]['absent_days']===1,'Holiday applicability preserves unrelated absence');
+// Contractor parent and employee table are saved atomically, retaining used employee IDs.
+$admin=true;$scope=null;
+$employees=[['employee_name'=>'Employee One','mobile'=>'9876543210','address'=>'Guwahati','bank_name'=>'State Bank','ifsc'=>'sbin0001234','account_number'=>'001234567890'],['employee_name'=>'Employee Two','mobile'=>'9876543211','address'=>'Assam','bank_name'=>'Bank','ifsc'=>'HDFC0001234','account_number'=>'00000042']];
+$cid=$host->saveContractor(0,['contractor_name'=>'New Contractor','payment_basis'=>'employee'],$employees);
+$children=$wpdb->get_results('SELECT * FROM bsm_contractor_employees WHERE contractor_id='.(int)$cid.' ORDER BY id');
+check(count($children)===2,'One contractor saves multiple employee rows');
+check($children[0]['account_number']==='001234567890'&&$children[0]['ifsc']==='SBIN0001234','Account leading zeros and uppercase IFSC persist');
+$employees[0]['id']=(int)$children[0]['id'];$employees[1]['id']=(int)$children[1]['id'];$employees[0]['address']='Updated Address';
+$wpdb->update('bsm_contractor_employees',['daily_rate'=>700,'hourly_rate'=>125],['id'=>$children[0]['id']]);
+$host->saveContractor($cid,['contractor_name'=>'Updated Contractor'],$employees);
+$updated=$wpdb->get_row('SELECT * FROM bsm_contractor_employees WHERE id='.(int)$children[0]['id']);
+check($updated['address']==='Updated Address'&&(float)$updated['hourly_rate']===125.0,'Employee edits retain ID and existing rates');
+$bad=$employees;$bad[0]['mobile']='123';try{$host->saveContractor($cid,['contractor_name'=>'Should Roll Back'],$bad);throw new Exception('Expected Mobile validation');}catch(Exception $e){check(strpos($e->getMessage(),'10 digits')!==false,'Employee Mobile validates server-side');}
+check($wpdb->get_var('SELECT contractor_name FROM bsm_labour_contractors WHERE id='.(int)$cid)==='Updated Contractor','Invalid child rolls back parent changes');
+$bad=$employees;$bad[0]['id']=$worker;try{$host->saveContractor($cid,['contractor_name'=>'Should Roll Back'],$bad);throw new Exception('Expected ownership validation');}catch(Exception $e){check(strpos($e->getMessage(),'does not belong')!==false,'Employee cannot be reassigned through another contractor table');}
+callop('time_save',['work_date'=>'2026-10-28','worker_id'=>$children[0]['id'],'site_id'=>1,'rows'=>[['from_time'=>'14:00','to_time'=>'15:00','activity'=>'Contract work']]]);
+$host->saveContractor($cid,['contractor_name'=>'Updated Contractor'],[]);
+check($wpdb->get_var('SELECT status FROM bsm_contractor_employees WHERE id='.(int)$children[0]['id'])==='inactive','Removing used employee preserves history as inactive');
+check(!$wpdb->get_var('SELECT id FROM bsm_contractor_employees WHERE id='.(int)$children[1]['id']),'Removing unused employee deletes only that row');
+// Time Sheet Master edit/delete actions preserve ownership and billed-entry locks.
+$admin=true;
+fails('time_update',['id'=>$rows[0]['id'],'from_time'=>'09:00','to_time'=>'10:00','activity'=>'Changed'],'Billed');
+fails('time_delete',['id'=>$rows[0]['id']],'Billed');
+$office_id=(int)$wpdb->get_var("SELECT id FROM bsm_time_entries WHERE employee_id=1 AND work_date='2026-10-28'");
+callop('time_update',['id'=>$office_id,'from_time'=>'09:30','to_time'=>'11:00','activity'=>'Edited activity']);
+check((int)$wpdb->get_var('SELECT minutes FROM bsm_time_entries WHERE id='.$office_id)===90,'Master edit recalculates duration');
+$first=(int)$wpdb->get_var("SELECT id FROM bsm_time_entries WHERE worker_id=$worker AND work_date='2026-10-27' ORDER BY from_time LIMIT 1");
+fails('time_update',['id'=>$first,'from_time'=>'09:00','to_time'=>'11:30','activity'=>'Overlap'],'overlap');
+$admin=false;
+callop('time_update',['id'=>$office_id,'from_time'=>'09:30','to_time'=>'10:30','activity'=>'Employee edit']);
+check($wpdb->get_var('SELECT activity FROM bsm_time_entries WHERE id='.$office_id)==='Employee edit','Employee may edit own unapproved entry');
+$other=(int)$wpdb->get_var('SELECT id FROM bsm_time_entries WHERE employee_id=2 LIMIT 1');fails('time_delete',['id'=>$other],'own unapproved');
+callop('time_delete',['id'=>$office_id]);check(!$wpdb->get_var('SELECT id FROM bsm_time_entries WHERE id='.$office_id),'Employee may delete own unapproved entry');
 echo "\n{$GLOBALS['passes']} regression checks passed.\n";

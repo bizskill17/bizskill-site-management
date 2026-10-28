@@ -1702,6 +1702,16 @@ function updateBankFieldVisibility(scope){
   });
 }
 
+function contractorEmployeeRow(employee={}){
+  const fields=[['employee_name','Name'],['mobile','Mobile'],['address','Address'],['bank_name','Bank'],['ifsc','IFSC'],['account_number','AC No.']];
+  return `<tr data-employee-id="${Number(employee.id||0)}">${fields.map(([field,label])=>`<td>${field==='address'?`<textarea data-employee-field="${field}" aria-label="${label}" rows="2">${esc(employee[field]||'')}</textarea>`:`<input type="text" data-employee-field="${field}" aria-label="${label}" value="${esc(employee[field]||'')}" ${field==='mobile'?'inputmode="numeric" maxlength="10" pattern="[0-9]{10}"':field==='account_number'?'inputmode="numeric" maxlength="60"':field==='ifsc'?'maxlength="11"':''}>`}</td>`).join('')}<td><button type="button" class="bsm-btn bsm-contractor-employee-remove" aria-label="Remove Employee">×</button></td></tr>`;
+}
+function renderContractorEmployeeTable(employees=[]){
+  $('#bsm-line-items').html(`<div class="bsm-contractor-employees"><div class="bsm-lines-head"><h3>Employees</h3><button type="button" id="bsm-contractor-employee-add" class="bsm-btn">+ Add Employee</button></div><div class="bsm-table-wrap"><table class="bsm-table"><thead><tr><th>Name</th><th>Mobile</th><th>Address</th><th>Bank</th><th>IFSC</th><th>AC No.</th><th>Action</th></tr></thead><tbody id="bsm-contractor-employee-rows">${(employees.length?employees:[{}]).map(contractorEmployeeRow).join('')}</tbody></table></div></div>`);
+}
+$(document).on('click','#bsm-contractor-employee-add',function(){$('#bsm-contractor-employee-rows').append(contractorEmployeeRow());});
+$(document).on('click','.bsm-contractor-employee-remove',function(){$(this).closest('tr').remove();});
+
 async function openForm(key,id=0){
   const cfg=App.configs[key];App.editId=id;
   $('#bsm-modal').toggleClass('bsm-site-receipt-modal',key==='site_receipts').toggleClass('bsm-purchase-edit-modal',key==='material_inwards' && !!id);
@@ -1788,6 +1798,7 @@ async function openForm(key,id=0){
     renderItems(cfg,attendanceRows);
     refreshLabourAttendanceRows();
   } else if(cfg.items) renderItems(cfg,row._items||[]); else $('#bsm-line-items').empty();
+  if(key==='labour_contractors')renderContractorEmployeeTable(row._employees||[]);
   if(['quotations','tax_invoices'].includes(key)) setTimeout(()=>prepareSalesForm(key,row),0);
   if(key==='material_inwards'){
     const mode=String(row.inward_type||$('#bsm-form-fields select[name="inward_type"]').val()||'purchase');
@@ -2625,6 +2636,9 @@ async function refreshAllConsumptionAvailability(){
 async function saveForm(){
   if(!validateMobileFields($('#bsm-form'))) return;
   const key=$('#bsm-form').data('module'),cfg=App.configs[key], data={id:App.editId}; $('#bsm-form-fields').find('input,select,textarea').each(function(){if(!this.name)return;data[this.name]=isDateFieldName(this.name)?dateSql($(this).val()):$(this).val();}); if(key==='material_inwards'){const $bottomRemarks=$('#bsm-line-items .bsm-inward-bottom-remarks textarea[name="remarks"]');if($bottomRemarks.length)data.remarks=$bottomRemarks.val();} if(!App.editId&&masterModules.includes(key))data.status='active'; if(!App.editId&&key==='material_requisitions')data.status='pending_approval'; if(key==='site_consumptions')data.status='approved';
+  if(key==='labour_contractors'){
+    data._employees=$('#bsm-contractor-employee-rows tr').map(function(){const employee={id:Number($(this).data('employee-id')||0)};$(this).find('[data-employee-field]').each(function(){employee[$(this).data('employee-field')]=$(this).val();});return employee;}).get();
+  }
   if(key==='material_inwards' && String(data.inward_type||'purchase')==='purchase' && !Number(data.purchase_order_id||0)){
     showToast('PO No. is required. Purchase cannot be entered without a Purchase Order.',true);
     return;
@@ -4485,7 +4499,7 @@ async function opsHolidays(){
 }
 async function opsWorkers(){
   setTitle('Contractor Employees');
-  $('#bsm-content').html(`${opsMeta.admin?`<div class="bsm-panel"><form id="ops-worker-form"><input type="hidden" id="ops-worker-id"><div class="bsm-form-grid">${opsSelect('ops-worker-contractor','Labour Contractor',App.options.contractors)}${opsText('ops-worker-name','Employee Name')}${opsText('ops-worker-daily','Daily Rate','','number')}${opsText('ops-worker-hourly','Hourly Rate','','number')}<label>Status<select id="ops-worker-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></label></div><div class="bsm-form-actions"><button class="bsm-btn bsm-btn-primary">Save Employee</button>${opsButton('worker-clear','Clear')}</div></form></div>`:''}<div class="bsm-panel">${opsTable(['Contractor','Employee','Daily Rate','Hourly Rate','Status',...(opsMeta.admin?['Action']:[])],opsMeta.workers.map(w=>`<tr><td>${esc(w.contractor_name)}</td><td>${esc(w.employee_name)}</td><td>${esc(w.daily_rate)}</td><td>${esc(w.hourly_rate)}</td><td>${esc(w.status)}</td>${opsMeta.admin?`<td>${opsButton('worker-edit','Edit',w.id)}</td>`:''}</tr>`).join(''))}</div>`);opsEnhance();
+  $('#bsm-content').html(`${opsMeta.admin?`<div class="bsm-panel"><form id="ops-worker-form"><input type="hidden" id="ops-worker-id"><div class="bsm-form-grid">${opsSelect('ops-worker-contractor','Labour Contractor',App.options.contractors)}${opsText('ops-worker-name','Name')}${opsText('ops-worker-mobile','Mobile')}${opsText('ops-worker-address','Address')}${opsText('ops-worker-bank','Bank')}${opsText('ops-worker-ifsc','IFSC')}${opsText('ops-worker-account','AC No.')}${opsText('ops-worker-daily','Daily Rate','','number')}${opsText('ops-worker-hourly','Hourly Rate','','number')}<label>Status<select id="ops-worker-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></label></div><div class="bsm-form-actions"><button class="bsm-btn bsm-btn-primary">Save Employee</button>${opsButton('worker-clear','Clear')}</div></form></div>`:''}<div class="bsm-panel">${opsTable(['Contractor','Name','Mobile','Address','Bank','IFSC','AC No.','Daily Rate','Hourly Rate','Status',...(opsMeta.admin?['Action']:[])],opsMeta.workers.map(w=>`<tr><td>${esc(w.contractor_name)}</td><td>${esc(w.employee_name)}</td><td>${esc(w.mobile||'')}</td><td>${esc(w.address||'')}</td><td>${esc(w.bank_name||'')}</td><td>${esc(w.ifsc||'')}</td><td>${esc(w.account_number||'')}</td><td>${esc(w.daily_rate)}</td><td>${esc(w.hourly_rate)}</td><td>${esc(w.status)}</td>${opsMeta.admin?`<td>${opsButton('worker-edit','Edit',w.id)}</td>`:''}</tr>`).join(''))}</div>`);opsEnhance();
 }
 async function opsTimeForm(){
   setTitle('Time Sheet');
@@ -4504,7 +4518,11 @@ async function opsTimeMaster(){
 }
 async function opsLoadTimeMaster(){
   opsRows=(await opsCall('time_list',{from:$('#ops-time-filter-from').val(),to:$('#ops-time-filter-to').val(),employee_id:$('#ops-time-filter-employee').val(),contractor_id:$('#ops-time-filter-contractor').val(),site_id:$('#ops-time-filter-site').val(),status:$('#ops-time-filter-status').val()})).rows;
-  $('#ops-time-list').html(opsTable(['Date','Employee','Contractor','Site','From','To','Hours','Activity','Status','Bill',...(opsMeta.admin?['Action']:[])],opsRows.map(r=>`<tr><td>${dateFmt(r.work_date)}</td><td>${esc(r.employee_name)}</td><td>${esc(r.contractor_name||'')}</td><td>${esc(r.site_name||'')}</td><td>${esc(r.from_time.slice(0,5))}</td><td>${esc(r.to_time.slice(0,5))}</td><td>${(+r.minutes/60).toFixed(2)}</td><td>${esc(r.activity)}</td><td>${esc(r.status)}</td><td>${esc(r.bill_no||'')}</td>${opsMeta.admin?`<td>${+r.bill_id?'Locked':opsButton('time-status',r.status==='approved'?'Reopen':'Approve',r.id,`data-status="${r.status==='approved'?'submitted':'approved'}"`)}</td>`:''}</tr>`).join('')));
+  $('#ops-time-list').html(opsTable(['Date','Employee','Contractor','Site','From','To','Hours','Activity','Action'],opsRows.map(r=>{const canChange=!Number(r.bill_id)&&(opsMeta.admin||r.status==='submitted');const disabled=canChange?'':'disabled title="This entry is locked"';return `<tr><td>${dateFmt(r.work_date)}</td><td>${esc(r.employee_name)}</td><td>${esc(r.contractor_name||'')}</td><td>${esc(r.site_name||'')}</td><td>${esc(r.from_time.slice(0,5))}</td><td>${esc(r.to_time.slice(0,5))}</td><td>${(+r.minutes/60).toFixed(2)}</td><td>${esc(r.activity)}</td><td><div class="ops-time-actions">${opsButton('time-edit','Edit',r.id,disabled)}${opsButton('time-delete','Delete',r.id,disabled)}</div></td></tr>`;}).join('')));
+}
+function opsTimeEdit(id){
+  const entry=opsRows.find(r=>Number(r.id)===Number(id));if(!entry)return;
+  $('#ops-time-editor').remove();$('#bsm-content').append(`<div id="ops-time-editor" class="bsm-quick-modal"><div class="bsm-quick-panel"><div class="bsm-quick-head"><h3>Edit Time Sheet</h3>${opsButton('time-edit-close','×')}</div><form id="ops-time-edit-form" data-id="${Number(entry.id)}"><div class="bsm-quick-body"><p>${esc(entry.employee_name)} — ${dateFmt(entry.work_date)}</p>${opsText('ops-time-edit-from','From Time',entry.from_time.slice(0,5),'time')}${opsText('ops-time-edit-to','To Time',entry.to_time.slice(0,5),'time')}${opsText('ops-time-edit-activity','Activity',entry.activity)}${opsMeta.admin&&Number(entry.worker_id)>0?`<label><input type="checkbox" id="ops-time-edit-approved" ${entry.status==='approved'?'checked':''}> Approved for contractor billing</label>`:''}</div><div class="bsm-form-actions">${opsButton('time-edit-close','Cancel')}<button class="bsm-btn bsm-btn-primary">Save</button></div></form></div></div>`);
 }
 async function opsBill(){
   setTitle('Employee / Time Based Contractor Bill');
@@ -4535,13 +4553,14 @@ $(document).on('change','#ops-time-employee,#ops-time-date',async function(){try
 $(document).on('input','.ops-time-from,.ops-time-to',opsTimeTotal);
 $(document).on('change','.ops-transfer-item',opsTransferValues);
 $(document).on('change','#ops-transfer-from',async function(){try{await opsLoadTransferStock();$('#ops-transfer-form tbody').html(opsTransferItem());opsEnhance();}catch(e){showToast(e.message,true);}});
-$(document).on('submit','#ops-holiday-form,#ops-worker-form,#ops-time-form,#ops-bill-form,#ops-transfer-form,#ops-receive-form',async function(e){
+$(document).on('submit','#ops-holiday-form,#ops-worker-form,#ops-time-form,#ops-bill-form,#ops-transfer-form,#ops-receive-form,#ops-time-edit-form',async function(e){
   e.preventDefault();const $form=$(this),$save=$form.find('button[type="submit"],button:not([type])');$save.prop('disabled',true);
   try{
     switch(this.id){
       case 'ops-holiday-form':{const ids=$('#ops-holiday-scope').val()==='selected'?($('#ops-holiday-employees').val()||[]):[];if($('#ops-holiday-scope').val()==='selected'&&!ids.length)throw new Error('Select at least one Employee.');await opsCall('holiday_save',{id:$('#ops-holiday-id').val(),holiday_date:$('#ops-holiday-date').val(),holiday_name:$('#ops-holiday-name').val(),employee_ids:ids});await opsHolidays();break;}
-      case 'ops-worker-form':await opsCall('worker_save',{id:$('#ops-worker-id').val(),contractor_id:$('#ops-worker-contractor').val(),employee_name:$('#ops-worker-name').val(),daily_rate:$('#ops-worker-daily').val(),hourly_rate:$('#ops-worker-hourly').val(),status:$('#ops-worker-status').val()});opsMeta=await opsCall('meta');await opsWorkers();break;
+      case 'ops-worker-form':await opsCall('worker_save',{id:$('#ops-worker-id').val(),contractor_id:$('#ops-worker-contractor').val(),employee_name:$('#ops-worker-name').val(),mobile:$('#ops-worker-mobile').val(),address:$('#ops-worker-address').val(),bank_name:$('#ops-worker-bank').val(),ifsc:$('#ops-worker-ifsc').val(),account_number:$('#ops-worker-account').val(),daily_rate:$('#ops-worker-daily').val(),hourly_rate:$('#ops-worker-hourly').val(),status:$('#ops-worker-status').val()});opsMeta=await opsCall('meta');await opsWorkers();break;
       case 'ops-time-form':{const rows=$('#ops-time-grid tbody tr').map(function(){return {id:$(this).data('id'),from_time:$(this).find('.ops-time-from').val(),to_time:$(this).find('.ops-time-to').val(),activity:$(this).find('.ops-time-activity').val()};}).get();const contractor=$('#ops-time-type').val()==='contractor';await opsCall('time_save',{work_date:$('#ops-time-date').val(),[contractor?'worker_id':'employee_id']:$('#ops-time-employee').val(),site_id:$('#ops-time-site').val(),rows});await opsLoadTimeDay();break;}
+      case 'ops-time-edit-form':await opsCall('time_update',{id:$form.data('id'),from_time:$('#ops-time-edit-from').val(),to_time:$('#ops-time-edit-to').val(),activity:$('#ops-time-edit-activity').val(),approved:$('#ops-time-edit-approved').prop('checked')||false});$('#ops-time-editor').remove();await opsLoadTimeMaster();break;
       case 'ops-bill-form':{const r=await opsCall('bill_create',opsBillData());opsBillPreview(r);$save.prop('disabled',true);$('#ops-bill-no').val('');showToast('Contractor Bill created. It is available in Contractor Bills and Outstanding.');return;}
       case 'ops-transfer-form':{const items=$('#ops-transfer-form tbody tr').map(function(){return {item_id:$(this).find('.ops-transfer-item').val(),qty:$(this).find('.ops-transfer-qty').val(),remarks:$(this).find('.ops-transfer-line-remarks').val()};}).get();await opsCall('transfer_save',{id:$form.data('id'),transfer_date:$('#ops-transfer-date').val(),from_site_id:$('#ops-transfer-from').val(),to_site_id:$('#ops-transfer-to').val(),vehicle_no:$('#ops-transfer-vehicle').val(),remarks:$('#ops-transfer-remarks').val(),items});await opsTransfers();break;}
       case 'ops-receive-form':await opsCall('transfer_action',{id:$form.data('id'),action:'receive',receipt_date:$('#ops-receive-date').val(),items:$form.find('tbody tr').map(function(){return {id:$(this).data('id'),received_qty:$(this).find('.ops-receive-good').val(),damaged_qty:$(this).find('.ops-receive-bad').val()};}).get()});await opsTransferView($form.data('id'));break;
@@ -4555,12 +4574,15 @@ $(document).on('click','[data-ops]',async function(){
     case 'holiday-edit':{const h=opsRows.find(x=>+x.id===id);$('#ops-holiday-id').val(h.id);$('#ops-holiday-date').val(h.holiday_date);$('#ops-holiday-name').val(h.holiday_name);const ids=JSON.parse(h.employee_ids||'[]');$('#ops-holiday-scope').val(ids.length?'selected':'all').trigger('change');$('#ops-holiday-employees').val(ids.map(String));bsmSyncAllSearchables($('#bsm-content'));break;}
     case 'holiday-delete':if(confirm('Delete this Holiday?')){await opsCall('holiday_delete',{id});await opsHolidays();}break;
     case 'worker-clear':await opsWorkers();break;
-    case 'worker-edit':{const w=opsMeta.workers.find(x=>+x.id===id);$('#ops-worker-id').val(w.id);$('#ops-worker-contractor').val(w.contractor_id);$('#ops-worker-name').val(w.employee_name);$('#ops-worker-daily').val(w.daily_rate);$('#ops-worker-hourly').val(w.hourly_rate);$('#ops-worker-status').val(w.status);bsmSyncAllSearchables($('#bsm-content'));break;}
+    case 'worker-edit':{const w=opsMeta.workers.find(x=>+x.id===id);$('#ops-worker-id').val(w.id);$('#ops-worker-contractor').val(w.contractor_id);$('#ops-worker-name').val(w.employee_name);$('#ops-worker-mobile').val(w.mobile||'');$('#ops-worker-address').val(w.address||'');$('#ops-worker-bank').val(w.bank_name||'');$('#ops-worker-ifsc').val(w.ifsc||'');$('#ops-worker-account').val(w.account_number||'');$('#ops-worker-daily').val(w.daily_rate);$('#ops-worker-hourly').val(w.hourly_rate);$('#ops-worker-status').val(w.status);bsmSyncAllSearchables($('#bsm-content'));break;}
     case 'time-add':$('#ops-time-grid tbody').append(opsTimeRow());break;
     case 'time-remove':$button.closest('tr').remove();opsTimeTotal();break;
     case 'time-filter':await opsLoadTimeMaster();break;
+    case 'time-edit':opsTimeEdit(id);break;
+    case 'time-edit-close':$('#ops-time-editor').remove();break;
+    case 'time-delete':if(confirm('Delete this Time Sheet entry?')){await opsCall('time_delete',{id});await opsLoadTimeMaster();}break;
     case 'time-status':await opsCall('time_status',{id,status:$button.data('status')});await opsLoadTimeMaster();break;
-    case 'time-export':downloadExcelFile('Time Sheet',['Date','Employee','Contractor','Site','From','To','Hours','Activity','Status','Bill'],opsRows.map(x=>[x.work_date,x.employee_name,x.contractor_name||'',x.site_name||'',x.from_time,x.to_time,(+x.minutes/60).toFixed(2),x.activity,x.status,x.bill_no||'']));break;
+    case 'time-export':downloadExcelFile('Time Sheet',['Date','Employee','Contractor','Site','From','To','Hours','Activity'],opsRows.map(x=>[x.work_date,x.employee_name,x.contractor_name||'',x.site_name||'',x.from_time,x.to_time,(+x.minutes/60).toFixed(2),x.activity]));break;
     case 'bill-preview':opsBillPreview(await opsCall('bill_preview',opsBillData()));break;
     case 'transfer-add':$('#ops-transfer-form tbody').append(opsTransferItem());opsEnhance();break;
     case 'transfer-remove':$button.closest('tr').remove();break;

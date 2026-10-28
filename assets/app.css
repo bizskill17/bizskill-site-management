@@ -2739,3 +2739,20 @@ html,body{
 #ops-transfer-form input[type=number],#ops-receive-form input[type=number]{max-width:160px}
 #ops-holiday-employees{min-height:150px}
 #ops-bill-form p{font-size:13px;line-height:1.6}
+
+/* Contractor parent/employee grid */
+.bsm-contractor-employees{margin-top:16px;min-width:0}
+.bsm-contractor-employees .bsm-lines-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.bsm-contractor-employees .bsm-lines-head h3{margin:0;font-size:16px}
+.bsm-contractor-employees .bsm-table-wrap{max-width:100%;overflow-x:auto!important}
+.bsm-contractor-employees table{min-width:1050px;width:100%;table-layout:fixed}
+.bsm-contractor-employees th:nth-child(1){width:170px}.bsm-contractor-employees th:nth-child(2){width:125px}
+.bsm-contractor-employees th:nth-child(3){width:230px}.bsm-contractor-employees th:nth-child(4){width:150px}
+.bsm-contractor-employees th:nth-child(5){width:125px}.bsm-contractor-employees th:nth-child(6){width:170px}
+.bsm-contractor-employees th:last-child{width:65px}
+.bsm-contractor-employees td{vertical-align:top}
+.bsm-contractor-employees input,.bsm-contractor-employees textarea{width:100%;min-width:0!important;margin:0}
+.bsm-contractor-employees [data-employee-field="ifsc"]{text-transform:uppercase}
+
+.ops-time-actions{display:flex;gap:6px;white-space:nowrap}
+#ops-time-editor .bsm-quick-panel{max-height:calc(100vh - 32px);overflow-y:auto}
