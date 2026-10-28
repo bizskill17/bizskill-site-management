@@ -62,7 +62,14 @@ callop('time_save',$day);$rows=callop('time_list',['worker_id'=>$worker])['rows'
 check(count($rows)===2&&(int)array_sum(array_column($rows,'minutes'))===210,'Time duration and adjacent intervals');
 $bad=$day;$bad['rows'][1]['from_time']='10:30';fails('time_save',$bad,'overlap');
 check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_time_entries')===2,'Overlapping replacement rolls back all rows');
-$bad=$day;$bad['rows']=[['from_time'=>'23:00','to_time'=>'01:00','activity'=>'Overnight']];fails('time_save',$bad,'To Time');
+$night=['work_date'=>'2026-10-25','employee_id'=>2,'rows'=>[['from_time'=>'23:00','to_time'=>'01:00','activity'=>'Overnight']]];
+callop('time_save',$night);check((int)$wpdb->get_var("SELECT minutes FROM bsm_time_entries WHERE employee_id=2 AND work_date='2026-10-25'")===120,'Overnight entry calculates two hours');
+fails('time_save',['work_date'=>'2026-10-26','employee_id'=>2,'rows'=>[['from_time'=>'00:30','to_time'=>'02:00','activity'=>'Overlap']]],'overlap');
+callop('time_save',['work_date'=>'2026-10-26','employee_id'=>2,'rows'=>[['from_time'=>'01:00','to_time'=>'02:00','activity'=>'Adjacent']]]);
+check((int)$wpdb->get_var("SELECT minutes FROM bsm_time_entries WHERE employee_id=2 AND work_date='2026-10-26'")===60,'Next-day adjacent entry is allowed');
+callop('time_save',['work_date'=>'2026-10-24','employee_id'=>2,'rows'=>[['from_time'=>'11:00','to_time'=>'00:00','activity'=>'Until midnight']]]);
+check((int)$wpdb->get_var("SELECT minutes FROM bsm_time_entries WHERE employee_id=2 AND work_date='2026-10-24'")===780,'11 AM to midnight calculates thirteen hours');
+$bad=$day;$bad['rows']=[['from_time'=>'11:00','to_time'=>'11:00','activity'=>'Zero']];fails('time_save',$bad,'different From');
 foreach($rows as $r)callop('time_status',['id'=>$r['id'],'status'=>'approved']);
 $bill=['contractor_id'=>1,'site_id'=>1,'from'=>'2026-10-01','to'=>'2026-10-28','bill_date'=>'2026-10-28','bill_no'=>'CB-TEST','gst_amount'=>0];
 $preview=callop('bill_preview',$bill);check($preview['total']===350.0,'Time-based bill uses approved 3.5 hours × 100');

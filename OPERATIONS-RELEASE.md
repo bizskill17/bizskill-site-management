@@ -9,7 +9,7 @@ Administrators see the new views automatically. Grant relevant view permissions 
 ## Office Attendance
 
 - **Holiday List**: Date, Holiday Name, All Employees or Selected Employees. Add, edit and delete are available to HO/Admin.
-- **Time Sheet**: choose Date and Employee Name, then enter repeatable From Time, To Time and Activity rows. Duration and total hours are calculated automatically. Intervals must be within one day and cannot overlap. Office employees can enter/view their own sheets; HO/Admin can select other employees.
+- **Time Sheet**: choose Date and Employee Name, then enter repeatable From Time, To Time and Activity rows. Duration and total hours are calculated automatically. A To Time earlier than From Time is treated as the next day. Overnight durations are calculated automatically and cannot overlap entries on adjacent dates. Office employees can enter/view their own sheets; HO/Admin can select other employees.
 - **Time Sheet Master**: filter by dates, employee, contractor, site or approval status; approve/reopen and export entries. Approved rows are read-only until reopened. Billed rows cannot be reopened or deleted.
 - Applicable holidays display as Holiday in daily attendance and are excluded from absences in the monthly salary calculation. Applicable holidays are payable even when unmarked, using the salary effective on each date. A holiday that is also marked Present is paid once. The calendar-day divisor and uploaded salary-slip workflow are unchanged.
 
@@ -40,7 +40,7 @@ Rates are captured when unapproved time entries are saved. Update and resave ent
 
 - PHP syntax checks: main plugin and workforce/transfer trait.
 - JavaScript syntax check: `assets/app.js`.
-- `php tests/operations.php`: 35 standalone regression checks using PDO SQLite. Covers date applicability, effective holiday salary, duration/overlap checks, ownership, approvals, billing, duplicate prevention, draft/dispatch/partial receipt, damage, stock reconciliation and site permissions.
+- `php tests/operations.php`: 39 standalone regression checks using PDO SQLite. Covers date applicability, effective holiday salary, duration/overlap checks, ownership, approvals, billing, duplicate prevention, draft/dispatch/partial receipt, damage, stock reconciliation and site permissions.
 - Browser smoke checks with mocked AJAX: all seven views render, time entry duration/submission, contractor bill preview and partial/damaged receipt submission. Desktop and mobile Time Sheet layouts inspected.
 
 Live WordPress/MySQL migration and hosting deployment have not been exercised in this workspace. After deployment, verify the new pages, grant employee permissions, and run one contractor bill and one transfer through the site's normal workflow.

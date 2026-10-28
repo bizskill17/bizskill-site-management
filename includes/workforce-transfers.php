@@ -120,6 +120,12 @@ trait BSM_Workforce_Transfers {
         $v=sanitize_text_field($value); $d=DateTime::createFromFormat('!Y-m-d',$v);
         if(!$d || $d->format('Y-m-d')!==$v) throw new Exception('Select a valid date.'); return $v;
     }
+    private function ops_time_interval($date,$from,$to) {
+        $start=strtotime($date.' '.substr($from,0,5).' UTC');
+        $end=strtotime($date.' '.substr($to,0,5).' UTC');
+        if($end<$start)$end+=86400;
+        return [$start,$end];
+    }
     private function ops_write($ok) { global $wpdb; if($ok===false) throw new Exception('Unable to save the record. Please retry.'); }
     private function ops_lock($key) {
         global $wpdb; $name=substr($this->prefix.'ops_'.$key,0,64);
@@ -215,24 +221,29 @@ trait BSM_Workforce_Transfers {
                     if(!$eid||!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}users WHERE id=%d AND status='active'",$eid)))throw new Exception('Select an active Employee.');
                     if(!$admin && $eid!==(int)$user['id'])throw new Exception('You can enter only your own Time Sheet.'); if($site)$this->ops_site($site);
                 }
-                $lock=$this->ops_lock('time_'.($wid?'w'.$wid:'e'.$eid).'_'.$date);$wpdb->query('START TRANSACTION');
+                $lock=$this->ops_lock('time_'.($wid?'w'.$wid:'e'.$eid));$wpdb->query('START TRANSACTION');
                 $existing=$wpdb->get_results($wpdb->prepare("SELECT * FROM {$p}time_entries WHERE employee_id=%d AND worker_id=%d AND work_date=%s FOR UPDATE",$eid,$wid,$date),ARRAY_A);
                 foreach($existing as $e){if($wid&&!$admin){$this->ops_site((int)$e['site_id']);if((int)$e['created_by']!==$uid)throw new Exception('This Employee day is managed by another user.');}}
                 $all=(array)($d['rows']??[]);$saved=[];$intervals=[];$submitted_ids=[];
                 foreach($all as $r){
                     $id=(int)($r['id']??0);if($id&&isset($submitted_ids[$id]))throw new Exception('Duplicate Time Sheet row.');if($id)$submitted_ids[$id]=true;$old=null;foreach($existing as $e)if((int)$e['id']===$id)$old=$e;
                     if($id&&!$old)throw new Exception('Time entry does not belong to this Employee and Date.');
-                    if($old && ($old['status']==='approved'||(int)$old['bill_id'])){$saved[]=$id;$intervals[]=[substr($old['from_time'],0,5),substr($old['to_time'],0,5)];continue;}
+                    if($old && ($old['status']==='approved'||(int)$old['bill_id'])){$saved[]=$id;$intervals[]=$this->ops_time_interval($date,$old['from_time'],$old['to_time']);continue;}
                     $from=sanitize_text_field($r['from_time']??'');$to=sanitize_text_field($r['to_time']??'');$activity=sanitize_textarea_field($r['activity']??'');
-                    if(!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/',$from)||!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/',$to)||$to<=$from||!$activity)throw new Exception('Every row needs Activity and a To Time after From Time on the same day.');
-                    $minutes=((int)substr($to,0,2)*60+(int)substr($to,3))-((int)substr($from,0,2)*60+(int)substr($from,3));
-                    $intervals[]=[$from,$to];
+                    if(!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/',$from)||!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/',$to)||$to===$from||!$activity)throw new Exception('Enter Activity and different From and To times for each row.');
+                    $interval=$this->ops_time_interval($date,$from,$to);
+                    $minutes=(int)(($interval[1]-$interval[0])/60);
+                    $intervals[]=$interval;
                     $row=['work_date'=>$date,'employee_id'=>$eid,'worker_id'=>$wid,'contractor_id'=>(int)($worker['contractor_id']??0),'site_id'=>$site,'from_time'=>$from,'to_time'=>$to,'minutes'=>$minutes,'activity'=>$activity,'daily_rate'=>$worker['daily_rate']??0,'hourly_rate'=>$worker['hourly_rate']??0,'status'=>'submitted','created_by'=>$uid,'updated_at'=>$now];
                     $this->ops_write($id?$wpdb->update($p.'time_entries',$row,['id'=>$id]):$wpdb->insert($p.'time_entries',$row));$saved[]=$id?:$wpdb->insert_id;
                 }
                 // Locked entries omitted by a client still participate in overlap validation.
-                foreach($existing as $e)if(!in_array((int)$e['id'],array_map('intval',$saved),true)&&($e['status']==='approved'||(int)$e['bill_id'])){$saved[]=(int)$e['id'];$intervals[]=[substr($e['from_time'],0,5),substr($e['to_time'],0,5)];}
-                usort($intervals,function($a,$b){return strcmp($a[0],$b[0]);});for($i=1;$i<count($intervals);$i++)if($intervals[$i][0]<$intervals[$i-1][1])throw new Exception('Time entries cannot overlap for the same Employee.');
+                foreach($existing as $e)if(!in_array((int)$e['id'],array_map('intval',$saved),true)&&($e['status']==='approved'||(int)$e['bill_id'])){$saved[]=(int)$e['id'];$intervals[]=$this->ops_time_interval($date,$e['from_time'],$e['to_time']);}
+                // Check adjacent dates as overnight work extends into the next calendar day.
+                $previous=gmdate('Y-m-d',strtotime($date.' UTC')-86400);$next=gmdate('Y-m-d',strtotime($date.' UTC')+86400);
+                $adjacent=$wpdb->get_results($wpdb->prepare("SELECT work_date,from_time,to_time FROM {$p}time_entries WHERE employee_id=%d AND worker_id=%d AND work_date BETWEEN %s AND %s AND work_date<>%s",$eid,$wid,$previous,$next,$date),ARRAY_A);
+                foreach($adjacent as $entry)$intervals[]=$this->ops_time_interval($entry['work_date'],$entry['from_time'],$entry['to_time']);
+                usort($intervals,function($a,$b){return $a[0]<=>$b[0];});for($i=1;$i<count($intervals);$i++)if($intervals[$i][0]<$intervals[$i-1][1])throw new Exception('Time entries cannot overlap for the same Employee.');
                 foreach($existing as $e)if(!in_array((int)$e['id'],array_map('intval',$saved),true))$this->ops_write($wpdb->delete($p.'time_entries',['id'=>$e['id']]));
                 $wpdb->query('COMMIT');break;
             case 'time_status':
