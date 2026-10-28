@@ -20,7 +20,7 @@ Administrators see the new views automatically. Grant relevant view permissions 
    - Contractor + Employee: use approved contractor-employee work dates at the snapshotted Daily Rate, once per employee per date.
    - According to Time: use approved minutes / 60 multiplied by the snapshotted Hourly Rate.
 2. Add employees, daily/hourly rates and status in **Contractor Employees**.
-3. In Time Sheet, select Contractor Employee, Employee Name, Site and the work date. Enter activities and submit.
+3. In the separate Time Sheet sidebar section, open Time Sheet and select Contractor Employee, Contractor Name, Employee Name, Site and the work date. Employee Name lists only active employees of the selected contractor; changing contractor clears the previous employee and activity rows. Enter activities and submit.
 4. HO/Admin approves entries in Time Sheet Master.
 5. Open **Employee / Time Based Bill**, choose contractor, site and date range, and preview the calculation. Supply Bill No., Bill Date and GST Amount to create the bill.
 6. The resulting bill appears in existing Contractor Bills, Outstanding and Site Cost reports and uses existing payment/advance allocation flows.
