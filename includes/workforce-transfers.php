@@ -120,6 +120,9 @@ trait BSM_Workforce_Transfers {
         return $u?:['id'=>0,'role'=>'administrator'];
     }
     private function ops_admin() { return current_user_can('manage_options') || $this->allowance_admin_allowed(); }
+    private function ops_can_punch_contractor($user) {
+        return current_user_can('manage_options') || ($user['role']??'')==='bsm_site_supervisor';
+    }
     private function ops_require_admin() { if(!$this->ops_admin()) throw new Exception('Only HO/Admin can perform this action.'); }
     private function ops_site($id) {
         global $wpdb; if(!$id || !$wpdb->get_var($wpdb->prepare("SELECT id FROM {$this->prefix}sites WHERE id=%d",$id))) throw new Exception('Select a valid Site.');
@@ -235,7 +238,7 @@ trait BSM_Workforce_Transfers {
                 $workers=$wpdb->get_results("SELECT w.*,w.employee_name label,c.contractor_name,c.payment_basis FROM {$p}contractor_employees w JOIN {$p}labour_contractors c ON c.id=w.contractor_id ORDER BY w.employee_name",ARRAY_A);
                 if(!$admin)foreach($workers as &$worker){unset($worker['mobile'],$worker['address'],$worker['bank_name'],$worker['ifsc'],$worker['account_number']);}unset($worker);
                 $destinations=$wpdb->get_results("SELECT id,site_name label FROM {$p}sites WHERE status='active' ORDER BY site_name",ARRAY_A);
-                $result=['destinations'=>$destinations,'admin'=>$admin,'employee_id'=>(int)$user['id'],'employees'=>$employees,'workers'=>$workers];break;
+                $result=['destinations'=>$destinations,'can_punch_contractor'=>$this->ops_can_punch_contractor($user),'admin'=>$admin,'employee_id'=>(int)$user['id'],'employees'=>$employees,'workers'=>$workers];break;
             case 'holiday_list':
                 $holidays=$wpdb->get_results("SELECT * FROM {$p}holidays ORDER BY holiday_date DESC",ARRAY_A);
                 if(!$admin)$holidays=array_values(array_filter($holidays,function($h)use($user){$ids=json_decode($h['employee_ids']?:'[]',true)?:[];return !$ids||in_array((int)$user['id'],array_map('intval',$ids),true);}));
@@ -260,7 +263,7 @@ trait BSM_Workforce_Transfers {
             case 'time_save':
                 $date=$this->ops_date($d['work_date']??'');$eid=(int)($d['employee_id']??0);$wid=(int)($d['worker_id']??0);$site=(int)($d['site_id']??0);$worker=null;
                 if($wid){
-                    if(!$admin && !in_array('contractor_employees',json_decode($user['allowed_views']??'[]',true)?:[],true))throw new Exception('Contractor time entry requires permission.');
+                    if(!$this->ops_can_punch_contractor($user))throw new Exception('Only Admin or Site Supervisor can punch Contractor Time Sheets.');
                     $worker=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}contractor_employees WHERE id=%d AND status='active'",$wid),ARRAY_A);if(!$worker)throw new Exception('Select an active Contractor Employee.');$eid=0;if(!$site)throw new Exception('Site is required for Contractor Employee.');$this->ops_site($site);
                 }else{
                     if(!$eid||!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}users WHERE id=%d AND status='active'",$eid)))throw new Exception('Select an active Employee.');
@@ -293,6 +296,7 @@ trait BSM_Workforce_Transfers {
                 $wpdb->query('COMMIT');break;
             case 'time_update':case 'time_delete':
                 $id=(int)($d['id']??0);$entry=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}time_entries WHERE id=%d",$id),ARRAY_A);if(!$entry)throw new Exception('Time entry not found.');
+                if((int)$entry['worker_id']>0 && !$this->ops_can_punch_contractor($user))throw new Exception('Only Admin or Site Supervisor can change Contractor Time Sheets.');
                 $lock=$this->ops_lock('time_'.((int)$entry['worker_id']?'w'.$entry['worker_id']:'e'.$entry['employee_id']));$wpdb->query('START TRANSACTION');
                 $entry=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}time_entries WHERE id=%d FOR UPDATE",$id),ARRAY_A);if(!$entry)throw new Exception('Time entry not found.');
                 if((int)$entry['bill_id'])throw new Exception('Billed time entries cannot be edited or deleted.');
