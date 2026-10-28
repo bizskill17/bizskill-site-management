@@ -2727,3 +2727,15 @@ html,body{
 .bsm-viewvis-item:last-child{border-bottom:0}
 .bsm-viewvis-item.is-locked{opacity:.7;cursor:default}.bsm-viewvis-item small{margin-left:auto;color:#6b7c93;font-size:11px}
 .bsm-viewvis input[type=checkbox]{width:16px;height:16px;flex:0 0 16px;margin:0}
+
+
+/* Workforce and transfer forms */
+#ops-time-grid[hidden],#ops-holiday-employees-wrap[hidden]{display:none!important}
+.ops-activity{display:flex;align-items:center;gap:8px}.ops-activity input{flex:1;min-width:120px}
+#ops-time-form td:first-child,#ops-time-form td:nth-child(2){width:180px}
+#ops-time-form input[type=time]{min-width:125px}
+#ops-transfer-form .bsm-table-wrap{overflow:visible}
+#ops-transfer-form td:first-child{min-width:240px}
+#ops-transfer-form input[type=number],#ops-receive-form input[type=number]{max-width:160px}
+#ops-holiday-employees{min-height:150px}
+#ops-bill-form p{font-size:13px;line-height:1.6}

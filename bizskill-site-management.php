@@ -2,14 +2,17 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.061
+ * Version: 0.0.062
  * Author: BizSkill
  */
 
 if (!defined('ABSPATH')) exit;
 
+require_once __DIR__ . '/includes/workforce-transfers.php';
+
 final class BSM_Site_Management {
-    const VERSION = '0.0.061';
+    use BSM_Workforce_Transfers;
+    const VERSION = '0.0.062';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -31,6 +34,8 @@ final class BSM_Site_Management {
         add_filter('theme_page_templates', [$this, 'register_blank_page_template']);
         add_filter('template_include', [$this, 'blank_template']);
         add_action('init', [$this, 'maybe_upgrade']);
+        add_action('init', [$this, 'operations_upgrade'], 11);
+        add_action('wp_ajax_bsm_operations', [$this, 'ajax_operations']);
 
         add_action('wp_ajax_bsm_project_tracker', [$this, 'ajax_project_tracker']);
         add_action('wp_ajax_bsm_save_view_visibility', [$this, 'ajax_save_view_visibility']);
@@ -277,6 +282,13 @@ final class BSM_Site_Management {
             'site_opening_stock' => ['Site Opening Stock', 'site-opening-stock'],
             'daily_outward_summary' => ['Daily Outward Summary', 'daily-outward-summary'],
             'labour_attendance' => ['Daily Labour Attendance', 'daily-labour-attendance'],
+            'holiday_list' => ['Holiday List', 'holiday-list'],
+            'time_sheet' => ['Time Sheet', 'time-sheet'],
+            'time_sheet_master' => ['Time Sheet Master', 'time-sheet-master'],
+            'contractor_employees' => ['Contractor Employees', 'contractor-employees'],
+            'contractor_calculated_bill' => ['Employee / Time Based Bill', 'contractor-calculated-bill'],
+            'site_transfer_form' => ['Site-to-Site Transfer Form', 'site-transfer-form'],
+            'site_transfer_master' => ['Site-to-Site Transfer Master', 'site-transfer-master'],
             'office_daily_attendance' => ['Daily Attendance', 'office-daily-attendance'],
             'office_attendance_master' => ['Attendance Master', 'office-attendance-master'],
             'office_monthly_salary' => ['Monthly Salary', 'office-monthly-salary'],
@@ -1661,6 +1673,9 @@ final class BSM_Site_Management {
         $lock_delete=function($message) use (&$out){$out['can_delete']=false;$out['delete_message']=$message;};
         $lock_both=function($message) use (&$out){$out['can_edit']=false;$out['can_delete']=false;$out['edit_message']=$message;$out['delete_message']=$message;};
 
+        if($key==='contractor_bills' && $exists("SELECT COUNT(*) FROM {$p}time_entries WHERE bill_id=%d",$id)){
+            $lock_both('This calculated bill is locked to approved Time Sheet entries.');return $out;
+        }
         switch($key){
             case 'bank_accounts':
                 if($exists("SELECT COUNT(*) FROM {$p}customer_receipts WHERE bank_account_id=%d",$id)) $lock_delete('This Bank Account is already used in Site Payment Receipts and cannot be deleted. You can mark it Inactive instead.');
@@ -2942,6 +2957,10 @@ final class BSM_Site_Management {
     public function ajax_save() {
         $this->verify_ajax(); global $wpdb;
         $key=sanitize_key($_POST['module']??''); $this->deny_employee_settings($key); $m=$this->module($key); if(!$m) wp_send_json_error(['message'=>'Invalid module']);
+        if(in_array($key,['site_consumptions','material_returns'],true)){
+            try{$ops_stock_lock=$this->ops_lock('stock_dispatch');}catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);}
+            register_shutdown_function(function()use($wpdb,$ops_stock_lock){$wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)',$ops_stock_lock));});
+        }
         $data=json_decode(stripslashes($_POST['data']??'{}'),true);
         if($key==='sites'){
             if (!$this->ensure_site_sections_column()) wp_send_json_error(['message'=>'Section database column could not be created. Check database permissions.']);
@@ -3005,6 +3024,11 @@ final class BSM_Site_Management {
             if($limit_amount<0) wp_send_json_error(['message'=>'Limit Amount cannot be negative']);
             $dup=(int)$wpdb->get_var($wpdb->prepare("SELECT id FROM {$this->prefix}employee_allowance_limits WHERE employee_id=%d AND allowance_type_id=%d AND id<>%d LIMIT 1",$employee_id,$allowance_type_id,$id));
             if($dup) wp_send_json_error(['message'=>'Allowance limit already exists for this Employee and Allowance Type']);
+        }
+        if($key==='labour_contractors' && isset($data['payment_basis']) && !in_array($data['payment_basis'],['direct','employee','time'],true)) wp_send_json_error(['message'=>'Invalid Payment Basis']);
+        if($key==='contractor_bills'){
+            if($id && (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$this->prefix}time_entries WHERE bill_id=%d",$id))) wp_send_json_error(['message'=>'Calculated bills are locked to their approved Time Sheet entries.']);
+            $data['payment_basis']='direct';
         }
         if($id){ $g=$this->record_guard($key,$id); if(!$g['can_edit']) wp_send_json_error(['message'=>$g['edit_message']?:'This record is locked and cannot be edited.']); }
         if($key==='company_settings'){ $this->migrate_company_payment_details(); }
@@ -4157,6 +4181,8 @@ final class BSM_Site_Management {
             $rate=(float)$wpdb->get_var($wpdb->prepare("SELECT opening_rate FROM {$p}site_opening_stock WHERE site_id=%d AND item_id=%d ORDER BY id DESC LIMIT 1",$site_id,$item_id));
         }
 
+        $available += $this->ops_stock_delta($site_id,$item_id);
+        if(!$unit_id) $unit_id=(int)$wpdb->get_var($wpdb->prepare("SELECT unit_id FROM {$p}items WHERE id=%d",$item_id));
         return [
             'available_qty'=>round($available,2),
             'unit_id'=>$unit_id,
@@ -4253,6 +4279,12 @@ final class BSM_Site_Management {
             $map[$key]['returned']+=(float)$x['qty'];
         }
 
+        foreach($this->ops_transfer_movements($site_id) as $x){
+            $key=$x['item_id'].'|'.$x['unit_id'];
+            if(!isset($map[$key])) $map[$key]=['id'=>$x['item_id'],'label'=>$x['item_name'],'unit_id'=>$x['unit_id'],'received'=>0,'consumed'=>0,'returned'=>0,'available_qty'=>0];
+            $map[$key]['received']+=$x['in'];$map[$key]['returned']+=$x['out'];
+        }
+
         // When editing a consumption, add that record's own quantity back to availability.
         if($consumption_id){
             $sql=$wpdb->prepare("SELECT item_id,unit_id,SUM(qty) qty FROM {$p}site_consumption_items WHERE consumption_id=%d GROUP BY item_id,unit_id",$consumption_id);
@@ -4281,7 +4313,12 @@ final class BSM_Site_Management {
     }
 
     public function ajax_delete(){
+        global $wpdb;
         $this->verify_ajax(); global $wpdb; $key=sanitize_key($_POST['module']??'');$this->deny_employee_settings($key);$id=intval($_POST['id']??0);$m=$this->module($key);if(!$m||!$id)wp_send_json_error(['message'=>'Invalid request']);
+        if($key==='contractor_bills' && (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$this->prefix}time_entries WHERE bill_id=%d",$id))) wp_send_json_error(['message'=>'A calculated Contractor Bill cannot be deleted.']);
+        if($key==='sites' && $wpdb->get_var($wpdb->prepare("SELECT id FROM {$this->prefix}site_transfers WHERE from_site_id=%d OR to_site_id=%d LIMIT 1",$id,$id))) wp_send_json_error(['message'=>'This Site is linked to a Site Transfer. Mark it inactive instead.']);
+        if($key==='items' && $wpdb->get_var($wpdb->prepare("SELECT id FROM {$this->prefix}site_transfer_items WHERE item_id=%d LIMIT 1",$id))) wp_send_json_error(['message'=>'This Item is linked to a Site Transfer. Mark it inactive instead.']);
+        if($key==='labour_contractors' && $wpdb->get_var($wpdb->prepare("SELECT id FROM {$this->prefix}contractor_employees WHERE contractor_id=%d LIMIT 1",$id))) wp_send_json_error(['message'=>'This Contractor has linked Employees. Mark it inactive instead.']);
         $deleted_salary_slip_id=0;
         if($key==='vendor_payments') $deleted_salary_slip_id=(int)$wpdb->get_var($wpdb->prepare("SELECT salary_slip_id FROM {$this->prefix}vendor_payments WHERE id=%d AND payment_type='salary'",$id));
         if($key==='company_settings') wp_send_json_error(['message'=>'Company Settings cannot be deleted.']);
@@ -5144,6 +5181,12 @@ final class BSM_Site_Management {
                 $add('Warehouse',$x['warehouse_id'],$x['warehouse_name'],$x['item_id'],$x['item_name'],$x['unit_id'],$x['unit'],'return_qty',$x['qty']);
             }
 
+            foreach($this->ops_transfer_movements($site,$item,$from,$to) as $x){
+                $site_name=(string)$wpdb->get_var($wpdb->prepare("SELECT site_name FROM {$p}sites WHERE id=%d",$x['site_id']));
+                if($x['in'])$add('Site',$x['site_id'],$site_name,$x['item_id'],$x['item_name'],$x['unit_id'],$x['unit'],'receipt',$x['in']);
+                if($x['out'])$add('Site',$x['site_id'],$site_name,$x['item_id'],$x['item_name'],$x['unit_id'],$x['unit'],'return_qty',$x['out']);
+            }
+
             foreach($map as &$x){
                 if($x['location_type']==='Warehouse') $x['balance']=$x['opening']+$x['inward']+$x['return_qty']-$x['dispatch'];
                 else $x['balance']=$x['opening']+$x['receipt']-$x['consumption']-$x['return_qty'];
@@ -5933,6 +5976,7 @@ final class BSM_Site_Management {
         if(!$rows){
             $rows=$wpdb->get_results($wpdb->prepare($base_select.$join." ORDER BY u.name,u.id",$date),ARRAY_A);
         }
+        foreach($rows as &$attendance_row){if($this->ops_holiday_dates((int)$attendance_row['user_id'],$date,$date))$attendance_row['attendance_status']='H';}unset($attendance_row);
         wp_send_json_success(['date'=>$date,'rows'=>$rows]);
     }
 
@@ -5956,6 +6000,7 @@ final class BSM_Site_Management {
         foreach($rows as $r){
             $user_id=(int)($r['user_id']??0); $st=strtoupper(sanitize_text_field($r['status']??''));
             if(!$user_id || !isset($eligible_set[$user_id])) continue;
+            if($this->ops_holiday_dates($user_id,$date,$date)) continue;
             if(!in_array($st,['P','A'],true)) wp_send_json_error(['message'=>'Please mark Present or Absent for every employee.']);
             $id=(int)$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}office_attendance WHERE attendance_date=%s AND user_id=%d LIMIT 1",$date,$user_id));
             $data=['attendance_status'=>$st,'updated_at'=>$now];
@@ -5983,11 +6028,12 @@ final class BSM_Site_Management {
         global $wpdb; $p=$this->prefix;
         $page=max(1,(int)($_POST['page']??1));$export_all=!empty($_POST['export_all']);$per=$export_all?0:20;$offset=$export_all?0:(($page-1)*20);
         $search=sanitize_text_field($_POST['search']??'');$date_from=sanitize_text_field($_POST['date_from']??'');$date_to=sanitize_text_field($_POST['date_to']??'');$user_id=(int)($_POST['user_id']??0);$status=strtoupper(sanitize_text_field($_POST['status']??''));
+        $holiday_status="CASE WHEN EXISTS(SELECT 1 FROM {$p}holidays h WHERE h.holiday_date=a.attendance_date AND (COALESCE(h.employee_ids,'[]')='[]' OR JSON_CONTAINS(COALESCE(NULLIF(h.employee_ids,''),'[]'),CAST(a.user_id AS CHAR)))) THEN 'H' ELSE a.attendance_status END";
         $where='1=1';$args=[];
-        if($date_from){$where.=' AND a.attendance_date>=%s';$args[]=$date_from;} if($date_to){$where.=' AND a.attendance_date<=%s';$args[]=$date_to;} if($user_id){$where.=' AND a.user_id=%d';$args[]=$user_id;} if(in_array($status,['P','A'],true)){$where.=' AND a.attendance_status=%s';$args[]=$status;}
+        if($date_from){$where.=' AND a.attendance_date>=%s';$args[]=$date_from;} if($date_to){$where.=' AND a.attendance_date<=%s';$args[]=$date_to;} if($user_id){$where.=' AND a.user_id=%d';$args[]=$user_id;} if(in_array($status,['P','A','H'],true)){$where.=" AND ($holiday_status)=%s";$args[]=$status;}
         if($search!==''){$n='%'.$wpdb->esc_like($search).'%';$where.=" AND (u.name LIKE %s OR COALESCE(d.designation_name,u.designation,'') LIKE %s OR a.attendance_status LIKE %s)";$args[]=$n;$args[]=$n;$args[]=$n;}
         $from=" FROM {$p}office_attendance a INNER JOIN {$p}users u ON u.id=a.user_id LEFT JOIN {$p}designations d ON d.id=u.designation_id WHERE $where";
-        $count="SELECT COUNT(*) $from";$sql="SELECT a.id,a.attendance_date,a.user_id,u.name,COALESCE(d.designation_name,u.designation,'') designation,a.attendance_status,COALESCE(a.image_url,'') image_url,COALESCE(a.image_name,'') image_name $from ORDER BY a.attendance_date DESC,u.name";
+        $count="SELECT COUNT(*) $from";$sql="SELECT a.id,a.attendance_date,a.user_id,u.name,COALESCE(d.designation_name,u.designation,'') designation,($holiday_status) attendance_status,COALESCE(a.image_url,'') image_url,COALESCE(a.image_name,'') image_name $from ORDER BY a.attendance_date DESC,u.name";
         if(!$export_all)$sql.=$wpdb->prepare(' LIMIT %d OFFSET %d',$per,$offset); if($args){$count=$wpdb->prepare($count,$args);$sql=$wpdb->prepare($sql,$args);} $total=(int)$wpdb->get_var($count);$rows=$wpdb->get_results($sql,ARRAY_A);
         wp_send_json_success(['rows'=>$rows,'total'=>$total,'page'=>$page,'pages'=>$export_all?1:max(1,(int)ceil($total/20))]);
     }
@@ -6002,8 +6048,11 @@ final class BSM_Site_Management {
         foreach($users as $u){
             $uid=(int)$u['user_id'];
             $atts=$wpdb->get_results($wpdb->prepare("SELECT attendance_date,attendance_status FROM {$p}office_attendance WHERE user_id=%d AND attendance_date BETWEEN %s AND %s ORDER BY attendance_date",$uid,$start,$end),ARRAY_A);
-            $present=0;$absent=0;$payable=0.0;$marked=count($atts);
-            foreach($atts as $a){if($a['attendance_status']==='P')$present++;else if($a['attendance_status']==='A')$absent++;}
+            $holidays=$this->ops_holiday_dates($uid,$start,$end);
+            $attendance_by_date=[];foreach($atts as $a)$attendance_by_date[$a['attendance_date']]=$a['attendance_status'];
+            foreach($holidays as $hd=>$unused)if(!isset($attendance_by_date[$hd]))$atts[]=['attendance_date'=>$hd,'attendance_status'=>'H'];
+            $present=0;$absent=0;$payable=0.0;$marked=count($attendance_by_date);
+            foreach($atts as $a){if($a['attendance_status']==='P')$present++;else if($a['attendance_status']==='A'&&!isset($holidays[$a['attendance_date']]))$absent++;}
             $days_in_month=(int)date('t',strtotime($start));
             $latest=(float)$wpdb->get_var($wpdb->prepare("SELECT monthly_salary FROM {$p}user_salary_history WHERE user_id=%d AND effective_date<=%s ORDER BY effective_date DESC,id DESC LIMIT 1",$uid,$end));
             if($latest<=0 && !empty($u['salary_effective_date']) && $u['salary_effective_date']<=$end)$latest=(float)$u['salary'];
@@ -6011,13 +6060,13 @@ final class BSM_Site_Management {
             // Example: September has 30 days; one Present day on a ₹10,000 salary = ₹333.33.
             if($days_in_month>0){
                 foreach($atts as $a){
-                    if($a['attendance_status']!=='P')continue;
+                    if($a['attendance_status']!=='P'&&!isset($holidays[$a['attendance_date']]))continue;
                     $sal=(float)$wpdb->get_var($wpdb->prepare("SELECT monthly_salary FROM {$p}user_salary_history WHERE user_id=%d AND effective_date<=%s ORDER BY effective_date DESC,id DESC LIMIT 1",$uid,$a['attendance_date']));
                     if($sal<=0 && !empty($u['salary_effective_date']) && $u['salary_effective_date']<=$a['attendance_date'])$sal=(float)$u['salary'];
                     if($sal>0)$payable += $sal/$days_in_month;
                 }
             }
-            $rows[]=['user_id'=>$uid,'name'=>$u['name'],'designation'=>$u['designation'],'monthly_salary'=>round($latest,2),'present_days'=>$present,'absent_days'=>$absent,'marked_days'=>$marked,'days_in_month'=>$days_in_month,'payable_salary'=>round($payable,2)];
+            $rows[]=['user_id'=>$uid,'name'=>$u['name'],'designation'=>$u['designation'],'monthly_salary'=>round($latest,2),'present_days'=>$present,'holiday_days'=>count($holidays),'absent_days'=>$absent,'marked_days'=>$marked,'days_in_month'=>$days_in_month,'payable_salary'=>round($payable,2)];
         }
         wp_send_json_success(['month'=>$month,'rows'=>$rows]);
     }
@@ -6353,3 +6402,4 @@ final class BSM_Site_Management {
 }
 
 BSM_Site_Management::instance();
+
