@@ -261,7 +261,7 @@ trait BSM_Workforce_Transfers {
                 $date=$this->ops_date($d['work_date']??'');$eid=(int)($d['employee_id']??0);$wid=(int)($d['worker_id']??0);$site=(int)($d['site_id']??0);$worker=null;
                 if($wid){
                     if(!$admin && !in_array('contractor_employees',json_decode($user['allowed_views']??'[]',true)?:[],true))throw new Exception('Contractor time entry requires permission.');
-                    $worker=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}contractor_employees WHERE id=%d AND status='active'",$wid),ARRAY_A);if(!$worker)throw new Exception('Select an active Contractor Employee.');$eid=0;$this->ops_site($site);
+                    $worker=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}contractor_employees WHERE id=%d AND status='active'",$wid),ARRAY_A);if(!$worker)throw new Exception('Select an active Contractor Employee.');$eid=0;if(!$site)throw new Exception('Site is required for Contractor Employee.');$this->ops_site($site);
                 }else{
                     if(!$eid||!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}users WHERE id=%d AND status='active'",$eid)))throw new Exception('Select an active Employee.');
                     if(!$admin && $eid!==(int)$user['id'])throw new Exception('You can enter only your own Time Sheet.'); if($site)$this->ops_site($site);
@@ -303,13 +303,15 @@ trait BSM_Workforce_Transfers {
                     if((int)$entry['site_id'])$this->ops_site((int)$entry['site_id']);
                 }
                 if($op==='time_delete'){$this->ops_write($wpdb->delete($p.'time_entries',['id'=>$id]));$wpdb->query('COMMIT');break;}
+                $site=(int)($d['site_id']??$entry['site_id']);
+                if((int)$entry['worker_id']>0){if(!$site)throw new Exception('Site is required for Contractor Employee.');$this->ops_site($site);}elseif($site)$this->ops_site($site);
                 $from=sanitize_text_field($d['from_time']??'');$to=sanitize_text_field($d['to_time']??'');$activity=sanitize_textarea_field($d['activity']??'');
                 if(!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/',$from)||!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/',$to)||$from===$to||!$activity)throw new Exception('Enter Activity and different From and To times.');
                 $interval=$this->ops_time_interval($entry['work_date'],$from,$to);$previous=gmdate('Y-m-d',strtotime($entry['work_date'].' UTC')-86400);$next=gmdate('Y-m-d',strtotime($entry['work_date'].' UTC')+86400);
                 $others=$wpdb->get_results($wpdb->prepare("SELECT work_date,from_time,to_time FROM {$p}time_entries WHERE employee_id=%d AND worker_id=%d AND work_date BETWEEN %s AND %s AND id<>%d",$entry['employee_id'],$entry['worker_id'],$previous,$next,$id),ARRAY_A);
                 foreach($others as $other){$peer=$this->ops_time_interval($other['work_date'],$other['from_time'],$other['to_time']);if($interval[0]<$peer[1]&&$peer[0]<$interval[1])throw new Exception('Time entries cannot overlap for the same Employee.');}
                 $status=$admin&&(int)$entry['worker_id']>0&&!empty($d['approved'])?'approved':'submitted';
-                $this->ops_write($wpdb->update($p.'time_entries',['from_time'=>$from,'to_time'=>$to,'minutes'=>(int)(($interval[1]-$interval[0])/60),'activity'=>$activity,'status'=>$status,'approved_by'=>$status==='approved'?$uid:0,'updated_at'=>$now],['id'=>$id]));$wpdb->query('COMMIT');break;
+                $this->ops_write($wpdb->update($p.'time_entries',['site_id'=>$site,'from_time'=>$from,'to_time'=>$to,'minutes'=>(int)(($interval[1]-$interval[0])/60),'activity'=>$activity,'status'=>$status,'approved_by'=>$status==='approved'?$uid:0,'updated_at'=>$now],['id'=>$id]));$wpdb->query('COMMIT');break;
             case 'time_status':
                 $this->ops_require_admin();$id=(int)($d['id']??0);$lock=$this->ops_lock('time_status');$wpdb->query('START TRANSACTION');
                 $e=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}time_entries WHERE id=%d FOR UPDATE",$id),ARRAY_A);if(!$e||(int)$e['bill_id'])throw new Exception('A billed entry is locked.');

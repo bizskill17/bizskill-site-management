@@ -59,6 +59,7 @@ fails('holiday_save',['holiday_date'=>'2026-02-30','holiday_name'=>'Bad date'],'
 callop('worker_save',['contractor_id'=>1,'employee_name'=>'Worker A','daily_rate'=>600,'hourly_rate'=>100]);
 $worker=(int)$wpdb->get_var('SELECT id FROM bsm_contractor_employees');
 $day=['work_date'=>'2026-10-28','worker_id'=>$worker,'site_id'=>1,'rows'=>[['from_time'=>'09:00','to_time'=>'11:00','activity'=>'Construction'],['from_time'=>'11:00','to_time'=>'12:30','activity'=>'Finishing']]];
+fails('time_save',array_merge($day,['site_id'=>0]),'Site is required');
 callop('time_save',$day);$rows=callop('time_list',['worker_id'=>$worker])['rows'];
 check(count($rows)===2&&(int)array_sum(array_column($rows,'minutes'))===210,'Time duration and adjacent intervals');
 $bad=$day;$bad['rows'][1]['from_time']='10:30';fails('time_save',$bad,'overlap');
@@ -149,6 +150,7 @@ $office_id=(int)$wpdb->get_var("SELECT id FROM bsm_time_entries WHERE employee_i
 callop('time_update',['id'=>$office_id,'from_time'=>'09:30','to_time'=>'11:00','activity'=>'Edited activity']);
 check((int)$wpdb->get_var('SELECT minutes FROM bsm_time_entries WHERE id='.$office_id)===90,'Master edit recalculates duration');
 $first=(int)$wpdb->get_var("SELECT id FROM bsm_time_entries WHERE worker_id=$worker AND work_date='2026-10-27' ORDER BY from_time LIMIT 1");
+fails('time_update',['id'=>$first,'site_id'=>0,'from_time'=>'09:00','to_time'=>'10:00','activity'=>'No Site'],'Site is required');
 fails('time_update',['id'=>$first,'from_time'=>'09:00','to_time'=>'11:30','activity'=>'Overlap'],'overlap');
 $admin=false;
 callop('time_update',['id'=>$office_id,'from_time'=>'09:30','to_time'=>'10:30','activity'=>'Employee edit']);
