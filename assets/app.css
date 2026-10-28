@@ -2756,3 +2756,13 @@ html,body{
 
 .ops-time-actions{display:flex;gap:6px;white-space:nowrap}
 #ops-time-editor .bsm-quick-panel{max-height:calc(100vh - 32px);overflow-y:auto}
+
+/* Time Sheet: let searchable menus extend below the form without clipping. */
+.bsm-app .bsm-panel:has(> #ops-time-form){overflow:visible;}
+#ops-time-form .bsm-searchable-select.open{z-index:500;}
+#ops-time-form .bsm-select-menu{max-height:260px;overflow-y:auto;box-shadow:0 12px 28px rgba(15,35,65,.22);}
+#ops-time-form .bsm-select-option{white-space:normal;overflow-wrap:anywhere;min-height:36px;line-height:1.4;}
+
+/* Activity text wraps and grows with its content, including existing entries. */
+#ops-time-grid .ops-activity{align-items:flex-start;}
+#ops-time-grid textarea.ops-time-activity{flex:1;width:100%;min-width:0;min-height:36px;height:auto;max-height:none!important;box-sizing:border-box;resize:none;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.4;}

@@ -4512,12 +4512,19 @@ async function opsTimeForm(){
   setTitle('Time Sheet');
   $('#bsm-content').html(`<div class="bsm-panel"><form id="ops-time-form"><div class="bsm-form-grid">${opsDate('ops-time-date','Date')}<label>Employee Type<select id="ops-time-type"><option value="office">Office Employee</option>${opsMeta.admin||(BSM.currentUser?.allowed_views||[]).includes('contractor_employees')?'<option value="contractor">Contractor Employee</option>':''}</select></label><label id="ops-time-contractor-wrap" hidden>Contractor Name<select id="ops-time-contractor" disabled>${opsOpts(App.options.contractors)}</select></label>${opsSelect('ops-time-employee','Employee Name',opsMeta.employees,'',true)}<label><span id="ops-time-site-label">Site</span><select id="ops-time-site">${opsOpts(App.options.sites)}</select></label></div><div id="ops-time-grid" hidden><div class="bsm-toolbar"><span id="ops-time-total"></span><div class="bsm-spacer"></div>${opsButton('time-add','+ Add Row')}</div>${opsTable(['From Time','To Time','Activity'],'<tr></tr>')}</div><div class="bsm-form-actions">${opsButton('time-cancel','Cancel')}<button class="bsm-btn bsm-btn-primary">Save Time Sheet</button></div></form></div>`);opsEnhance();await opsLoadTimeDay();
 }
-function opsTimeRow(r={}){const locked=r.status==='approved'||+r.bill_id;return `<tr data-id="${r.id||0}" data-locked="${locked?1:0}"><td><input type="time" class="ops-time-from" required value="${esc((r.from_time||'').slice(0,5))}" ${locked?'disabled':''}></td><td><input type="time" class="ops-time-to" required value="${esc((r.to_time||'').slice(0,5))}" ${locked?'disabled':''}></td><td><div class="ops-activity"><input type="text" class="ops-time-activity" required aria-label="Activity" value="${esc(r.activity||'')}" ${locked?'disabled':''}>${locked?`<span>Approved${+r.bill_id?' / Billed':''}</span>`:opsButton('time-remove','×','','aria-label="Delete activity row"')}</div></td></tr>`;}
+function opsTimeRow(r={}){const locked=r.status==='approved'||+r.bill_id;return `<tr data-id="${r.id||0}" data-locked="${locked?1:0}"><td><input type="time" class="ops-time-from" required value="${esc((r.from_time||'').slice(0,5))}" ${locked?'disabled':''}></td><td><input type="time" class="ops-time-to" required value="${esc((r.to_time||'').slice(0,5))}" ${locked?'disabled':''}></td><td><div class="ops-activity"><textarea class="ops-time-activity" rows="1" required aria-label="Activity" ${locked?'disabled':''}>${esc(r.activity||'')}</textarea>${locked?`<span>Approved${+r.bill_id?' / Billed':''}</span>`:opsButton('time-remove','×','','aria-label="Delete activity row"')}</div></td></tr>`;}
 async function opsLoadTimeDay(){
   const employee=$('#ops-time-employee').val(),date=$('#ops-time-date').val();$('#ops-time-grid').prop('hidden',!employee);if(!employee)return;
   const contractor=$('#ops-time-type').val()==='contractor';const data={from:date,to:date,[contractor?'worker_id':'employee_id']:employee};const rows=(await opsCall('time_list',data)).rows;
-  $('#ops-time-grid tbody').html((rows.length?rows:[{}]).map(opsTimeRow).join(''));if(rows.length)$('#ops-time-site').val(rows[0].site_id||'');bsmSyncAllSearchables($('#bsm-content'));opsTimeTotal();
+  $('#ops-time-grid tbody').html((rows.length?rows:[{}]).map(opsTimeRow).join(''));if(rows.length)$('#ops-time-site').val(rows[0].site_id||'');bsmSyncAllSearchables($('#bsm-content'));opsTimeTotal();opsResizeActivities();
 }
+function opsResizeActivity(el){
+  el.style.height='auto';
+  el.style.height=Math.max(36,el.scrollHeight+2)+'px';
+}
+function opsResizeActivities(){ $('#ops-time-grid .ops-time-activity').each(function(){opsResizeActivity(this);}); }
+$(document).on('input','.ops-time-activity',function(){opsResizeActivity(this);});
+$(window).on('resize',opsResizeActivities);
 function opsTimeTotal(){let minutes=0;$('#ops-time-grid tbody tr').each(function(){const a=$(this).find('.ops-time-from').val(),b=$(this).find('.ops-time-to').val();if(a&&b&&b!==a){const n=x=>+x.slice(0,2)*60+(+x.slice(3,5));minutes+=(n(b)-n(a)+1440)%1440;}});$('#ops-time-total').text(`Total: ${Math.floor(minutes/60)}h ${minutes%60}m`);}
 async function opsTimeMaster(){
   setTitle('Time Sheet Master');
@@ -4601,7 +4608,7 @@ $(document).on('click','[data-ops]',async function(){
     case 'holiday-delete':if(confirm('Delete this Holiday?')){await opsCall('holiday_delete',{id});await opsHolidays();}break;
     case 'worker-clear':await opsWorkers();break;
     case 'worker-edit':{const w=opsMeta.workers.find(x=>+x.id===id);$('#ops-worker-id').val(w.id);$('#ops-worker-contractor').val(w.contractor_id);$('#ops-worker-name').val(w.employee_name);$('#ops-worker-mobile').val(w.mobile||'');$('#ops-worker-address').val(w.address||'');$('#ops-worker-bank').val(w.bank_name||'');$('#ops-worker-ifsc').val(w.ifsc||'');$('#ops-worker-account').val(w.account_number||'');$('#ops-worker-daily').val(w.daily_rate);$('#ops-worker-hourly').val(w.hourly_rate);$('#ops-worker-status').val(w.status);bsmSyncAllSearchables($('#bsm-content'));break;}
-    case 'time-add':$('#ops-time-grid tbody').append(opsTimeRow());break;
+    case 'time-add':$('#ops-time-grid tbody').append(opsTimeRow());opsResizeActivities();break;
     case 'time-remove':$button.closest('tr').remove();opsTimeTotal();break;
     case 'time-filter':await opsLoadTimeMaster();break;
     case 'time-edit':opsTimeEdit(id);break;
