@@ -3739,7 +3739,7 @@ function bsmOpenSearchable($wrap){
     $menu.css({position:'fixed',left:left+'px',right:'auto',top:top+'px',bottom:'auto',width:width+'px',maxHeight:height+'px'});
     return;
   }
-  if(poVendorSelect && rect && $menu.length){
+  if((poVendorSelect || $select.closest('#ops-time-form').length) && rect && $menu.length){
     const vw=document.documentElement.clientWidth||window.innerWidth;
     const vh=document.documentElement.clientHeight||window.innerHeight;
     const width=Math.min(Math.max(300,rect.width),Math.max(160,vw-16));
@@ -3802,6 +3802,13 @@ $(document).on('focus click','.bsm-select-search',function(e){
   if(!$wrap.hasClass('open')) bsmOpenSearchable($wrap);
   e.stopPropagation();
 });
+// Close viewport-positioned Time Sheet menus when their scroll container moves.
+// Scrolling the option list itself must keep the menu open.
+document.addEventListener('scroll',function(e){
+  $('#ops-time-form .bsm-po-vendor-dropdown-open').each(function(){
+    if(e.target instanceof Element && e.target.contains(this))bsmCloseSearchable($(this));
+  });
+},true);
 $(document).on('scroll', '#po_pending_list .po-pending-table-wrap', function(){
   $('.bsm-po-vendor-dropdown-open').each(function(){bsmCloseSearchable($(this));});
 });
