@@ -3739,7 +3739,7 @@ function bsmOpenSearchable($wrap){
     $menu.css({position:'fixed',left:left+'px',right:'auto',top:top+'px',bottom:'auto',width:width+'px',maxHeight:height+'px'});
     return;
   }
-  if((poVendorSelect || $select.closest('#ops-time-form').length) && rect && $menu.length){
+  if((poVendorSelect || $select.closest('#ops-time-form,.bsm-time-filters').length) && rect && $menu.length){
     const vw=document.documentElement.clientWidth||window.innerWidth;
     const vh=document.documentElement.clientHeight||window.innerHeight;
     const width=Math.min(Math.max(300,rect.width),Math.max(160,vw-16));
@@ -3805,7 +3805,7 @@ $(document).on('focus click','.bsm-select-search',function(e){
 // Close viewport-positioned Time Sheet menus when their scroll container moves.
 // Scrolling the option list itself must keep the menu open.
 document.addEventListener('scroll',function(e){
-  $('#ops-time-form .bsm-po-vendor-dropdown-open').each(function(){
+  $('#ops-time-form .bsm-po-vendor-dropdown-open,.bsm-time-filters .bsm-po-vendor-dropdown-open').each(function(){
     if(e.target instanceof Element && e.target.contains(this))bsmCloseSearchable($(this));
   });
 },true);
@@ -4533,14 +4533,67 @@ function opsResizeActivities(){ $('#ops-time-grid .ops-time-activity').each(func
 $(document).on('input','.ops-time-activity',function(){opsResizeActivity(this);});
 $(window).on('resize',opsResizeActivities);
 function opsTimeTotal(){let minutes=0;$('#ops-time-grid tbody tr').each(function(){const a=$(this).find('.ops-time-from').val(),b=$(this).find('.ops-time-to').val();if(a&&b&&b!==a){const n=x=>+x.slice(0,2)*60+(+x.slice(3,5));minutes+=(n(b)-n(a)+1440)%1440;}});$('#ops-time-total').text(`Total: ${Math.floor(minutes/60)}h ${minutes%60}m`);}
+let opsTimeRequest=0,opsTimeLoading=false,opsTimeGroups=[];
+const opsTimeHeaders=['Date','Employee','Contractor','Site','From','To','Hours','Activity'];
+const opsTimeCells=r=>[dateFmt(r.work_date),r.employee_name,r.contractor_name||'',r.site_name||'',r.from_time.slice(0,5),r.to_time.slice(0,5),(+r.minutes/60).toFixed(2),r.activity];
+function opsTimeIcon(type){
+  return `<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M14 2H5v20h14V7z M14 2v5h5"/>${type==='pdf'?'<path d="M8 16h8 M12 10v7 m-3-3 3 3 3-3"/>':'<path d="m8 11 7 7 m0-7-7 7"/>'}</svg>`;
+}
 async function opsTimeMaster(){
   setTitle('Time Sheet Master');
-  $('#bsm-content').html(`<div class="bsm-toolbar">${opsDate('ops-time-filter-from','From Date',opsToday().slice(0,7)+'-01')}${opsDate('ops-time-filter-to','To Date')}${opsSelect('ops-time-filter-employee','Employee',opsMeta.employees)}${opsSelect('ops-time-filter-contractor','Contractor',App.options.contractors)}${opsSelect('ops-time-filter-site','Site',App.options.sites)}<label>Status<select id="ops-time-filter-status"><option value="">All</option><option value="submitted">Submitted</option><option value="approved">Approved</option></select></label>${opsButton('time-filter','Apply')}${opsButton('time-export','Excel Download')}${opsMeta.admin||(BSM.currentUser?.allowed_views||[]).includes('time_sheet')?opsButton('time-new','+ Add'):''}</div><div class="bsm-panel" id="ops-time-list"></div>`);opsEnhance();await opsLoadTimeMaster();
+  const employees=[...opsMeta.employees.map(e=>({...e,id:'e:'+e.id})),...opsMeta.workers.map(w=>({id:'w:'+w.id,label:w.employee_name+' — '+w.contractor_name}))];
+  $('#bsm-content').html(`<div class="bsm-time-filters">${opsDate('ops-time-filter-from','From Date',opsToday().slice(0,7)+'-01')}${opsDate('ops-time-filter-to','To Date')}${opsSelect('ops-time-filter-employee','Employee',employees)}${opsSelect('ops-time-filter-contractor','Contractor',App.options.contractors)}${opsSelect('ops-time-filter-site','Site',App.options.sites)}<label>Group By<select id="ops-time-group"><option value="">None</option><option value="employee">Employee</option><option value="site">Site</option><option value="contractor">Contractor</option><option value="date">Date</option></select></label><div class="ops-time-downloads">${opsButton('time-pdf',opsTimeIcon('pdf'),'','title="Download PDF" aria-label="Download PDF"')}${opsButton('time-export',opsTimeIcon('excel'),'','title="Download Excel" aria-label="Download Excel"')}${opsMeta.admin||(BSM.currentUser?.allowed_views||[]).includes('time_sheet')?opsButton('time-new','+ Add'):''}</div></div><div class="bsm-panel" id="ops-time-list"></div>`);opsEnhance();await opsLoadTimeMaster();
 }
 async function opsLoadTimeMaster(){
-  opsRows=(await opsCall('time_list',{from:$('#ops-time-filter-from').val(),to:$('#ops-time-filter-to').val(),employee_id:$('#ops-time-filter-employee').val(),contractor_id:$('#ops-time-filter-contractor').val(),site_id:$('#ops-time-filter-site').val(),status:$('#ops-time-filter-status').val()})).rows;
-  $('#ops-time-list').html(opsTable(['Date','Employee','Contractor','Site','From','To','Hours','Activity','Action'],opsRows.map(r=>{const canChange=!Number(r.bill_id)&&(opsMeta.admin||r.status==='submitted')&&(!Number(r.worker_id)||opsMeta.can_punch_contractor);const disabled=canChange?'':'disabled title="This entry is locked"';return `<tr><td>${dateFmt(r.work_date)}</td><td>${esc(r.employee_name)}</td><td>${esc(r.contractor_name||'')}</td><td>${esc(r.site_name||'')}</td><td>${esc(r.from_time.slice(0,5))}</td><td>${esc(r.to_time.slice(0,5))}</td><td>${(+r.minutes/60).toFixed(2)}</td><td>${esc(r.activity)}</td><td><div class="ops-time-actions">${opsButton('time-edit','Edit',r.id,disabled)}${opsButton('time-delete','Delete',r.id,disabled)}</div></td></tr>`;}).join('')));
+  const request=++opsTimeRequest,from=$('#ops-time-filter-from').val(),to=$('#ops-time-filter-to').val();
+  if(!from||!to||from>to){opsTimeLoading=false;$('.ops-time-downloads [data-ops="time-pdf"],.ops-time-downloads [data-ops="time-export"]').prop('disabled',true);opsRows=[];opsTimeGroups=[];$('#ops-time-list').html('<p class="ops-time-note">Select a valid date range.</p>');return;}
+  opsTimeLoading=true;$('.ops-time-downloads [data-ops="time-pdf"],.ops-time-downloads [data-ops="time-export"]').prop('disabled',true);
+  try{
+    const employee=String($('#ops-time-filter-employee').val()||'').split(':');
+    const result=await opsCall('time_list',{from,to,employee_id:employee[0]==='e'?employee[1]:'',worker_id:employee[0]==='w'?employee[1]:'',contractor_id:$('#ops-time-filter-contractor').val(),site_id:$('#ops-time-filter-site').val()});
+    if(request!==opsTimeRequest||App.current!=='time_sheet_master')return;
+    opsRows=result.rows;opsRenderTimeMaster();
+  }catch(error){if(request===opsTimeRequest){opsRows=[];opsTimeGroups=[];$('#ops-time-list').html('<p class="ops-time-note">Unable to load Time Sheets. Change a filter to retry.</p>');}throw error;
+  }finally{if(request===opsTimeRequest){opsTimeLoading=false;$('.ops-time-downloads [data-ops="time-pdf"],.ops-time-downloads [data-ops="time-export"]').prop('disabled',false);}}
 }
+function opsRenderTimeMaster(){
+  const group=$('#ops-time-group').val(),groups=new Map();
+  for(const r of opsRows){const key=group==='employee'?(+r.worker_id?'w'+r.worker_id:'e'+r.employee_id):group==='site'?r.site_id:group==='contractor'?r.contractor_id:group==='date'?r.work_date:'';const label=group==='employee'?r.employee_name:group==='site'?(r.site_name||'No Site'):group==='contractor'?(r.contractor_name||'Office Employees'):group==='date'?dateFmt(r.work_date):'';if(!groups.has(String(key)))groups.set(String(key),{label,rows:[]});groups.get(String(key)).rows.push(r);}
+  opsTimeGroups=[...groups.values()];
+  let body='';
+  for(const g of opsTimeGroups){
+    const hours=(g.rows.reduce((n,r)=>n+(+r.minutes),0)/60).toFixed(2);
+    if(group)body+=`<tr class="ops-time-group-row"><td colspan="9">${esc(g.label)} <span>${g.rows.length} entries · ${hours} hours</span></td></tr>`;
+    body+=g.rows.map(r=>{const canChange=!Number(r.bill_id)&&(opsMeta.admin||r.status==='submitted')&&(!Number(r.worker_id)||opsMeta.can_punch_contractor);const disabled=canChange?'':'disabled title="This entry is locked"';return `<tr>${opsTimeCells(r).map(v=>`<td>${esc(v)}</td>`).join('')}<td><div class="ops-time-actions">${opsButton('time-edit','Edit',r.id,disabled)}${opsButton('time-delete','Delete',r.id,disabled)}</div></td></tr>`;}).join('');
+  }
+  $('#ops-time-list').html(opsTable([...opsTimeHeaders,'Action'],body)+`<div class="ops-time-summary">${opsRows.length} entries <strong>Total: ${(opsRows.reduce((n,r)=>n+(+r.minutes),0)/60).toFixed(2)} hours</strong></div>`);
+}
+function opsTimeExportRows(){
+  const grouped=!!$('#ops-time-group').val(),rows=[];
+  for(const g of opsTimeGroups){if(grouped)rows.push([g.label,'','','','','',(g.rows.reduce((n,r)=>n+(+r.minutes),0)/60).toFixed(2)+' hours','']);rows.push(...g.rows.map(opsTimeCells));}
+  rows.push(['Total','','','','','',(opsRows.reduce((n,r)=>n+(+r.minutes),0)/60).toFixed(2),'']);return rows;
+}
+// Small standalone PDF writer: landscape A4, wrapped cells and repeated page headers.
+function opsTimePdf(){
+  if(opsTimeLoading)return;
+  const widths=[66,100,100,80,42,42,45,215],left=26,top=554,line=11,pages=[];
+  const pdfText=v=>String(v??'').normalize('NFKD').replace(/[^\x20-\x7e]/g,' ').replace(/([\\()])/g,'\\$1');
+  const wrap=(value,width)=>{const size=Math.max(4,Math.floor(width/4.5)),words=String(value??'').split(/\s+/),lines=[];let current='';for(let word of words){while(word.length>size){if(current){lines.push(current);current='';}lines.push(word.slice(0,size));word=word.slice(size);}if(current.length+word.length+1>size){lines.push(current);current='';}current+=(current?' ':'')+word;}lines.push(current);return lines;};
+  let commands='',y=top;
+  const text=(x,y,value,bold=false)=>`BT /${bold?'F2':'F1'} 8 Tf ${x} ${y} Td (${pdfText(value)}) Tj ET\n`;
+  function header(){commands=text(left,574,'Time Sheet Master',true)+text(left,560,dateFmt($('#ops-time-filter-from').val())+' to '+dateFmt($('#ops-time-filter-to').val()));y=536;let x=left;opsTimeHeaders.forEach((v,i)=>{commands+=text(x+3,y,v,true);x+=widths[i];});y-=16;}
+  function finish(){commands+=text(left,20,'Page '+(pages.length+1));pages.push(commands);}
+  header();
+  for(const row of opsTimeExportRows()){
+    const cells=row.map((v,i)=>wrap(v,widths[i]-6));let offset=0,count=Math.max(...cells.map(c=>c.length));
+    while(offset<count){if(y<50){finish();header();}const fit=Math.max(1,Math.min(count-offset,Math.floor((y-40)/line)));let x=left;cells.forEach((lines,i)=>{for(let j=0;j<fit;j++)if(lines[offset+j]!==undefined)commands+=text(x+3,y-j*line,lines[offset+j]);x+=widths[i];});y-=fit*line+8;commands+=`0.8 G ${left} ${y+3} m 816 ${y+3} l S 0 G\n`;offset+=fit;}
+  }finish();
+  const objects=['<< /Type /Catalog /Pages 2 0 R >>','', '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>'],kids=[];
+  pages.forEach(stream=>{const pageId=objects.length+1,streamId=pageId+1;kids.push(pageId+' 0 R');objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${streamId} 0 R >>`,`<< /Length ${stream.length} >>\nstream\n${stream}endstream`);});objects[1]=`<< /Type /Pages /Count ${kids.length} /Kids [${kids.join(' ')}] >>`;
+  let pdf='%PDF-1.4\n',offsets=[0];objects.forEach((o,i)=>{offsets.push(pdf.length);pdf+=(i+1)+' 0 obj\n'+o+'\nendobj\n';});const xref=pdf.length;pdf+=`xref\n0 ${objects.length+1}\n0000000000 65535 f \n`+offsets.slice(1).map(n=>String(n).padStart(10,'0')+' 00000 n \n').join('')+`trailer\n<< /Size ${objects.length+1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  const url=URL.createObjectURL(new Blob([pdf],{type:'application/pdf'})),a=document.createElement('a');a.href=url;a.download='Time-Sheet.pdf';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);
+}
+$(document).on('change','.bsm-time-filters input,.bsm-time-filters select',async function(){try{if(this.id==='ops-time-group')opsRenderTimeMaster();else await opsLoadTimeMaster();}catch(e){showToast(e.message,true);}});
 function opsTimeEdit(id){
   const entry=opsRows.find(r=>Number(r.id)===Number(id));if(!entry)return;
   $('#ops-time-editor').remove();$('#bsm-content').append(`<div id="ops-time-editor" class="bsm-quick-modal"><div class="bsm-quick-panel"><div class="bsm-quick-head"><h3>Edit Time Sheet</h3>${opsButton('time-edit-close','×')}</div><form id="ops-time-edit-form" data-id="${Number(entry.id)}"><div class="bsm-quick-body"><p>${esc(entry.employee_name)} — ${dateFmt(entry.work_date)}</p>${Number(entry.worker_id)>0?opsSelect('ops-time-edit-site','Site *',App.options.sites,entry.site_id,true):''}${opsText('ops-time-edit-from','From Time',entry.from_time.slice(0,5),'time')}${opsText('ops-time-edit-to','To Time',entry.to_time.slice(0,5),'time')}${opsText('ops-time-edit-activity','Activity',entry.activity)}${opsMeta.admin&&Number(entry.worker_id)>0?`<label><input type="checkbox" id="ops-time-edit-approved" ${entry.status==='approved'?'checked':''}> Approved for contractor billing</label>`:''}</div><div class="bsm-form-actions">${opsButton('time-edit-close','Cancel')}<button class="bsm-btn bsm-btn-primary">Save</button></div></form></div></div>`);opsEnhance();
@@ -4622,7 +4675,8 @@ $(document).on('click','[data-ops]',async function(){
     case 'time-edit-close':$('#ops-time-editor').remove();break;
     case 'time-delete':if(confirm('Delete this Time Sheet entry?')){await opsCall('time_delete',{id});await opsLoadTimeMaster();}break;
     case 'time-status':await opsCall('time_status',{id,status:$button.data('status')});await opsLoadTimeMaster();break;
-    case 'time-export':downloadExcelFile('Time Sheet',['Date','Employee','Contractor','Site','From','To','Hours','Activity'],opsRows.map(x=>[x.work_date,x.employee_name,x.contractor_name||'',x.site_name||'',x.from_time,x.to_time,(+x.minutes/60).toFixed(2),x.activity]));break;
+    case 'time-pdf':opsTimePdf();break;
+    case 'time-export':if(!opsTimeLoading)downloadExcelFile('Time Sheet',opsTimeHeaders,opsTimeExportRows());break;
     case 'bill-preview':opsBillPreview(await opsCall('bill_preview',opsBillData()));break;
     case 'transfer-add':$('#ops-transfer-form tbody').append(opsTransferItem());opsEnhance();break;
     case 'transfer-remove':$button.closest('tr').remove();break;

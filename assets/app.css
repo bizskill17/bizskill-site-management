@@ -2766,3 +2766,13 @@ html,body{
 /* Activity text wraps and grows with its content, including existing entries. */
 #ops-time-grid .ops-activity{align-items:flex-start;}
 #ops-time-grid textarea.ops-time-activity{flex:1;width:100%;min-width:0;min-height:36px;height:auto;max-height:none!important;box-sizing:border-box;resize:none;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.4;}
+
+/* Compact Time Sheet Master filters and exports. */
+.bsm-app .bsm-time-filters{display:grid;grid-template-columns:repeat(2,minmax(135px,1fr)) repeat(4,minmax(120px,1fr)) auto;gap:10px;align-items:end;padding:14px;background:#fff;border:1px solid #bfd3f4;border-radius:14px;margin-bottom:14px;}
+.bsm-app .bsm-time-filters label{display:flex;flex-direction:column;gap:5px;min-width:0;font-size:12px!important;font-weight:600;}
+.bsm-app .bsm-time-filters input,.bsm-app .bsm-time-filters .bsm-select-control,.bsm-app .bsm-time-filters .bsm-select-search{height:38px!important;min-height:38px!important;font-size:13px!important;box-sizing:border-box;min-width:0;width:100%;}
+.ops-time-downloads{display:flex;gap:6px;align-items:center;}.ops-time-downloads .bsm-btn{height:38px;display:inline-flex;align-items:center;justify-content:center;padding:8px;white-space:nowrap;}.ops-time-downloads [data-ops="time-pdf"]{color:#c53030}.ops-time-downloads [data-ops="time-export"]{color:#16784a}
+.ops-time-group-row td{background:#eaf2ff!important;font-weight:700;padding:12px!important;}.ops-time-group-row span{float:right;font-weight:500;font-size:12px}.ops-time-summary{display:flex;justify-content:space-between;padding:13px 16px;background:#f5f8ff;font-size:13px}.ops-time-note{padding:16px;}
+#ops-time-list td:nth-child(8){white-space:pre-wrap;overflow-wrap:anywhere;}
+@media(max-width:1200px){.bsm-app .bsm-time-filters{grid-template-columns:repeat(3,minmax(130px,1fr));}.ops-time-downloads{justify-content:flex-end;grid-column:1/-1;}}
+@media(max-width:600px){.bsm-app .bsm-time-filters{grid-template-columns:repeat(2,minmax(0,1fr));padding:12px;}}
