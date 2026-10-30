@@ -2327,6 +2327,9 @@ final class BSM_Site_Management {
                     $lr['paid_amount']=(float)$wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(amount),0) FROM {$this->prefix}contractor_payments WHERE contractor_bill_id=%d AND LOWER(COALESCE(status,''))<>'cancelled'",(int)$lr['id']));
                     $lr['advance_adjustment']=(float)($lr['advance_adjustment']??0);$lr['pending_amount']=max(0,(float)($lr['total_amount']??0)-(float)$lr['advance_adjustment']-(float)$lr['paid_amount']);
                 }
+                if($key==='material_dispatches'){
+                    $lr['dispatch_photo_url']=$wpdb->get_var($wpdb->prepare("SELECT file_url FROM {$this->prefix}documents WHERE module='material_dispatches' AND reference_id=%d AND document_type='Dispatch Photo' ORDER BY id DESC LIMIT 1",(int)$lr['id']));
+                }
                 if($key==='material_inwards'){
                     $lr['gst_type']=!empty($lr['vendor_id'])?$wpdb->get_var($wpdb->prepare("SELECT gst_type FROM {$this->prefix}vendors WHERE id=%d",(int)$lr['vendor_id'])):null;
                     $lr['invoice_url']=$wpdb->get_var($wpdb->prepare("SELECT file_url FROM {$this->prefix}documents WHERE module='material_inwards' AND reference_id=%d AND document_type='Supplier Invoice' ORDER BY id DESC LIMIT 1",(int)$lr['id']));
