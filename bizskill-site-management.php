@@ -236,7 +236,7 @@ final class BSM_Site_Management {
             'bank_accounts' => ['Bank Master', 'bank-master'],
             'customers' => ['Customers', 'customers'],
             'sites' => ['Sites', 'sites'],
-            'vendors' => ['Vendors', 'vendors'],
+            'vendors' => ['Suppliers', 'vendors'],
             'labour_contractors' => ['Labour Contractors', 'labour-contractors'],
             'states' => ['States', 'states'],
             'item_categories' => ['Item Categories', 'item-categories'],
@@ -321,7 +321,7 @@ final class BSM_Site_Management {
             'report_labour' => ['Daily Labour Report', 'daily-labour-report'],
             'report_labour_summary' => ['Labour Summary', 'labour-summary'],
             'report_customer_outstanding' => ['Site Balance', 'customer-outstanding'],
-            'report_vendor_outstanding' => ['Vendor Outstanding', 'vendor-outstanding'],
+            'report_vendor_outstanding' => ['Supplier Outstanding', 'vendor-outstanding'],
             'report_contractor_outstanding' => ['Sitewise Contractor Outstanding', 'contractor-outstanding'],
             'quotation_form' => ['Quotation Form', 'quotation-form'],
             'quotation_master' => ['Quotation Master', 'quotation-master'],
@@ -655,13 +655,13 @@ final class BSM_Site_Management {
 
     public function ajax_purchase_order_create(){
         $this->verify_ajax();$this->migrate_purchase_orders();global $wpdb;$p=$this->prefix;
-        $warehouse=(int)($_POST['warehouse_id']??0);if(!$warehouse)$warehouse=$this->default_warehouse_id();$items=json_decode(stripslashes($_POST['items']??'[]'),true);if(!$warehouse||!is_array($items)||!$items)wp_send_json_error(['message'=>'Select Vendor and enter PO Qty']);
+        $warehouse=(int)($_POST['warehouse_id']??0);if(!$warehouse)$warehouse=$this->default_warehouse_id();$items=json_decode(stripslashes($_POST['items']??'[]'),true);if(!$warehouse||!is_array($items)||!$items)wp_send_json_error(['message'=>'Select Supplier and enter PO Qty']);
         $summary=$this->pending_po_summary($warehouse);$by_item=[];foreach($summary as $x)$by_item[(int)$x['item_id']]=$x;$groups=[];
         foreach($items as $it){$iid=(int)($it['item_id']??0);$vendor=(int)($it['vendor_id']??0);$qty=round((float)($it['po_qty']??0),2);$rate=round((float)($it['rate']??0),2);if(!$iid||!$vendor||$qty<=0)continue;if($rate<0)wp_send_json_error(['message'=>'Rate cannot be negative']);if(empty($by_item[$iid]))wp_send_json_error(['message'=>'Item is no longer pending for PO']);$x=$by_item[$iid];if($qty>(float)$x['pending_po_qty']+0.009)wp_send_json_error(['message'=>'PO Qty cannot exceed Pending PO Qty for '.$x['item_name']]);
             $remain=$qty;$alloc=[];$dates=[];foreach($x['allocations'] as $al){if($remain<=0.009)break;$a=min($remain,(float)$al['qty']);if($a>0){$alloc[]=['requisition_item_id'=>(int)$al['requisition_item_id'],'qty'=>$a];$remain=round($remain-$a,2);if(!empty($al['required_date']))$dates[]=$al['required_date'];}}
             $groups[$vendor][]=['item_id'=>$iid,'unit_id'=>(int)$x['unit_id'],'approved_qty_snapshot'=>(float)$x['approved_qty'],'stock_snapshot'=>(float)$x['current_stock'],'pending_qty_snapshot'=>(float)$x['pending_po_qty'],'po_qty'=>$qty,'fixed_price'=>(float)$x['fixed_price'],'rate'=>$rate,'allocations'=>$alloc,'required_date'=>$dates?min($dates):null];
         }
-        if(!$groups)wp_send_json_error(['message'=>'Select Vendor and enter PO Qty for at least one item']);
+        if(!$groups)wp_send_json_error(['message'=>'Select Supplier and enter PO Qty for at least one item']);
         // DDL auto-commits; migrate the legacy unique index BEFORE starting a transaction.
         $indexes=$wpdb->get_results("SHOW INDEX FROM `{$it}` WHERE Key_name='boq_item'",ARRAY_A);
         if($indexes && count($indexes)===2 && ($indexes[0]['Non_unique']??0)==0) {
@@ -675,7 +675,7 @@ final class BSM_Site_Management {
         $created_by=$current_user && $current_user->exists() ? $current_user->display_name : '';
 
         $this->verify_ajax();$this->migrate_purchase_orders();$vendor=(int)($_POST['vendor_id']??0);$warehouse=(int)($_POST['warehouse_id']??0);$po_date=sanitize_text_field($_POST['po_date']??'');$required=sanitize_text_field($_POST['required_date']??'');$remarks=sanitize_textarea_field($_POST['remarks']??'');$items=json_decode(stripslashes($_POST['items']??'[]'),true);
-        if(!$vendor||!$warehouse||!preg_match('/^\d{4}-\d{2}-\d{2}$/',$po_date)||!is_array($items)||!$items)wp_send_json_error(['message'=>'Vendor, Warehouse, PO Date and at least one Item are required']);$clean=[];
+        if(!$vendor||!$warehouse||!preg_match('/^\d{4}-\d{2}-\d{2}$/',$po_date)||!is_array($items)||!$items)wp_send_json_error(['message'=>'Supplier, Warehouse, PO Date and at least one Item are required']);$clean=[];
         foreach($items as $it){$iid=(int)($it['item_id']??0);$qty=round((float)($it['po_qty']??0),2);if(!$iid||$qty<=0)continue;global $wpdb;$p=$this->prefix;$x=$wpdb->get_row($wpdb->prepare("SELECT id,unit_id,opening_rate FROM {$p}items WHERE id=%d",$iid),ARRAY_A);if(!$x)continue;$clean[]=['item_id'=>$iid,'unit_id'=>(int)$x['unit_id'],'po_qty'=>$qty,'fixed_price'=>(float)$x['opening_rate'],'rate'=>round((float)($it['rate']??$x['opening_rate']),2)];}
         if(!$clean)wp_send_json_error(['message'=>'Enter valid PO Items']);$res=$this->create_purchase_order_record($vendor,$warehouse,$po_date,$required,$remarks,$clean);if(!empty($res['error']))wp_send_json_error(['message'=>$res['error']]);wp_send_json_success(['message'=>'PO created successfully','id'=>$res['id'],'po_no'=>$res['po_no']]);
     }
@@ -797,7 +797,7 @@ final class BSM_Site_Management {
 
         // PO details use the full printable width; Terms & Conditions are not shown on PO PDFs.
         $rect($c,36,616,523,96,[0.985,0.992,1]);
-        $meta=[['PO No.',$h['po_no']??'-'],['Date',!empty($h['po_date'])?date('d/m/Y',strtotime($h['po_date'])):'-'],['Vendor',$h['vendor_name']??'-'],['Mobile',$h['vendor_mobile']??'-'],['Address',$h['vendor_address']??'-'],['GST No.',$h['vendor_gstin']??'-'],['Deliver At',$h['warehouse_name']??'-']];
+        $meta=[['PO No.',$h['po_no']??'-'],['Date',!empty($h['po_date'])?date('d/m/Y',strtotime($h['po_date'])):'-'],['Supplier',$h['vendor_name']??'-'],['Mobile',$h['vendor_mobile']??'-'],['Address',$h['vendor_address']??'-'],['GST No.',$h['vendor_gstin']??'-'],['Deliver At',$h['warehouse_name']??'-']];
         $y=696;foreach($meta as $i=>$mv){$txt($c,47,$y,$mv[0],7,true);$txt($c,105,$y,(string)$mv[1],7,false);$y-=12;}
         $top=596;$headers=['Sl','Item','HSN','Qty','Unit','Fixed','Rate','Amount'];$cols=[28,150,48,48,48,60,58,83];$tx=36;
         $rect($c,36,$top-24,523,24,$theme,$theme,0);
@@ -819,7 +819,7 @@ final class BSM_Site_Management {
         if($logoJpeg&&$logoW&&$logoH)$objs[]="<< /Type /XObject /Subtype /Image /Width $logoW /Height $logoH /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ".strlen($logoJpeg)." >>\nstream\n".$logoJpeg."\nendstream";
         $pdf="%PDF-1.4\n";$offs=[0];foreach($objs as $ix=>$o){$offs[]=strlen($pdf);$pdf.=($ix+1)." 0 obj\n$o\nendobj\n";}$xref=strlen($pdf);$pdf.="xref\n0 ".(count($objs)+1)."\n0000000000 65535 f \n";for($i=1;$i<=count($objs);$i++)$pdf.=sprintf("%010d 00000 n \n",$offs[$i]);$pdf.="trailer\n<< /Size ".(count($objs)+1)." /Root 1 0 R >>\nstartxref\n$xref\n%%EOF";
         $up=wp_upload_dir();if(!empty($up['error']))return '';$dir=trailingslashit($up['basedir']).'bizskill-purchase-orders';if(!is_dir($dir)&&!wp_mkdir_p($dir))return '';
-        $vendorFile=preg_replace('/[\\\/:*?"<>|]+/','-',trim((string)($h['vendor_name']??'Vendor')));$poFile=preg_replace('/[^A-Za-z0-9_-]+/','',(string)($h['po_no']?:$id));$fn=trim($vendorFile).' - '.$poFile.'.pdf';$path=trailingslashit($dir).$fn;if(@file_put_contents($path,$pdf,LOCK_EX)===false)return '';return trailingslashit($up['baseurl']).'bizskill-purchase-orders/'.rawurlencode($fn);
+        $vendorFile=preg_replace('/[\\\/:*?"<>|]+/','-',trim((string)($h['vendor_name']??'Supplier')));$poFile=preg_replace('/[^A-Za-z0-9_-]+/','',(string)($h['po_no']?:$id));$fn=trim($vendorFile).' - '.$poFile.'.pdf';$path=trailingslashit($dir).$fn;if(@file_put_contents($path,$pdf,LOCK_EX)===false)return '';return trailingslashit($up['baseurl']).'bizskill-purchase-orders/'.rawurlencode($fn);
     }
 
     public function ajax_purchase_order_cancel(){
@@ -1618,7 +1618,7 @@ final class BSM_Site_Management {
             'states' => ['table'=>'states','label'=>'States','pk'=>'id'],
             'customers' => ['table'=>'customers','label'=>'Customers','pk'=>'id'],
             'sites' => ['table'=>'sites','label'=>'Sites','pk'=>'id'],
-            'vendors' => ['table'=>'vendors','label'=>'Vendors','pk'=>'id'],
+            'vendors' => ['table'=>'vendors','label'=>'Suppliers','pk'=>'id'],
             'labour_contractors' => ['table'=>'labour_contractors','label'=>'Labour Contractors','pk'=>'id'],
             'labour_attendance' => ['table'=>'labour_attendance','label'=>'Daily Labour Attendance','pk'=>'id'],
             'item_categories' => ['table'=>'item_categories','label'=>'Item Categories','pk'=>'id'],
@@ -1693,7 +1693,7 @@ final class BSM_Site_Management {
                 if($exists("SELECT (SELECT COUNT(*) FROM {$p}material_requisitions WHERE site_id=%d)+(SELECT COUNT(*) FROM {$p}material_dispatches WHERE site_id=%d)+(SELECT COUNT(*) FROM {$p}site_receipts WHERE site_id=%d)+(SELECT COUNT(*) FROM {$p}site_consumptions WHERE site_id=%d)+(SELECT COUNT(*) FROM {$p}material_returns WHERE site_id=%d)+(SELECT COUNT(*) FROM {$p}labour_attendance WHERE site_id=%d)+(SELECT COUNT(*) FROM {$p}site_expenses WHERE site_id=%d)",$id,$id,$id,$id,$id,$id,$id)) $lock_delete('This Site already has transactions and cannot be deleted. You can mark it Inactive instead.');
                 break;
             case 'vendors':
-                if($exists("SELECT (SELECT COUNT(*) FROM {$p}material_inwards WHERE vendor_id=%d)+(SELECT COUNT(*) FROM {$p}vendor_payments WHERE vendor_id=%d)",$id,$id)) $lock_delete('This Vendor is already used in transactions and cannot be deleted. You can mark it Inactive instead.');
+                if($exists("SELECT (SELECT COUNT(*) FROM {$p}material_inwards WHERE vendor_id=%d)+(SELECT COUNT(*) FROM {$p}vendor_payments WHERE vendor_id=%d)",$id,$id)) $lock_delete('This Supplier is already used in transactions and cannot be deleted. You can mark it Inactive instead.');
                 break;
             case 'labour_contractors':
                 if($exists("SELECT (SELECT COUNT(*) FROM {$p}labour_attendance WHERE contractor_id=%d)+(SELECT COUNT(*) FROM {$p}contractor_bills WHERE contractor_id=%d)+(SELECT COUNT(*) FROM {$p}contractor_payments WHERE contractor_id=%d)",$id,$id,$id)) $lock_delete('This Labour Contractor is already used in transactions and cannot be deleted. You can mark it Inactive instead.');
@@ -2197,7 +2197,7 @@ final class BSM_Site_Management {
         $table=$this->prefix.$m['table']; $page=max(1,intval($_POST['page']??1)); $export_all=!empty($_POST['export_all']); $per=$export_all?0:20; $offset=$export_all?0:(($page-1)*20);
         $search=sanitize_text_field($_POST['search']??'');
 
-        // Unified Payments view: show Vendor Payments and Contractor Payments together.
+        // Unified Payments view: show Supplier Payments and Contractor Payments together.
         // Contractor payments created from Pending Payment therefore appear here as a new row after every Update.
         if($key==='vendor_payments'){
             $site_id=(int)($_POST['site_id']??0);
@@ -3131,10 +3131,10 @@ final class BSM_Site_Management {
             if(empty($data['payment_date'])) wp_send_json_error(['message'=>'Payment Date is required']);
             if((float)($data['amount']??0)<=0) wp_send_json_error(['message'=>'Amount must be greater than zero']);
             if($ptype==='head_office_vendor'){
-                if(empty($data['vendor_id'])) wp_send_json_error(['message'=>'Vendor is required']);
+                if(empty($data['vendor_id'])) wp_send_json_error(['message'=>'Supplier is required']);
                 $data['site_id']=null;
             } elseif($ptype==='site_vendor'){
-                if(empty($data['vendor_id'])) wp_send_json_error(['message'=>'Vendor is required']);
+                if(empty($data['vendor_id'])) wp_send_json_error(['message'=>'Supplier is required']);
                 if(empty($data['site_id'])) wp_send_json_error(['message'=>'Site is required']);
             } elseif($ptype==='site_fund') {
                 if(empty($data['site_id'])) wp_send_json_error(['message'=>'Site is required']);
@@ -3186,7 +3186,7 @@ final class BSM_Site_Management {
         }
         if(in_array($key,['vendors','labour_contractors'],true)){
             $name_field=$key==='vendors'?'vendor_name':'contractor_name';
-            $name_label=$key==='vendors'?'Vendor Name':'Contractor Name';
+            $name_label=$key==='vendors'?'Supplier Name':'Contractor Name';
             foreach([$name_field=>$name_label,'contact_person'=>'Contact Person','mobile'=>'Mobile','address'=>'Address','city'=>'City','state_id'=>'State'] as $f=>$label){
                 if(!isset($data[$f]) || trim((string)$data[$f])==='') wp_send_json_error(['message'=>$label.' is required']);
             }
@@ -3908,7 +3908,7 @@ final class BSM_Site_Management {
         $reference=sanitize_text_field($_POST['transaction_reference']??'');
         $remarks=sanitize_textarea_field($_POST['remarks']??'');
         $total=round((float)($_POST['amount']??0),2);
-        if(!$vendor_id)wp_send_json_error(['message'=>'Please select Vendor']);
+        if(!$vendor_id)wp_send_json_error(['message'=>'Please select Supplier']);
         if(!preg_match('/^\d{4}-\d{2}-\d{2}$/',$payment_date))wp_send_json_error(['message'=>'Payment Date is required']);
         if($total<=0)wp_send_json_error(['message'=>'Payment Amount must be greater than zero']);
         if(strtolower($payment_mode)==='bank' && !$bank_account_id)wp_send_json_error(['message'=>'Please select Bank']);
@@ -3936,9 +3936,9 @@ final class BSM_Site_Management {
             }
         }
         $vendor_outstanding=round($vendor_outstanding,2);
-        if($vendor_outstanding<=0.009)wp_send_json_error(['message'=>'No Vendor Outstanding available']);
-        if($total>$vendor_outstanding+0.009)wp_send_json_error(['message'=>'Payment Amount cannot exceed Vendor Outstanding']);
-        if(!$clean||$remaining>0.009)wp_send_json_error(['message'=>'Unable to allocate Payment against Vendor Outstanding']);
+        if($vendor_outstanding<=0.009)wp_send_json_error(['message'=>'No Supplier Outstanding available']);
+        if($total>$vendor_outstanding+0.009)wp_send_json_error(['message'=>'Payment Amount cannot exceed Supplier Outstanding']);
+        if(!$clean||$remaining>0.009)wp_send_json_error(['message'=>'Unable to allocate Payment against Supplier Outstanding']);
 
         $payment_no=$this->next_no('vendor_payments','VP');$now=current_time('mysql');$wp_uid=get_current_user_id();
         // DDL auto-commits; migrate the legacy unique index BEFORE starting a transaction.
