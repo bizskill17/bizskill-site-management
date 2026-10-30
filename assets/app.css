@@ -2877,3 +2877,10 @@ html,body{
 #po_pending_list .po-three-quotes>thead>tr>th:nth-child(13){width:76px!important;min-width:76px!important;max-width:76px!important;}
 #po_pending_list .po-three-quotes>tbody>tr.po-pending-summary-row>td:nth-child(13){width:76px!important;min-width:76px!important;max-width:76px!important;}
 #po_pending_list .po-three-quotes input.po-quote-rate,#po_pending_list .po-three-quotes input.po-row-rate{width:66px!important;min-width:0!important;max-width:66px!important;padding:4px!important;box-sizing:border-box;}
+
+/* Supplier quotation comparison */
+.bsm-direct-po-panel .bsm-table-wrap{overflow-x:auto!important}.bsm-direct-po-panel table{min-width:1800px}
+.bsm-direct-po-panel th:nth-child(5),.bsm-direct-po-panel th:nth-child(6),.po-master-comparison .quote-one{background:#2459ae!important;color:#fff!important}
+.bsm-direct-po-panel .po-direct-quote-1{background:#eaf2ff}.bsm-direct-po-panel .po-direct-quote-2{background:#e6f8f1}.bsm-direct-po-panel .po-direct-quote-3{background:#fff1df}.bsm-direct-po-panel .po-direct-chosen{background:#f0eaff}
+.po-master-comparison .quote-two{background:#087c73!important;color:#fff!important}.po-master-comparison .quote-three{background:#b96916!important;color:#fff!important}.po-master-comparison .quote-chosen{background:#65418c!important;color:#fff!important}
+.po-master-comparison>td{padding:8px 16px!important;background:#f5f8ff!important}.po-master-comparison table{min-width:1000px}
