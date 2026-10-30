@@ -1795,6 +1795,7 @@ async function openForm(key,id=0){
     if($site.length&&id)$site.prop('disabled',true).trigger('change');
   }
   if(key==='labour_attendance'){
+    $('#bsm-form-fields input[name="attendance_date"]').closest('label').after(`<label><span class="bsm-field-label">Updated By</span><input type="text" id="bsm-labour-updated-by" value="${esc(BSM.currentUser?.name||'')}" readonly></label>`);
     App.attendanceWorkers=(await opsCall('meta')).workers||[];
     let savedHours=[];try{savedHours=JSON.parse(row.remarks||'{}').employee_hours||[];}catch(e){}
     App.attendanceSavedHours=savedHours;
