@@ -2890,3 +2890,10 @@ html,body{
 .bsm-direct-po-panel .po-header-quotes label:nth-child(-n+2){background:#eaf2ff;padding:6px;border-radius:6px}
 .bsm-direct-po-panel table{min-width:700px!important}
 .bsm-direct-po-panel th:nth-child(5),.bsm-direct-po-panel th:nth-child(6){background:#10365e!important;color:#fff!important}
+
+/* PO Form: four fields per row on desktop. */
+@media (min-width: 1024px) {
+  .bsm-direct-po-panel > .bsm-form-grid,
+  .bsm-direct-po-panel > .po-header-quotes { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  .bsm-direct-po-panel > .bsm-form-grid > label { min-width: 0; }
+}
