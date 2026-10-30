@@ -3134,7 +3134,7 @@ async function openDispatchFromRequisition(id){
   $('#bsm-lines-body .bsm-add-line-inline').remove();
   $('#bsm-line-items thead th:last-child').remove();
   $('#bsm-lines-body tr').each(function(){$(this).find('td:last-child').remove();});
-  $('#bsm-documents').empty();$('#bsm-form').data('module','material_dispatches').data('requisition-id',id);$('#bsm-modal').show();
+  $('#bsm-documents').html('<div class="bsm-docbox"><label><span class="bsm-field-label">Upload Photo</span><input type="file" id="bsm-dispatch-photo" accept="image/jpeg,image/png,image/webp"></label></div>');$('#bsm-form').data('module','material_dispatches').data('requisition-id',id);$('#bsm-modal').show();
 }
 function exportSpecialRows(title,headers,rows){downloadExcelFile(title,headers,rows);}
 
