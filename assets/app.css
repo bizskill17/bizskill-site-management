@@ -2785,7 +2785,7 @@ html,body{
 
 /* Dispatch header: four evenly sized fields per row on desktop. */
 @media(min-width:1024px){
-  #bsm-form[data-module="material_dispatches"] #bsm-form-fields.bsm-form-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;}
-  #bsm-form[data-module="material_dispatches"] #bsm-form-fields.bsm-form-grid>label{grid-column:auto!important;min-width:0;}
-  #bsm-form[data-module="material_dispatches"] #bsm-form-fields input[type="file"]{width:100%;min-width:0;max-width:100%;box-sizing:border-box;font-size:12px;}
+  #bsm-form-fields.bsm-form-grid.bsm-dispatch-summary{grid-template-columns:repeat(4,minmax(0,1fr))!important;}
+  #bsm-form-fields.bsm-form-grid.bsm-dispatch-summary>label{grid-column:auto!important;min-width:0;}
+  #bsm-form-fields.bsm-dispatch-summary input[type="file"]{width:100%;min-width:0;max-width:100%;box-sizing:border-box;font-size:12px;}
 }
