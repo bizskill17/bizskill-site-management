@@ -2789,3 +2789,11 @@ html,body{
   #bsm-form-fields.bsm-form-grid.bsm-dispatch-summary>label{grid-column:auto!important;min-width:0;}
   #bsm-form-fields.bsm-dispatch-summary input[type="file"]{width:100%;min-width:0;max-width:100%;box-sizing:border-box;font-size:12px;}
 }
+
+/* Three supplier quotations remain aligned in a horizontally scrollable comparison. */
+#po_pending_list .po-three-quotes{table-layout:auto!important;min-width:2200px!important;width:100%!important;}
+#po_pending_list .po-three-quotes>thead>tr>th,#po_pending_list .po-three-quotes>tbody>tr.po-pending-summary-row>td{width:auto!important;max-width:none!important;min-width:105px!important;}
+#po_pending_list .po-three-quotes>tbody>tr.po-pending-summary-row>td:first-child{min-width:190px!important;}
+#po_pending_list .po-three-quotes .bsm-searchable-select{min-width:180px!important;width:100%!important;}
+#po_pending_list .po-three-quotes input{min-width:90px!important;width:100%!important;box-sizing:border-box;}
+#po_pending_list .po-three-quotes .po-row-rate{background:#edf4ff!important;font-weight:600;}

@@ -658,8 +658,17 @@ final class BSM_Site_Management {
         $warehouse=(int)($_POST['warehouse_id']??0);if(!$warehouse)$warehouse=$this->default_warehouse_id();$items=json_decode(stripslashes($_POST['items']??'[]'),true);if(!$warehouse||!is_array($items)||!$items)wp_send_json_error(['message'=>'Select Supplier and enter PO Qty']);
         $summary=$this->pending_po_summary($warehouse);$by_item=[];foreach($summary as $x)$by_item[(int)$x['item_id']]=$x;$groups=[];
         foreach($items as $it){$iid=(int)($it['item_id']??0);$vendor=(int)($it['vendor_id']??0);$qty=round((float)($it['po_qty']??0),2);$rate=round((float)($it['rate']??0),2);if(!$iid||!$vendor||$qty<=0)continue;if($rate<0)wp_send_json_error(['message'=>'Rate cannot be negative']);if(empty($by_item[$iid]))wp_send_json_error(['message'=>'Item is no longer pending for PO']);$x=$by_item[$iid];if($qty>(float)$x['pending_po_qty']+0.009)wp_send_json_error(['message'=>'PO Qty cannot exceed Pending PO Qty for '.$x['item_name']]);
+            $quotes=[];$quote_ids=[];$selected_rate=null;
+            foreach((array)($it['quotations']??[]) as $quote){
+                $qid=(int)($quote['vendor_id']??0);$raw=$quote['rate']??'';
+                if(!$qid||isset($quote_ids[$qid])||!is_numeric($raw)||!is_finite((float)$raw)||(float)$raw<0)wp_send_json_error(['message'=>'Enter three different suppliers with valid rates.']);
+                if(!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}vendors WHERE id=%d AND status='active'",$qid)))wp_send_json_error(['message'=>'Select active suppliers.']);
+                $quote_ids[$qid]=true;$qr=round((float)$raw,2);$quotes[]=['supplier_id'=>$qid,'rate'=>$qr];if($qid===$vendor)$selected_rate=$qr;
+            }
+            if(count($quotes)!==3||$selected_rate===null)wp_send_json_error(['message'=>'Choose a supplier from three quotations.']);
+            $rate=$selected_rate;
             $remain=$qty;$alloc=[];$dates=[];foreach($x['allocations'] as $al){if($remain<=0.009)break;$a=min($remain,(float)$al['qty']);if($a>0){$alloc[]=['requisition_item_id'=>(int)$al['requisition_item_id'],'qty'=>$a];$remain=round($remain-$a,2);if(!empty($al['required_date']))$dates[]=$al['required_date'];}}
-            $groups[$vendor][]=['item_id'=>$iid,'unit_id'=>(int)$x['unit_id'],'approved_qty_snapshot'=>(float)$x['approved_qty'],'stock_snapshot'=>(float)$x['current_stock'],'pending_qty_snapshot'=>(float)$x['pending_po_qty'],'po_qty'=>$qty,'fixed_price'=>(float)$x['fixed_price'],'rate'=>$rate,'allocations'=>$alloc,'required_date'=>$dates?min($dates):null];
+            $groups[$vendor][]=['item_id'=>$iid,'unit_id'=>(int)$x['unit_id'],'approved_qty_snapshot'=>(float)$x['approved_qty'],'stock_snapshot'=>(float)$x['current_stock'],'pending_qty_snapshot'=>(float)$x['pending_po_qty'],'po_qty'=>$qty,'fixed_price'=>(float)$x['fixed_price'],'rate'=>$rate,'quotations'=>$quotes,'allocations'=>$alloc,'required_date'=>$dates?min($dates):null];
         }
         if(!$groups)wp_send_json_error(['message'=>'Select Supplier and enter PO Qty for at least one item']);
         // DDL auto-commits; migrate the legacy unique index BEFORE starting a transaction.
@@ -667,7 +676,7 @@ final class BSM_Site_Management {
         if($indexes && count($indexes)===2 && ($indexes[0]['Non_unique']??0)==0) {
             $wpdb->query("ALTER TABLE `{$it}` DROP INDEX `boq_item`, ADD KEY `boq_item` (`boq_id`,`item_id`)");
         }
-        $wpdb->query('START TRANSACTION');$created=[];foreach($groups as $vendor=>$gitems){$dates=array_values(array_filter(array_column($gitems,'required_date')));sort($dates);$res=$this->create_purchase_order_record((int)$vendor,$warehouse,current_time('Y-m-d'),$dates[0]??null,'',$gitems);if(!empty($res['error'])){$wpdb->query('ROLLBACK');wp_send_json_error(['message'=>$res['error']]);}$created[]=$res;}$wpdb->query('COMMIT');wp_send_json_success(['created'=>$created,'message'=>count($created).' PO'.(count($created)>1?'s':'').' created successfully']);
+        $wpdb->query('START TRANSACTION');$created=[];foreach($groups as $vendor=>$gitems){$dates=array_values(array_filter(array_column($gitems,'required_date')));sort($dates);$quote_record=wp_json_encode(['supplier_quotations'=>array_map(function($line){return ['item_id'=>$line['item_id'],'quotations'=>$line['quotations'],'selected_rate'=>$line['rate']];},$gitems)]);$res=$this->create_purchase_order_record((int)$vendor,$warehouse,current_time('Y-m-d'),$dates[0]??null,$quote_record,$gitems);if(!empty($res['error'])){$wpdb->query('ROLLBACK');wp_send_json_error(['message'=>$res['error']]);}$created[]=$res;}$wpdb->query('COMMIT');wp_send_json_success(['created'=>$created,'message'=>count($created).' PO'.(count($created)>1?'s':'').' created successfully']);
     }
 
     public function ajax_purchase_order_manual_save(){
