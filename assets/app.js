@@ -1828,7 +1828,10 @@ async function openForm(key,id=0){
     'material_requisitions','material_inwards','material_dispatches',
     'site_receipts','site_consumptions','material_returns','contractor_bills','contractor_advances','employee_allowance_limits','quotations','tax_invoices'
   ]);
-  if(hideDocumentsFor.has(key)) $('#bsm-documents').empty();
+  if(key==='material_dispatches'){
+    const photos=(row._documents||[]).filter(d=>d.document_type==='Dispatch Photo');
+    $('#bsm-documents').html(`<div class="bsm-docbox"><label><span class="bsm-field-label">Upload Photo</span><input type="file" id="bsm-dispatch-photo" accept="image/jpeg,image/png,image/webp"></label>${photos.length?`<div class="bsm-doc-list">${photos.map(d=>`<a href="${esc(d.file_url)}" target="_blank" rel="noopener">${esc(d.original_filename||'View Photo')}</a>`).join('')}</div>`:''}</div>`);
+  }else if(hideDocumentsFor.has(key)) $('#bsm-documents').empty();
   else if(key==='labour_attendance')$('#bsm-documents').empty();
   else renderDocuments(row._documents||[],key,id);
   updateBankFieldVisibility($('#bsm-form'));
@@ -2695,6 +2698,8 @@ async function saveForm(){
       seen.add(cid);
     }
   }
+  const dispatchPhoto=key==='material_dispatches'?($('#bsm-dispatch-photo')[0]?.files?.[0]||null):null;
+  if(dispatchPhoto&&(!['image/jpeg','image/png','image/webp'].includes(dispatchPhoto.type)||dispatchPhoto.size>10*1024*1024)){showToast('Choose a JPG, PNG or WebP photo up to 10 MB.',true);return;}
   const contractorDocFile=(key==='contractor_bills')?($('#bsm-contractor-doc-file')[0]?.files?.[0]||null):null;
   const contractorPaymentPhoto=(key==='contractor_advances')?($('#bsm-contractor-payment-photo')[0]?.files?.[0]||null):null;
   const paymentDocumentFile=(key==='vendor_payments')?($('#bsm-payment-document-file')[0]?.files?.[0]||null):null;
@@ -2740,6 +2745,12 @@ async function saveForm(){
         fd.append('action','bsm_upload');fd.append('nonce',BSM.nonce);fd.append('module','material_inwards');fd.append('reference_id',r.data.id);fd.append('document_type','Supplier Invoice');fd.append('bill_type',data.bill_type||'');fd.append('file',purchaseInvoiceFile);
         const ur=await $.ajax({url:BSM.ajax,method:'POST',data:fd,processData:false,contentType:false});
         if(!ur.success) uploadFailed=true;
+      }catch(e){uploadFailed=true;}
+    }
+    if(dispatchPhoto && r.data?.id){
+      try{
+        const fd=new FormData();fd.append('action','bsm_upload');fd.append('nonce',BSM.nonce);fd.append('module','material_dispatches');fd.append('reference_id',r.data.id);fd.append('document_type','Dispatch Photo');fd.append('file',dispatchPhoto);
+        const ur=await $.ajax({url:BSM.ajax,method:'POST',data:fd,processData:false,contentType:false});if(!ur.success)uploadFailed=true;
       }catch(e){uploadFailed=true;}
     }
     if(siteReceiptChallanFile && r.data?.id){

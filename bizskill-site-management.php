@@ -6191,6 +6191,14 @@ final class BSM_Site_Management {
 
     public function ajax_upload(){
         $this->verify_ajax(); if(empty($_FILES['file'])) wp_send_json_error(['message'=>'No file']);
+        if(sanitize_key($_POST['module']??'')==='material_dispatches' && sanitize_text_field($_POST['document_type']??'')==='Dispatch Photo'){
+            global $wpdb;$dispatch_id=(int)($_POST['reference_id']??0);
+            if(!$dispatch_id||!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$this->prefix}material_dispatches WHERE id=%d",$dispatch_id)))wp_send_json_error(['message'=>'Dispatch not found.']);
+            $guard=$this->record_guard('material_dispatches',$dispatch_id);if(!$guard['can_edit'])wp_send_json_error(['message'=>$guard['edit_message']?:'You cannot update this dispatch.']);
+            $check=wp_check_filetype_and_ext($_FILES['file']['tmp_name'],$_FILES['file']['name']);
+            if(!in_array($check['type']??'',['image/jpeg','image/png','image/webp'],true)||!@getimagesize($_FILES['file']['tmp_name']))wp_send_json_error(['message'=>'Upload a JPG, PNG or WebP photo.']);
+            if((int)($_FILES['file']['size']??0)>10*1024*1024)wp_send_json_error(['message'=>'Photo exceeds 10 MB.']);
+        }
         if(sanitize_key($_POST['module']??'')==='vendor_payments' && sanitize_text_field($_POST['document_type']??'')==='Payment Document'){
             $allowed=['image/jpeg','image/png','image/webp','application/pdf'];
             $check=wp_check_filetype_and_ext($_FILES['file']['tmp_name'],$_FILES['file']['name']);
