@@ -2778,3 +2778,7 @@ html,body{
 @media(max-width:600px){.bsm-app .bsm-time-filters{grid-template-columns:repeat(2,minmax(0,1fr));padding:12px;}}
 
 .bsm-labour-hours{min-width:250px;padding:4px;}.bsm-labour-hours-head,.bsm-labour-hours-row{display:grid!important;grid-template-columns:minmax(120px,1fr) 120px;gap:12px;align-items:center;padding:7px 4px;border-bottom:1px solid #dce6f5;font-size:13px!important;}.bsm-labour-hours-row input{width:100%!important;min-width:0!important;}.bsm-labour-hours-head{background:#edf4ff;}.bsm-labour-hours-row:last-child{border-bottom:0;}
+
+/* Daily Labour Attendance: show employee hours without count controls. */
+#bsm-form[data-module="labour_attendance"] #bsm-lines-body input[name="no_of_labour"],
+#bsm-form[data-module="labour_attendance"] .bsm-attendance-total-row{display:none!important;}
