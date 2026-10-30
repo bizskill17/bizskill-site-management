@@ -4581,15 +4581,21 @@ function opsTimePdf(){
   const wrap=(value,width)=>{const size=Math.max(4,Math.floor(width/4.5)),words=String(value??'').split(/\s+/),lines=[];let current='';for(let word of words){while(word.length>size){if(current){lines.push(current);current='';}lines.push(word.slice(0,size));word=word.slice(size);}if(current.length+word.length+1>size){lines.push(current);current='';}current+=(current?' ':'')+word;}lines.push(current);return lines;};
   let commands='',y=top;
   const text=(x,y,value,bold=false)=>`BT /${bold?'F2':'F1'} 8 Tf ${x} ${y} Td (${pdfText(value)}) Tj ET\n`;
-  function header(){commands=text(left,574,'Time Sheet Master',true)+text(left,558,dateFmt($('#ops-time-filter-from').val())+' to '+dateFmt($('#ops-time-filter-to').val()));commands+='0.07 0.20 0.36 rg 26 525 790 23 re f 1 1 1 rg\n';y=533;let x=left;opsTimeHeaders.forEach((v,i)=>{commands+=text(x+5,y,v,true);x+=widths[i];});commands+='0 0 0 rg\n';y=510;}
+  function grid(rowTop,bottom,merged=false){
+    commands+=`0.55 0.64 0.76 RG 0.5 w ${left} ${bottom} 790 ${rowTop-bottom} re S\n`;
+    let x=left;for(let i=0;i<widths.length-1;i++){x+=widths[i];if(!merged)commands+=`${x} ${bottom} m ${x} ${rowTop} l S\n`;}
+    if(merged)commands+=`690 ${bottom} m 690 ${rowTop} l S\n`;
+    commands+='0 G\n';
+  }
+  function header(){commands=text(left,574,'Time Sheet Master',true)+text(left,558,dateFmt($('#ops-time-filter-from').val())+' to '+dateFmt($('#ops-time-filter-to').val()));commands+='0.07 0.20 0.36 rg 26 525 790 23 re f 1 1 1 rg\n';y=533;let x=left;opsTimeHeaders.forEach((v,i)=>{commands+=text(x+5,y,v,true);x+=widths[i];});commands+='0 0 0 rg\n';grid(548,525);y=510;}
   function finish(){commands+=text(left,20,'Page '+(pages.length+1));pages.push(commands);}
   header();
   for(const row of opsTimeExportRows()){
     const summary=row[1]===''&&row[2]===''&&row[3]===''&&row[4]===''&&row[5]==='';
     if(summary){
       if(y<76){finish();header();}
-      commands+=`0.91 0.95 1 rg ${left} ${y-9} 790 25 re f 0 0 0 rg\n`;
-      commands+=text(left+6,y,String(row[0]).slice(0,130),true)+text(702,y,String(row[6]).replace(/ hours$/,'')+' hours',true);y-=36;continue;
+      commands+=`0.91 0.95 1 rg ${left} ${y-15} 790 30 re f 0 0 0 rg\n`;
+      commands+=text(left+6,y,String(row[0]).slice(0,130),true)+text(702,y,String(row[6]).replace(/ hours$/,'')+' hours',true);grid(y+15,y-15,true);y-=30;continue;
     }
     const cells=row.map((v,i)=>wrap(v,widths[i]-10));let offset=0,count=Math.max(...cells.map(c=>c.length));
     while(offset<count){
@@ -4597,7 +4603,7 @@ function opsTimePdf(){
       const fit=Math.max(1,Math.min(count-offset,Math.floor((y-54)/line)+1));let x=left;
       cells.forEach((lines,i)=>{for(let j=0;j<fit;j++)if(lines[offset+j]!==undefined)commands+=text(x+5,y-j*line,lines[offset+j]);x+=widths[i];});
       const bottom=y-(fit-1)*line-7;
-      commands+=`0.85 G ${left} ${bottom} m 816 ${bottom} l S 0 G\n`;
+      grid(y+15,bottom);
       y=bottom-15;offset+=fit;
     }
   }finish();
