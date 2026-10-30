@@ -2827,3 +2827,12 @@ html,body{
 #po_pending_list .po-three-quotes .bsm-select-control{min-height:32px!important;height:32px!important;}
 #po_pending_list .po-three-quotes .bsm-select-search{min-width:0!important;height:30px!important;padding-left:6px!important;padding-right:20px!important;font-size:12px!important;}
 #po_pending_list .po-three-quotes>thead>tr>th{white-space:normal!important;line-height:1.25!important;}
+
+/* Allow quotation columns and long labels to size naturally. */
+#po_pending_list table.po-three-quotes{table-layout:auto!important;}
+#po_pending_list .po-three-quotes>thead>tr>th:nth-child(n),#po_pending_list .po-three-quotes>tbody>tr.po-pending-summary-row>td:nth-child(n){width:auto!important;white-space:normal!important;overflow-wrap:anywhere!important;height:auto!important;vertical-align:top!important;}
+#po_pending_list .po-three-quotes .bsm-select-control{height:auto!important;min-height:32px!important;align-items:flex-start!important;}
+#po_pending_list .po-three-quotes textarea.bsm-select-search{display:block;resize:none;overflow:hidden;white-space:pre-wrap!important;overflow-wrap:anywhere;line-height:1.4!important;min-height:30px!important;max-height:none!important;box-sizing:border-box;}
+#po_pending_list .po-three-quotes input[type="number"]::-webkit-inner-spin-button,#po_pending_list .po-three-quotes input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+#po_pending_list .po-three-quotes input[type="number"]{-moz-appearance:textfield;}
+#po_pending_list .po-three-quotes textarea.bsm-select-search{height:auto!important;field-sizing:content;}
