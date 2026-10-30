@@ -2865,3 +2865,15 @@ html,body{
 #po_pending_list .po-three-quotes>tbody>tr.po-pending-summary-row>td:nth-child(13){background:#f1eaff!important;min-width:85px!important;}
 #po_pending_list .po-three-quotes>thead>tr>th:nth-child(13){background:#62418b!important;color:#fff!important;}
 #po_pending_list .po-three-quotes>tbody>tr.po-pending-summary-row>td:nth-child(13) input,#po_pending_list .po-three-quotes>tbody>tr.po-pending-summary-row>td:nth-child(13) textarea,#po_pending_list .po-three-quotes>tbody>tr.po-pending-summary-row>td:nth-child(13) .bsm-select-control{background:#f1eaff!important;}
+
+/* Keep all quotation rate columns narrow. */
+#po_pending_list table.po-three-quotes{min-width:1320px!important;}
+#po_pending_list .po-three-quotes>thead>tr>th:nth-child(7){width:76px!important;min-width:76px!important;max-width:76px!important;}
+#po_pending_list .po-three-quotes>tbody>tr.po-pending-summary-row>td:nth-child(7){width:76px!important;min-width:76px!important;max-width:76px!important;}
+#po_pending_list .po-three-quotes>thead>tr>th:nth-child(9){width:76px!important;min-width:76px!important;max-width:76px!important;}
+#po_pending_list .po-three-quotes>tbody>tr.po-pending-summary-row>td:nth-child(9){width:76px!important;min-width:76px!important;max-width:76px!important;}
+#po_pending_list .po-three-quotes>thead>tr>th:nth-child(11){width:76px!important;min-width:76px!important;max-width:76px!important;}
+#po_pending_list .po-three-quotes>tbody>tr.po-pending-summary-row>td:nth-child(11){width:76px!important;min-width:76px!important;max-width:76px!important;}
+#po_pending_list .po-three-quotes>thead>tr>th:nth-child(13){width:76px!important;min-width:76px!important;max-width:76px!important;}
+#po_pending_list .po-three-quotes>tbody>tr.po-pending-summary-row>td:nth-child(13){width:76px!important;min-width:76px!important;max-width:76px!important;}
+#po_pending_list .po-three-quotes input.po-quote-rate,#po_pending_list .po-three-quotes input.po-row-rate{width:66px!important;min-width:0!important;max-width:66px!important;padding:4px!important;box-sizing:border-box;}
