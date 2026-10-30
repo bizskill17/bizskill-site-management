@@ -704,14 +704,13 @@ async function renderPurchaseOrderForm(){
     <div class="bsm-panel bsm-direct-po-panel">
       <div class="bsm-form-grid">
         <label><span class="bsm-field-label">PO Date <span class="bsm-required">*</span></span><input type="date" lang="en-GB" id="po_direct_date" value="${esc(BSM.today||'')}"></label>
-        <label><span class="bsm-field-label">Supplier <span class="bsm-required">*</span></span><select id="po_direct_vendor">${vendorOpts}</select></label>
         <label><span class="bsm-field-label">Warehouse <span class="bsm-required">*</span></span><select id="po_direct_warehouse">${whOpts}</select></label>
         <label><span class="bsm-field-label">Required Date</span><input type="date" lang="en-GB" id="po_direct_required"></label>
         <label><span class="bsm-field-label">Created By</span><input type="text" id="po_direct_created_by" value="${esc((BSM.currentUser&&BSM.currentUser.name)||'')}" readonly></label>
       </div>
       <div class="bsm-form-grid po-header-quotes">
         ${[1,2,3].map(n=>`<label>Supplier ${n} <select class="po-direct-quote-supplier" data-slot="${n}">${vendorOpts}</select></label><label>Rate ${n} <input type="number" class="po-direct-quote-rate" data-slot="${n}" min="0" step="0.01"></label>`).join('')}
-        <label>Chosen Supplier <input type="text" class="po-direct-chosen-name" readonly></label><label>Chosen Rate <input type="number" class="po-direct-chosen-rate" readonly></label>
+        <label>Chosen Supplier <span class="bsm-required">*</span><select id="po_direct_vendor"><option value="">Select quoted supplier</option></select></label><label>Chosen Rate <input type="number" class="po-direct-chosen-rate" readonly></label>
       </div>
       <div class="bsm-lines">
         <div class="bsm-lines-head"><h3>Items</h3></div>
@@ -4044,8 +4043,10 @@ $(document).on('click','#po_create_selected',async function(){
   try{const r=await ajax('bsm_purchase_order_create',{warehouse_id:App.pendingPoWarehouse||'',items:JSON.stringify(items)});if(r.success){showToast(r.data.message||'PO created');await loadPendingPoItems();}else showToast(r.data?.message||'Unable to create PO',true);}finally{$button.prop('disabled',false);}
 });
 
-function syncDirectPoChosen($row){const vendor=String($('#po_direct_vendor').val()||'');const quotes=[1,2,3].map(n=>({vendor_id:String($('.po-direct-quote-supplier[data-slot="'+n+'"]').val()||''),rate:$('.po-direct-quote-rate[data-slot="'+n+'"]').val()}));const match=quotes.find(q=>q.vendor_id===vendor&&vendor);$('.po-direct-chosen-name').val(vendor?(labelFor('vendors',vendor)||''):'');$('.po-direct-chosen-rate').val(match?match.rate:'');$row.find('.po-direct-rate').val(match?match.rate:'');updateDirectPoAmount($row);}
-$(document).on('change input','.po-direct-quote-supplier,.po-direct-quote-rate',function(){$('#po_direct_items .po-direct-row').each(function(){syncDirectPoChosen($(this));});});
+function syncDirectPoChosen($row){const vendor=String($('#po_direct_vendor').val()||'');const quotes=[1,2,3].map(n=>({vendor_id:String($('.po-direct-quote-supplier[data-slot="'+n+'"]').val()||''),rate:$('.po-direct-quote-rate[data-slot="'+n+'"]').val()}));const match=quotes.find(q=>q.vendor_id===vendor&&vendor);$('.po-direct-chosen-rate').val(match?match.rate:'');$row.find('.po-direct-rate').val(match?match.rate:'');updateDirectPoAmount($row);}
+function refreshDirectPoChosenOptions(){const $chosen=$('#po_direct_vendor'),value=String($chosen.val()||''),seen=new Set();const opts=[1,2,3].map(n=>String($('.po-direct-quote-supplier[data-slot="'+n+'"]').val()||'')).filter(id=>{if(!id||seen.has(id))return false;seen.add(id);return true;});$chosen.html('<option value="">Select quoted supplier</option>'+opts.map(id=>`<option value="${esc(id)}">${esc(labelFor('vendors',id)||'')}</option>`).join('')).val(opts.includes(value)?value:'');bsmRefreshSearchableSelect($chosen[0]);}
+$(document).on('change','.po-direct-quote-supplier',function(){refreshDirectPoChosenOptions();$('#po_direct_items .po-direct-row').each(function(){syncDirectPoChosen($(this));});});
+$(document).on('input change','.po-direct-quote-rate',function(){$('#po_direct_items .po-direct-row').each(function(){syncDirectPoChosen($(this));});});
 $(document).on('change','#po_direct_vendor',function(){$('#po_direct_items .po-direct-row').each(function(){syncDirectPoChosen($(this));});});
 $(document).on('click','.po-direct-add',function(){
   const $row=$(this).closest('tr');
@@ -4075,7 +4076,7 @@ $(document).on('click','#po_direct_save',async function(){
   const remarks='';
   const created_by=$('#po_direct_created_by').val()||'';
   if(!po_date)return showToast('PO Date is required',true);
-  if(!vendor_id)return showToast('Supplier is required',true);
+  if(!vendor_id)return showToast('Select a Chosen Supplier from the quotations',true);
   if(!warehouse_id)return showToast('Warehouse is required',true);
   const items=[];
   let invalid=false;
