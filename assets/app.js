@@ -688,7 +688,7 @@ function directPoItemRow(){
     <td class="po-direct-unit">-</td>
     <td><input type="number" class="po-direct-qty num" min="0.01" step="0.01" value=""></td>
     <td><input type="number" class="po-direct-fixed-price num" min="0" step="0.01" value="" readonly></td>
-    ${[1,2,3].map(n=>`<td class="po-direct-quote-${n}"><select class="po-direct-quote-supplier" data-slot="${n}">${poVendorOptions()}</select></td><td class="po-direct-quote-${n}"><input type="number" class="po-direct-quote-rate" data-slot="${n}" min="0" step="0.01"></td>`).join('')}<td class="po-direct-chosen"><input type="text" class="po-direct-chosen-name" readonly></td><td class="po-direct-chosen"><input type="number" class="po-direct-rate num" readonly></td>
+    <td><input type="number" class="po-direct-rate num" readonly></td>
     <td class="num po-direct-amount">0.00</td>
     <td class="po-direct-actions">
       <button type="button" class="bsm-icon-btn bsm-icon-primary po-direct-add" title="Add Item">+</button>
@@ -709,11 +709,15 @@ async function renderPurchaseOrderForm(){
         <label><span class="bsm-field-label">Required Date</span><input type="date" lang="en-GB" id="po_direct_required"></label>
         <label><span class="bsm-field-label">Created By</span><input type="text" id="po_direct_created_by" value="${esc((BSM.currentUser&&BSM.currentUser.name)||'')}" readonly></label>
       </div>
+      <div class="bsm-form-grid po-header-quotes">
+        ${[1,2,3].map(n=>`<label>Supplier ${n} <select class="po-direct-quote-supplier" data-slot="${n}">${vendorOpts}</select></label><label>Rate ${n} <input type="number" class="po-direct-quote-rate" data-slot="${n}" min="0" step="0.01"></label>`).join('')}
+        <label>Chosen Supplier <input type="text" class="po-direct-chosen-name" readonly></label><label>Chosen Rate <input type="number" class="po-direct-chosen-rate" readonly></label>
+      </div>
       <div class="bsm-lines">
         <div class="bsm-lines-head"><h3>Items</h3></div>
         <div class="bsm-table-wrap">
           <table>
-            <thead><tr><th>Item</th><th>Unit</th><th class="num">PO Qty</th><th class="num">Fixed Price</th><th>Supplier 1</th><th>Rate 1</th><th>Supplier 2</th><th>Rate 2</th><th>Supplier 3</th><th>Rate 3</th><th>Chosen Supplier</th><th>Chosen Rate</th><th class="num">Amount</th><th></th></tr></thead>
+            <thead><tr><th>Item</th><th>Unit</th><th class="num">PO Qty</th><th class="num">Fixed Price</th><th class="num">Rate</th><th class="num">Amount</th><th></th></tr></thead>
             <tbody id="po_direct_items">${directPoItemRow()}</tbody>
           </table>
         </div>
@@ -4032,8 +4036,8 @@ $(document).on('click','#po_create_selected',async function(){
   try{const r=await ajax('bsm_purchase_order_create',{warehouse_id:App.pendingPoWarehouse||'',items:JSON.stringify(items)});if(r.success){showToast(r.data.message||'PO created');await loadPendingPoItems();}else showToast(r.data?.message||'Unable to create PO',true);}finally{$button.prop('disabled',false);}
 });
 
-function syncDirectPoChosen($row){const vendor=String($('#po_direct_vendor').val()||'');const quotes=[1,2,3].map(n=>({vendor_id:String($row.find('.po-direct-quote-supplier[data-slot="'+n+'"]').val()||''),rate:$row.find('.po-direct-quote-rate[data-slot="'+n+'"]').val()}));const match=quotes.find(q=>q.vendor_id===vendor&&vendor);$row.find('.po-direct-chosen-name').val(vendor?(labelFor('vendors',vendor)||''):'');$row.find('.po-direct-rate').val(match?match.rate:'');updateDirectPoAmount($row);}
-$(document).on('change input','.po-direct-quote-supplier,.po-direct-quote-rate',function(){syncDirectPoChosen($(this).closest('tr'));});
+function syncDirectPoChosen($row){const vendor=String($('#po_direct_vendor').val()||'');const quotes=[1,2,3].map(n=>({vendor_id:String($('.po-direct-quote-supplier[data-slot="'+n+'"]').val()||''),rate:$('.po-direct-quote-rate[data-slot="'+n+'"]').val()}));const match=quotes.find(q=>q.vendor_id===vendor&&vendor);$('.po-direct-chosen-name').val(vendor?(labelFor('vendors',vendor)||''):'');$('.po-direct-chosen-rate').val(match?match.rate:'');$row.find('.po-direct-rate').val(match?match.rate:'');updateDirectPoAmount($row);}
+$(document).on('change input','.po-direct-quote-supplier,.po-direct-quote-rate',function(){$('#po_direct_items .po-direct-row').each(function(){syncDirectPoChosen($(this));});});
 $(document).on('change','#po_direct_vendor',function(){$('#po_direct_items .po-direct-row').each(function(){syncDirectPoChosen($(this));});});
 $(document).on('click','.po-direct-add',function(){
   const $row=$(this).closest('tr');
@@ -4074,7 +4078,7 @@ $(document).on('click','#po_direct_save',async function(){
     const rate=Number($(this).find('.po-direct-rate').val()||0);
     if(!item_id && po_qty<=0)return;
     if(!item_id || po_qty<=0){invalid=true;return;}
-    const quotations=[1,2,3].map(n=>({vendor_id:String($(this).find('.po-direct-quote-supplier[data-slot="'+n+'"]').val()||''),rate:$(this).find('.po-direct-quote-rate[data-slot="'+n+'"]').val()}));
+    const quotations=[1,2,3].map(n=>({vendor_id:String($('.po-direct-quote-supplier[data-slot="'+n+'"]').val()||''),rate:$('.po-direct-quote-rate[data-slot="'+n+'"]').val()}));
     if(quotations.some(q=>!q.vendor_id||q.rate===''||!Number.isFinite(Number(q.rate))||Number(q.rate)<0)||new Set(quotations.map(q=>q.vendor_id)).size!==3||!quotations.some(q=>q.vendor_id===String(vendor_id))){invalid=true;return;}
     items.push({item_id,po_qty,fixed_price,rate,quotations});
   });
@@ -4782,3 +4786,5 @@ $(document).on('click','[data-ops]',async function(){
 
 jQuery(document).on('click','.bsm-contractor-outstanding-payment',function(){window.openContractorOutstandingPayment(jQuery(this).data('contractor-id'),jQuery(this).data('site-id'),jQuery(this).data('outstanding'));});
 
+
+/* PO comparison is displayed above the item grid. */

@@ -2884,3 +2884,9 @@ html,body{
 .bsm-direct-po-panel .po-direct-quote-1{background:#eaf2ff}.bsm-direct-po-panel .po-direct-quote-2{background:#e6f8f1}.bsm-direct-po-panel .po-direct-quote-3{background:#fff1df}.bsm-direct-po-panel .po-direct-chosen{background:#f0eaff}
 .po-master-comparison .quote-two{background:#087c73!important;color:#fff!important}.po-master-comparison .quote-three{background:#b96916!important;color:#fff!important}.po-master-comparison .quote-chosen{background:#65418c!important;color:#fff!important}
 .po-master-comparison>td{padding:8px 16px!important;background:#f5f8ff!important}.po-master-comparison table{min-width:1000px}
+
+/* Header supplier comparison and compact item grid. */
+.bsm-direct-po-panel .po-header-quotes{padding:12px 16px;border-top:1px solid #bcd6fb}
+.bsm-direct-po-panel .po-header-quotes label:nth-child(-n+2){background:#eaf2ff;padding:6px;border-radius:6px}
+.bsm-direct-po-panel table{min-width:700px!important}
+.bsm-direct-po-panel th:nth-child(5),.bsm-direct-po-panel th:nth-child(6){background:#10365e!important;color:#fff!important}
