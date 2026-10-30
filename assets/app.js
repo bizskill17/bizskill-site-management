@@ -1829,6 +1829,7 @@ async function openForm(key,id=0){
     'site_receipts','site_consumptions','material_returns','contractor_bills','contractor_advances','employee_allowance_limits','quotations','tax_invoices'
   ]);
   if(hideDocumentsFor.has(key)) $('#bsm-documents').empty();
+  else if(key==='labour_attendance')$('#bsm-documents').empty();
   else renderDocuments(row._documents||[],key,id);
   updateBankFieldVisibility($('#bsm-form'));
   if(key==='contractor_advances') setTimeout(loadContractorPaymentSummary,0);
