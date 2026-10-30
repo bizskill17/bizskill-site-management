@@ -1834,6 +1834,7 @@ async function openForm(key,id=0){
   }else if(hideDocumentsFor.has(key)) $('#bsm-documents').empty();
   else if(key==='labour_attendance')$('#bsm-documents').empty();
   else renderDocuments(row._documents||[],key,id);
+  if(key==='material_dispatches')positionDispatchPhoto();
   updateBankFieldVisibility($('#bsm-form'));
   if(key==='contractor_advances') setTimeout(loadContractorPaymentSummary,0);
   $('#bsm-modal').fadeIn(100);
@@ -2038,6 +2039,11 @@ async function validateExistingLabourAttendance($sel){
   return true;
 }
 
+function positionDispatchPhoto(){
+  const $photo=$('#bsm-dispatch-photo').closest('label');
+  const $driver=$('#bsm-form-fields [name="driver_mobile"]').closest('label');
+  if($photo.length&&$driver.length){$photo.insertAfter($driver);if(!$('#bsm-documents .bsm-doc-list').length)$('#bsm-documents').empty();}
+}
 function renderDocuments(docs,key,id){ if(!id){$('#bsm-documents').empty();return;} let h='<div class="bsm-docbox"><h3>Documents</h3><div class="bsm-doc-upload"><input id="bsm-doc-type" placeholder="Document Type"><input type="file" id="bsm-doc-file"><button type="button" class="bsm-btn" id="bsm-upload-doc">Upload</button></div>'; if(docs.length)h+='<div class="bsm-doc-list">'+docs.map(d=>`<a href="${esc(d.file_url)}" target="_blank">${esc(d.document_type||d.original_filename)} ↗</a>`).join('')+'</div>';h+='</div>';$('#bsm-documents').html(h);}
 
 
@@ -3134,7 +3140,7 @@ async function openDispatchFromRequisition(id){
   $('#bsm-lines-body .bsm-add-line-inline').remove();
   $('#bsm-line-items thead th:last-child').remove();
   $('#bsm-lines-body tr').each(function(){$(this).find('td:last-child').remove();});
-  $('#bsm-documents').html('<div class="bsm-docbox"><label><span class="bsm-field-label">Upload Photo</span><input type="file" id="bsm-dispatch-photo" accept="image/jpeg,image/png,image/webp"></label></div>');$('#bsm-form').data('module','material_dispatches').data('requisition-id',id);$('#bsm-modal').show();
+  $('#bsm-documents').html('<div class="bsm-docbox"><label><span class="bsm-field-label">Upload Photo</span><input type="file" id="bsm-dispatch-photo" accept="image/jpeg,image/png,image/webp"></label></div>');positionDispatchPhoto();$('#bsm-form').data('module','material_dispatches').data('requisition-id',id);$('#bsm-modal').show();
 }
 function exportSpecialRows(title,headers,rows){downloadExcelFile(title,headers,rows);}
 
