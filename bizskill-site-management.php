@@ -2231,7 +2231,19 @@ final class BSM_Site_Management {
             $dataSql="SELECT * FROM ($union) p ORDER BY payment_date DESC, created_at DESC, id DESC";
             if(!$export_all)$dataSql.=$wpdb->prepare(" LIMIT %d OFFSET %d",20,$offset);
             $rows=$wpdb->get_results($dataSql,ARRAY_A);
-            foreach($rows as &$lr){
+            if($key==='labour_attendance'){
+            $updater_names=[];
+            foreach($rows as &$attendance){
+                $updater=(int)($attendance['updated_by']?:($attendance['created_by']??0));
+                if(!array_key_exists($updater,$updater_names)){
+                    $name=$updater?(string)$wpdb->get_var($wpdb->prepare("SELECT name FROM {$this->prefix}users WHERE wp_user_id=%d LIMIT 1",$updater)):'';
+                    if($name===''&&$updater){$wp_user=get_userdata($updater);if($wp_user)$name=$wp_user->display_name;}
+                    $updater_names[$updater]=$name;
+                }
+                $attendance['updated_by_name']=$updater_names[$updater];
+            }unset($attendance);
+        }
+        foreach($rows as &$lr){
                 if(($lr['_source']??'')==='vendor'){
                     if(in_array(($lr['payment_type']??''),['employee_allowance','salary'],true)){
                         $linked=(($lr['payment_type']??'')==='salary')?'Salary':'Employee Allowance';$lr['_can_edit']=0;$lr['_can_delete']=0;$lr['_edit_message']=$linked.' payment is linked to its source record.';$lr['_delete_message']=$linked.' payment is linked to its source record.';
