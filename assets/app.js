@@ -52,7 +52,7 @@ App.configs = {
   sites:{title:'Sites', fields:[F('site_name','Site Name', {required:true}),F('customer_id','Customer/Project',Object.assign({required:true},ref('customers'))),F('site_location','Site Location',{required:true}),F('site_sections','Section',{type:'site_sections'}),F('site_manager_user_id','Site Manager',Object.assign({required:true},ref('users'))),F('site_supervisor_user_id','Site Supervisor',Object.assign({required:true},ref('users'))),F('start_date','Start Date',Object.assign({required:true},date)),F('expected_end_date','Expected Completion Date',Object.assign({required:true},date)),F('work_order_value','Work Order Value',Object.assign({required:true},money)),F('status','Status',status(['active','on_hold','completed'])),F('remarks','Remarks',textarea)], columns:[C('site_code','Site Code'),C('site_name','Site'),C('customer_id','Customer/Project','ref:customers'),C('site_location','Site Location'),C('site_sections','Section'),C('site_manager_user_id','Site Manager','ref:users'),C('start_date','Start Date','date'),C('work_order_value','Work Order Value','money'),C('status','Status')]},
   vendors:{title:'Vendors', fields:[F('vendor_name','Vendor Name',{required:true}),F('contact_person','Contact Person',{required:true}),F('mobile','Mobile',{required:true}),F('email','Email',{type:'email'}),F('address','Address',Object.assign({required:true},textarea)),F('city','City',{required:true}),F('state_id','State',Object.assign({required:true,addMaster:'states'},ref('states'))),F('gstin','GSTIN'),F('gst_type','GST Type',{type:'select',required:true,options:[['intra_state','Intra-State'],['inter_state','Inter-State'],['no_gst','No GST']]}),F('pan','PAN'),F('bank_name','Bank Name'),F('bank_account','Bank Account'),F('ifsc','IFSC'),F('status','Status',status())], columns:[C('vendor_name','Vendor'),C('contact_person','Contact'),C('mobile','Mobile'),C('gstin','GSTIN'),C('gst_type','GST Type'),C('status','Status')]},
   labour_contractors:{title:'Labour Contractors', fields:[F('payment_basis','Payment Basis',{type:'select',options:[['direct','Direct Payment to Contractor'],['employee','Contractor + Employee'],['time','According to Time']]}),F('contractor_name','Contractor Name',{required:true}),F('contact_person','Contact Person',{required:true}),F('mobile','Mobile',{required:true}),F('email','Email',{type:'email'}),F('address','Address',Object.assign({required:true},textarea)),F('city','City',{required:true}),F('state_id','State',Object.assign({required:true,addMaster:'states'},ref('states'))),F('gstin','GSTIN'),F('pan','PAN'),F('bank_name','Bank Name'),F('bank_account','Bank Account'),F('ifsc','IFSC'),F('status','Status',status())], columns:[C('payment_basis','Payment Basis'),C('contractor_name','Contractor'),C('contact_person','Contact'),C('mobile','Mobile'),C('gstin','GSTIN'),C('status','Status')]},
-  labour_attendance:{title:'Daily Labour Attendance', attendanceTable:true, fields:[F('site_id','Site',Object.assign({required:true},ref('sites'))),F('attendance_date','Date',Object.assign({required:true},date))], items:[F('contractor_id','Labour Contractor',Object.assign({required:true},ref('contractors'))),F('no_of_labour','Attend',{type:'number',min:1,step:'1',required:true})], columns:[C('attendance_date','Date','date'),C('site_id','Site','ref:sites'),C('contractor_id','Contractor','ref:contractors'),C('no_of_labour','Attend','number')]},
+  labour_attendance:{title:'Daily Labour Attendance', attendanceTable:true, fields:[F('site_id','Site',Object.assign({required:true},ref('sites'))),F('attendance_date','Date',Object.assign({required:true},date))], items:[F('contractor_id','Labour Contractor',Object.assign({required:true},ref('contractors'))),F('no_of_labour','Employees / Working Hours',{type:'number',min:0,step:'1'})], columns:[C('attendance_date','Date','date'),C('site_id','Site','ref:sites'),C('contractor_id','Contractor','ref:contractors'),C('no_of_labour','Attend','number')]},
   item_categories:{title:'Item Categories', fields:[F('category_name','Category Name',{required:true}),F('status','Status',status())], columns:[C('category_name','Category'),C('status','Status')]},
   units:{title:'Units', fields:[F('unit_name','Unit Name',{required:true}),F('status','Status',status())], columns:[C('unit_name','Unit'),C('status','Status')]},
   gst_rates:{title:'GST Rates', fields:[F('gst_rate','GST Rate %',Object.assign({required:true},money)),F('status','Status',status())], columns:[C('gst_rate','GST Rate %','number'),C('status','Status')]},
@@ -1795,6 +1795,9 @@ async function openForm(key,id=0){
     if($site.length&&id)$site.prop('disabled',true).trigger('change');
   }
   if(key==='labour_attendance'){
+    App.attendanceWorkers=(await opsCall('meta')).workers||[];
+    let savedHours=[];try{savedHours=JSON.parse(row.remarks||'{}').employee_hours||[];}catch(e){}
+    App.attendanceSavedHours=savedHours;
     const attendanceRows=id?[{contractor_id:row.contractor_id||'',no_of_labour:row.no_of_labour||''}]:[];
     renderItems(cfg,attendanceRows);
     refreshLabourAttendanceRows();
@@ -1983,8 +1986,19 @@ function addLine(cfg,it={}){
   if(cfg===App.configs.material_returns) setTimeout(refreshMaterialReturnItemOptions,0);
   if(cfg.attendanceTable) refreshLabourAttendanceRows();
 }
+function renderLabourEmployeeHours($row){
+  const cid=String($row.find('select[name="contractor_id"]').val()||'');
+  let $grid=$row.find('.bsm-labour-hours');
+  if($grid.attr('data-contractor')===cid)return;
+  $grid.remove();$row.find('input[name="no_of_labour"]').prop('hidden',true);
+  const workers=(App.attendanceWorkers||[]).filter(w=>String(w.contractor_id)===cid&&(w.status==='active'||(App.attendanceSavedHours||[]).some(h=>String(h.worker_id)===String(w.id))));
+  const html=!cid?'Select a Labour Contractor.':!workers.length?'No employees found. Add employees in Labour Contractor Master.':`<div class="bsm-labour-hours-head"><strong>Employee Name</strong><strong>Working Hours</strong></div>`+workers.map(w=>{const saved=(App.attendanceSavedHours||[]).find(h=>String(h.worker_id)===String(w.id));return `<label class="bsm-labour-hours-row"><span>${esc(w.employee_name)}</span><input type="number" class="bsm-labour-working-hours" data-worker="${Number(w.id)}" aria-label="Working Hours for ${esc(w.employee_name)}" min="0" max="24" step="0.01" placeholder="Hours" value="${saved?esc(saved.working_hours):''}"></label>`;}).join('');
+  $row.find('input[name="no_of_labour"]').after(`<div class="bsm-labour-hours" data-contractor="${esc(cid)}">${html}</div>`);
+}
+$(document).on('input','.bsm-labour-working-hours',refreshLabourAttendanceRows);
 function refreshLabourAttendanceRows(){
   if($('#bsm-form').data('module')!=='labour_attendance') return;
+  $('#bsm-lines-body .bsm-line').each(function(){const $row=$(this);renderLabourEmployeeHours($row);$row.find('input[name="no_of_labour"]').val($row.find('.bsm-labour-working-hours').filter(function(){return Number(this.value)>0;}).length);});
   const selected=[];
   $('#bsm-lines-body select[name="contractor_id"]').each(function(){const v=String($(this).val()||'');if(v)selected.push(v);});
   $('#bsm-lines-body select[name="contractor_id"]').each(function(){
@@ -2666,11 +2680,13 @@ async function saveForm(){
     }
   }
   if(key==='labour_attendance'){
+    $('#bsm-lines-body .bsm-line').each(function(i){data._items[i].employee_hours=$(this).find('.bsm-labour-working-hours').map(function(){return {worker_id:Number($(this).data('worker')),working_hours:this.value};}).get().filter(h=>h.working_hours!=='');});
     const seen=new Set();
     for(const row of (data._items||[])){
       const cid=String(row.contractor_id||''); const attend=String(row.no_of_labour||'').trim();
       if(!cid){showToast('Please select a Labour Contractor.',true);return;}
-      if(attend===''){showToast('Please enter the number of labour attending.',true);return;}
+      if(!(row.employee_hours||[]).some(h=>Number(h.working_hours)>0)){showToast('Enter Working Hours for at least one employee.',true);return;}
+      if(row.employee_hours.some(h=>!Number.isFinite(Number(h.working_hours))||Number(h.working_hours)<0||Number(h.working_hours)>24)){showToast('Working Hours must be between 0 and 24.',true);return;}
       if(!/^\d+$/.test(attend)){showToast('Attendance must be a whole number.',true);return;}
       if(Number(attend)<=0){showToast('Attendance must be greater than 0.',true);return;}
       if(seen.has(cid)){showToast('This Labour Contractor has already been selected.',true);return;}

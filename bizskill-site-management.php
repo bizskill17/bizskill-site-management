@@ -3515,32 +3515,39 @@ final class BSM_Site_Management {
             foreach($items as $idx=>$it){
                 if(!is_array($it)) continue;
                 $contractor_id=(int)($it['contractor_id']??0);
-                $attend_raw=trim((string)($it['no_of_labour']??''));
                 if(!$contractor_id) wp_send_json_error(['message'=>'Please select a Labour Contractor.']);
-                if($attend_raw==='') wp_send_json_error(['message'=>'Please enter the number of labour attending.']);
-                if(!preg_match('/^\d+$/',$attend_raw)) wp_send_json_error(['message'=>'Attendance must be a whole number.']);
-                $attend=(int)$attend_raw;
-                if($attend<=0) wp_send_json_error(['message'=>'Attendance must be greater than 0.']);
+                $employee_hours=[];$worker_seen=[];$attend=0;
+                foreach((array)($it['employee_hours']??[]) as $hours){
+                    $worker_id=(int)($hours['worker_id']??0);$raw=$hours['working_hours']??'';
+                    if(!$worker_id||isset($worker_seen[$worker_id])||!is_numeric($raw)||(float)$raw<0||(float)$raw>24)wp_send_json_error(['message'=>'Enter valid Working Hours between 0 and 24 for each employee.']);
+                    $worker=$wpdb->get_row($wpdb->prepare("SELECT id,employee_name,status FROM {$this->prefix}contractor_employees WHERE id=%d AND contractor_id=%d",$worker_id,$contractor_id),ARRAY_A);
+                    if(!$worker)wp_send_json_error(['message'=>'Employee does not belong to the selected Labour Contractor.']);
+                    if($worker['status']!=='active'&&!$id)wp_send_json_error(['message'=>'Select active Contractor Employees.']);
+                    $worker_seen[$worker_id]=true;$value=round((float)$raw,2);if($value>0)$attend++;
+                    $employee_hours[]=['worker_id'=>$worker_id,'employee_name'=>$worker['employee_name'],'working_hours'=>$value];
+                }
+                if(!$attend)wp_send_json_error(['message'=>'Enter Working Hours for at least one employee.']);
+                $hours_json=wp_json_encode(['employee_hours'=>$employee_hours]);
                 if(isset($seen[$contractor_id])) wp_send_json_error(['message'=>'This Labour Contractor has already been selected.']);
                 $seen[$contractor_id]=1;
                 $exclude_id=($id && $idx===0)?$id:0;
                 $dup=(int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$this->prefix}labour_attendance WHERE attendance_date=%s AND site_id=%d AND contractor_id=%d AND id<>%d",$attendance_date,$site_id,$contractor_id,$exclude_id));
                 if($dup) wp_send_json_error(['message'=>'Attendance for this Labour Contractor already exists for the selected Site and Date.']);
-                $clean_rows[]=['contractor_id'=>$contractor_id,'no_of_labour'=>$attend];
+                $clean_rows[]=['contractor_id'=>$contractor_id,'no_of_labour'=>$attend,'remarks'=>$hours_json];
             }
             if(!$clean_rows) wp_send_json_error(['message'=>'Please add at least one Labour Contractor.']);
             if($id){
                 $first=array_shift($clean_rows);
                 $ok=$wpdb->update($table,[
                     'attendance_date'=>$attendance_date,'site_id'=>$site_id,'contractor_id'=>$first['contractor_id'],'no_of_labour'=>$first['no_of_labour'],
-                    'remarks'=>'','updated_by'=>$uid,'updated_at'=>$now
+                    'remarks'=>$first['remarks'],'updated_by'=>$uid,'updated_at'=>$now
                 ],['id'=>$id]);
                 if($ok===false) wp_send_json_error(['message'=>$wpdb->last_error?:'Save failed']);
             }
             foreach($clean_rows as $lr){
                 $ok=$wpdb->insert($table,[
                     'attendance_date'=>$attendance_date,'site_id'=>$site_id,'contractor_id'=>$lr['contractor_id'],'no_of_labour'=>$lr['no_of_labour'],
-                    'remarks'=>'','created_by'=>$uid,'created_at'=>$now,'updated_by'=>$uid,'updated_at'=>$now
+                    'remarks'=>$lr['remarks'],'created_by'=>$uid,'created_at'=>$now,'updated_by'=>$uid,'updated_at'=>$now
                 ]);
                 if(!$ok){
                     if(stripos((string)$wpdb->last_error,'Duplicate')!==false) wp_send_json_error(['message'=>'Attendance for this Labour Contractor already exists for the selected Site and Date.']);

@@ -2776,3 +2776,5 @@ html,body{
 #ops-time-list td:nth-child(8){white-space:pre-wrap;overflow-wrap:anywhere;}
 @media(max-width:1200px){.bsm-app .bsm-time-filters{grid-template-columns:repeat(3,minmax(130px,1fr));}.ops-time-downloads{justify-content:flex-end;grid-column:1/-1;}}
 @media(max-width:600px){.bsm-app .bsm-time-filters{grid-template-columns:repeat(2,minmax(0,1fr));padding:12px;}}
+
+.bsm-labour-hours{min-width:250px;padding:4px;}.bsm-labour-hours-head,.bsm-labour-hours-row{display:grid!important;grid-template-columns:minmax(120px,1fr) 120px;gap:12px;align-items:center;padding:7px 4px;border-bottom:1px solid #dce6f5;font-size:13px!important;}.bsm-labour-hours-row input{width:100%!important;min-width:0!important;}.bsm-labour-hours-head{background:#edf4ff;}.bsm-labour-hours-row:last-child{border-bottom:0;}
