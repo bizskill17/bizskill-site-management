@@ -258,8 +258,8 @@ trait BSM_Notifications {
                 // Catch up today's missed slots, never yesterday's summaries.
                 $slot=$now->format('Y-m-d').':'.$time;
                 foreach($definition[1]==='office'?[0]:$sites as $site){$key='schedule:'.$type.':'.$slot.':'.$site;$done=$wpdb->get_var($wpdb->prepare("SELECT state FROM {$this->prefix}notification_state WHERE record_key=%s",$key));if($done!==null){
-                        // Recover daily slots previously marked done while their report was empty.
-                        if($definition[2]!=='daily'||(int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$this->prefix}notification_queue WHERE notification_type=%s AND site_id=%d AND reference_no=%s",$type,$site,$slot))>0)continue;
+                        // Recover daily and pending-PO slots marked done without a queued message.
+                        if(($definition[2]!=='daily'&&$type!=='pending_po')||(int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$this->prefix}notification_queue WHERE notification_type=%s AND site_id=%d AND reference_no=%s",$type,$site,$slot))>0)continue;
                     }
                     $message=$this->nt_summary($type,$site,$now->format('Y-m-d'));
                     if($message==='')continue;
