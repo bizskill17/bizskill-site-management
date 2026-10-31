@@ -44,6 +44,7 @@ trait BSM_Notifications {
                 group_id varchar(190) NOT NULL DEFAULT '',
                 reference_no varchar(190) NOT NULL DEFAULT '',
                 message longtext NOT NULL,
+                attachment_url text NULL,
                 status varchar(30) NOT NULL DEFAULT 'queued',
                 attempts int unsigned NOT NULL DEFAULT 0,
                 cycle_attempts int unsigned NOT NULL DEFAULT 0,
@@ -66,6 +67,10 @@ trait BSM_Notifications {
             if($wpdb->get_var("SHOW TABLES LIKE '{$p}notification_queue'")&&$wpdb->get_var("SHOW TABLES LIKE '{$p}notification_state'")&&$wpdb->get_var("SHOW COLUMNS FROM {$p}sites LIKE 'whatsapp_group_id'")&&$wpdb->get_var("SHOW COLUMNS FROM {$p}purchase_orders LIKE 'approved_at'")){
                 $this->nt_scan(true);update_option('bsm_notifications_schema','1',false);
             }
+        }
+        if(get_option('bsm_notifications_schema')==='1'&&get_option('bsm_notification_attachments_schema')!=='1'){
+            if(!$wpdb->get_var("SHOW COLUMNS FROM {$p}notification_queue LIKE 'attachment_url'"))$wpdb->query("ALTER TABLE {$p}notification_queue ADD attachment_url text NULL");
+            if($wpdb->get_var("SHOW COLUMNS FROM {$p}notification_queue LIKE 'attachment_url'"))update_option('bsm_notification_attachments_schema','1',false);
         }
         if(get_option('bsm_notifications_schema')==='1'){
             // Replace the old one-minute event without accumulating duplicate cron entries.
@@ -110,11 +115,11 @@ trait BSM_Notifications {
             if(strlen($current)+strlen($line)+1>$limit){$parts[]=$current;$current='';}$current.=($current!==''?"\n":'').$line;
         }if($current!=='')$parts[]=$current;return $parts;
     }
-    private function nt_queue($type,$sites,$reference,$message,$event,$test=false){
+    private function nt_queue($type,$sites,$reference,$message,$event,$test=false,$attachment_url=''){
         global $wpdb;$s=$this->nt_settings();if(!$test&&(!$s['enabled']||empty($s['types'][$type])))return;
         $destinations=[];foreach(array_unique(array_map('intval',(array)$sites)) as $site){$group=trim($this->nt_group($site));$key=$group!==''?$group:'missing:'.$site;if(isset($destinations[$key]))continue;$destinations[$key]=true;
             $parts=$this->nt_parts($message);foreach($parts as $i=>$part){$now=$this->nt_now();$key=hash('sha256',"$event|$type|$group|".($group===''?$site:'')."|$i");
-                $inserted=$wpdb->query($wpdb->prepare("INSERT IGNORE INTO {$this->prefix}notification_queue (event_key,notification_type,site_id,group_id,reference_no,message,status,attempts,next_attempt,created_at,updated_at,response) VALUES (%s,%s,%d,%s,%s,%s,%s,0,%s,%s,%s,%s)",$key,$type,$site,$group,$reference,(count($parts)>1?'Part '.($i+1).'/'.count($parts)."\n":'').$part,$group===''?'skipped':'queued',$now,$now,$now,$group===''?'Group ID missing':''));if($inserted===false)throw new Exception('Unable to queue notification.');
+                $inserted=$wpdb->query($wpdb->prepare("INSERT IGNORE INTO {$this->prefix}notification_queue (event_key,notification_type,site_id,group_id,reference_no,message,attachment_url,status,attempts,next_attempt,created_at,updated_at,response) VALUES (%s,%s,%d,%s,%s,%s,%s,%s,0,%s,%s,%s,%s)",$key,$type,$site,$group,$reference,(count($parts)>1?'Part '.($i+1).'/'.count($parts)."\n":'') .$part,$i===0?$attachment_url:'',$group===''?'skipped':'queued',$now,$now,$now,$group===''?'Group ID missing':''));if($inserted===false)throw new Exception('Unable to queue notification.');
             }
         }
     }
@@ -131,7 +136,7 @@ trait BSM_Notifications {
             }
             foreach($rows as $r){$key=$source.':'.$r['id'];$state=(string)($r['status']??'saved');$old=$wpdb->get_var($wpdb->prepare("SELECT state FROM {$p}notification_state WHERE record_key=%s",$key));
                 if($old===$state)continue;
-                if(!$baseline){foreach($this->nt_record_events($source,$r,$old) as $event)$this->nt_queue($event['type'],$event['sites'],$event['reference'],$event['message'],($event['event_id']??$key).':'.$event['type']);}
+                if(!$baseline){foreach($this->nt_record_events($source,$r,$old) as $event)$this->nt_queue($event['type'],$event['sites'],$event['reference'],$event['message'],($event['event_id']??$key).':'.$event['type'],false,$event['attachment_url']??'');}
                 $wpdb->replace($p.'notification_state',['record_key'=>$key,'state'=>$state]);
             }
         }}finally{$wpdb->get_var("SELECT RELEASE_LOCK('".esc_sql($p."nt_scan")."')");}
@@ -155,7 +160,7 @@ trait BSM_Notifications {
     }
     private function nt_line($r,$quantity){return '• '.$r['item_name'].' — '.$this->nt_num($quantity).' '.($r['unit_name']??'');}
     private function nt_event_message($type,$source,$r){
-        global $wpdb;$p=$this->prefix;$id=(int)$r['id'];$sites=[(int)($r['site_id']??0)];$reference='';$message='';
+        global $wpdb;$p=$this->prefix;$id=(int)$r['id'];$sites=[(int)($r['site_id']??0)];$reference='';$message='';$attachment_url='';
         if($source==='material_requisitions'){
             $approved=$type==='requisition_approved';$reference=$r['requisition_no'];$message='*'.($approved?'REQUISITION APPROVED':'REQUISITION SUBMITTED')."*\nSite: ".$this->nt_site($r['site_id'])."\nRequisition: $reference\nDate: ".$this->nt_date($r['requisition_date']).$this->nt_optional('Required Date',$this->nt_date($r['required_date']??''))."\n\n";
             foreach($this->nt_items('material_requisition_items','requisition_id',$id) as $line)$message.=$this->nt_line($line,$line['requested_qty']).($approved?' | Approved: '.$this->nt_num($line['approved_qty']).' '.$line['unit_name']:'')."\n";
@@ -163,7 +168,7 @@ trait BSM_Notifications {
             $message.=$approved?$this->nt_optional('Approval Date',$this->nt_date($r['approved_at']??'')):'';
             $message.=$this->nt_optional('Remarks',$approved?($r['approval_remarks']??''):($r['remarks']??''));
         }elseif($source==='material_dispatches'||$source==='site_transfers'){
-            $transfer=$source==='site_transfers';$to=(int)($transfer?$r['to_site_id']:$r['site_id']);$from=(int)($r['from_site_id']??0);$sites=[$to];if($from)$sites[]=$from;$reference=$transfer?$r['transfer_no']:$r['dispatch_no'];
+            $transfer=$source==='site_transfers';if(!$transfer)$attachment_url=esc_url_raw($r['dispatch_photo_url']??'',['http','https']);$to=(int)($transfer?$r['to_site_id']:$r['site_id']);$from=(int)($r['from_site_id']??0);$sites=[$to];if($from)$sites[]=$from;$reference=$transfer?$r['transfer_no']:$r['dispatch_no'];
             $message="*MATERIAL DISPATCHED*\nDispatch: $reference\nDate: ".$this->nt_date($transfer?$r['transfer_date']:$r['dispatch_date'])."\nFrom: ".($from?$this->nt_site($from):$this->nt_label('warehouses','warehouse_name',$r['warehouse_id']??0))."\nTo: ".$this->nt_site($to)."\n";
             $message.=$this->nt_optional('Requisition',!empty($r['requisition_id'])?$this->nt_label('material_requisitions','requisition_no',$r['requisition_id']):'')."\n";
             foreach($this->nt_items($transfer?'site_transfer_items':'material_dispatch_items',$transfer?'transfer_id':'dispatch_id',$id) as $line)$message.=$this->nt_line($line,$line['qty'])."\n";
@@ -189,7 +194,7 @@ trait BSM_Notifications {
             foreach($this->nt_items('material_inward_items','inward_id',$id) as $line){if(empty($line['purchase_order_item_id']))continue;$pi=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}purchase_order_items WHERE id=%d",$line['purchase_order_item_id']),ARRAY_A);$pending=max(0,$pi['po_qty']-$this->po_item_received_qty($pi['id']));$message.='• '.$line['item_name'].' | '.$this->nt_num($line['qty']).' '.$line['unit_name'].' | '.$this->nt_num($pending).' '.$line['unit_name']."\n";}
             foreach($this->nt_items('purchase_order_items','purchase_order_id',(int)$po['id']) as $pi)$remaining+=max(0,$pi['po_qty']-$this->po_item_received_qty($pi['id']));$message.='Received By: '.$this->nt_name($r['created_by']??0,true)."\nPO Status: ".($remaining>0.009?'Partially Received':'Fully Received');
         }
-        return $message!==''?compact('type','sites','reference','message'):null;
+        return $message!==''?compact('type','sites','reference','message','attachment_url'):null;
     }
     private function nt_dispatch_pending($id){
         global $wpdb;$p=$this->prefix;return max(0,(float)$wpdb->get_var($wpdb->prepare("SELECT d.qty-COALESCE((SELECT SUM(r.received_qty+r.damaged_qty) FROM {$p}site_receipt_items r JOIN {$p}site_receipts h ON h.id=r.receipt_id WHERE r.dispatch_item_id=d.id AND h.status<>'cancelled'),0) FROM {$p}material_dispatch_items d WHERE d.id=%d",$id)));
@@ -260,7 +265,8 @@ trait BSM_Notifications {
                 if($r['notification_type']!=='test'&&(!$s['enabled']||empty($s['types'][$r['notification_type']]))){$wpdb->update($p.'notification_queue',['status'=>'skipped','response'=>'Notification disabled','updated_at'=>$now],['id'=>$r['id']]);continue;}
                 if(!$this->nt_still_relevant($r)){$wpdb->update($p.'notification_queue',['status'=>'skipped','response'=>'Source cancelled or no outstanding data.','updated_at'=>$now],['id'=>$r['id']]);continue;}
                 $claim=$wpdb->query($wpdb->prepare("UPDATE {$p}notification_queue SET status='sending',attempts=attempts+1,cycle_attempts=cycle_attempts+1,updated_at=%s WHERE id=%d AND status='queued'",$now,$r['id']));if($claim!==1)continue;
-                $response=wp_remote_post('https://app.messageautosender.com/api/v1/message/create',['timeout'=>20,'redirection'=>0,'headers'=>['accept'=>'application/json','Content-Type'=>'application/json','Authorization'=>'Basic '.base64_encode($s['username'].':'.$password)],'body'=>wp_json_encode(['recipientIds'=>[$r['group_id']],'message'=>[$r['message']]])]);
+                $payload=['recipientIds'=>[$r['group_id']],'message'=>[$r['message']]];if(!empty($r['attachment_url']))$payload['filePathUrl']=[$r['attachment_url']];
+                $response=wp_remote_post('https://app.messageautosender.com/api/v1/message/create',['timeout'=>20,'redirection'=>0,'headers'=>['accept'=>'application/json','Content-Type'=>'application/json','Authorization'=>'Basic '.base64_encode($s['username'].':'.$password)],'body'=>wp_json_encode($payload)]);
                 $status='accepted';$detail='Request accepted by provider.';$delay=0;
                 if(is_wp_error($response)){$status='review_required';$detail='Transport error; outcome unknown. Verify provider history before retrying.';}
                 else{
