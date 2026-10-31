@@ -4073,22 +4073,23 @@ function poWrapSupplierFields(){
 $(document).on('input','#po_pending_list textarea.bsm-select-search',poWrapSupplierFields);
 $(document).on('change','#po_pending_list .po-quote-supplier,#po_pending_list .po-row-vendor',function(){setTimeout(poWrapSupplierFields,0);});
 $(window).on('resize',function(){if($('#po_pending_list .po-three-quotes').length)poWrapSupplierFields();});
+function poLowestQuotation(quotes,vendor){return quotes.filter(q=>vendor&&q.vendor_id===String(vendor)&&q.rate!==''&&Number.isFinite(Number(q.rate))&&Number(q.rate)>=0).reduce((lowest,q)=>!lowest||Number(q.rate)<Number(lowest.rate)?q:lowest,null);}
 function poRowQuotations($row){return [1,2,3].map(n=>({vendor_id:String($row.find(`.po-quote-supplier[data-slot="${n}"]`).val()||''),rate:$row.find(`.po-quote-rate[data-slot="${n}"]`).val()}));}
 $(document).on('change input','#po_pending_list .po-quote-supplier,#po_pending_list .po-quote-rate',function(){
   const $row=$(this).closest('tr'),$chosen=$row.find('.po-row-vendor'),selected=$chosen.val(),quotes=poRowQuotations($row),seen=new Set();
   $chosen.html('<option value="">Select quoted supplier</option>'+quotes.filter(q=>{if(!q.vendor_id||seen.has(q.vendor_id))return false;seen.add(q.vendor_id);return true;}).map(q=>`<option value="${esc(q.vendor_id)}">${esc(labelFor('vendors',q.vendor_id))}</option>`).join('')).val(selected||'');
-  $row.find('.po-row-rate').val(quotes.find(q=>q.vendor_id===$chosen.val())?.rate??'');bsmRefreshSearchableSelect($chosen[0]);
+  $row.find('.po-row-rate').val(poLowestQuotation(quotes,$chosen.val())?.rate??'');bsmRefreshSearchableSelect($chosen[0]);
 });
-$(document).on('change','#po_pending_list .po-row-vendor',function(){const $row=$(this).closest('tr');$row.find('.po-row-rate').val(poRowQuotations($row).find(q=>q.vendor_id===String($(this).val()))?.rate??'');});
+$(document).on('change','#po_pending_list .po-row-vendor',function(){const $row=$(this).closest('tr');$row.find('.po-row-rate').val(poLowestQuotation(poRowQuotations($row),$(this).val())?.rate??'');});
 $(document).on('click','#po_create_selected',async function(){
   const items=[];let error='';
-  $('#po_pending_list tbody tr[data-item]').each(function(){const $row=$(this),vendor=String($row.find('.po-row-vendor').val()||''),qty=Number($row.find('.po-row-qty').val()||0);if(!vendor||qty<=0)return;const quotations=poRowQuotations($row);if(new Set(quotations.map(q=>q.vendor_id)).size!==3||quotations.some(q=>!q.vendor_id||q.rate===''||!Number.isFinite(Number(q.rate))||Number(q.rate)<0)){error='Enter three different suppliers and valid rates for each selected item.';return;}const chosen=quotations.find(q=>q.vendor_id===vendor);if(!chosen){error='Choose one of the three quoted suppliers.';return;}items.push({item_id:$row.data('item'),vendor_id:vendor,po_qty:qty,rate:Number(chosen.rate),quotations});});
+  $('#po_pending_list tbody tr[data-item]').each(function(){const $row=$(this),vendor=String($row.find('.po-row-vendor').val()||''),qty=Number($row.find('.po-row-qty').val()||0);if(!vendor||qty<=0)return;const quotations=poRowQuotations($row);if(quotations.some(q=>!q.vendor_id||q.rate===''||!Number.isFinite(Number(q.rate))||Number(q.rate)<0)){error='Enter three suppliers and valid rates for each selected item.';return;}const chosen=poLowestQuotation(quotations,vendor);if(!chosen){error='Choose one of the three quoted suppliers.';return;}items.push({item_id:$row.data('item'),vendor_id:vendor,po_qty:qty,rate:Number(chosen.rate),quotations});});
   if(error)return showToast(error,true);if(!items.length)return showToast('Choose Supplier for at least one item.',true);
   const $button=$(this);$button.prop('disabled',true);
   try{const r=await ajax('bsm_purchase_order_create',{warehouse_id:App.pendingPoWarehouse||'',items:JSON.stringify(items)});if(r.success){showToast(r.data.message||'PO created');await loadPendingPoItems();}else showToast(r.data?.message||'Unable to create PO',true);}finally{$button.prop('disabled',false);}
 });
 
-function syncDirectPoChosen($row){const vendor=String($('#po_direct_vendor').val()||'');const quotes=[1,2,3].map(n=>({vendor_id:String($('.po-direct-quote-supplier[data-slot="'+n+'"]').val()||''),rate:$('.po-direct-quote-rate[data-slot="'+n+'"]').val()}));const match=quotes.find(q=>q.vendor_id===vendor&&vendor);$('.po-direct-chosen-rate').val(match?match.rate:'');$row.find('.po-direct-rate').val(match?match.rate:'');updateDirectPoAmount($row);}
+function syncDirectPoChosen($row){const vendor=String($('#po_direct_vendor').val()||'');const quotes=[1,2,3].map(n=>({vendor_id:String($('.po-direct-quote-supplier[data-slot="'+n+'"]').val()||''),rate:$('.po-direct-quote-rate[data-slot="'+n+'"]').val()}));const match=poLowestQuotation(quotes,vendor);$('.po-direct-chosen-rate').val(match?match.rate:'');$row.find('.po-direct-rate').val(match?match.rate:'');updateDirectPoAmount($row);}
 function refreshDirectPoChosenOptions(){const $chosen=$('#po_direct_vendor'),value=String($chosen.val()||''),seen=new Set();const opts=[1,2,3].map(n=>String($('.po-direct-quote-supplier[data-slot="'+n+'"]').val()||'')).filter(id=>{if(!id||seen.has(id))return false;seen.add(id);return true;});$chosen.html('<option value="">Select quoted supplier</option>'+opts.map(id=>`<option value="${esc(id)}">${esc(labelFor('vendors',id)||'')}</option>`).join('')).val(opts.includes(value)?value:'');bsmRefreshSearchableSelect($chosen[0]);}
 $(document).on('change','.po-direct-quote-supplier',function(){refreshDirectPoChosenOptions();$('#po_direct_items .po-direct-row').each(function(){syncDirectPoChosen($(this));});});
 $(document).on('input change','.po-direct-quote-rate',function(){$('#po_direct_items .po-direct-row').each(function(){syncDirectPoChosen($(this));});});
@@ -4133,10 +4134,10 @@ $(document).on('click','#po_direct_save',async function(){
     if(!item_id && po_qty<=0)return;
     if(!item_id || po_qty<=0){invalid=true;return;}
     const quotations=[1,2,3].map(n=>({vendor_id:String($('.po-direct-quote-supplier[data-slot="'+n+'"]').val()||''),rate:$('.po-direct-quote-rate[data-slot="'+n+'"]').val()}));
-    if(quotations.some(q=>!q.vendor_id||q.rate===''||!Number.isFinite(Number(q.rate))||Number(q.rate)<0)||new Set(quotations.map(q=>q.vendor_id)).size!==3||!quotations.some(q=>q.vendor_id===String(vendor_id))){invalid=true;return;}
+    if(quotations.some(q=>!q.vendor_id||q.rate===''||!Number.isFinite(Number(q.rate))||Number(q.rate)<0)||!quotations.some(q=>q.vendor_id===String(vendor_id))){invalid=true;return;}
     items.push({item_id,po_qty,fixed_price,rate,quotations});
   });
-  if(invalid)return showToast('Select Item, enter PO Qty and three different supplier rates, and choose a quoted Supplier above',true);
+  if(invalid)return showToast('Select Item, enter PO Qty and three supplier rates, and choose a quoted Supplier above',true);
   if(!items.length)return showToast('Add at least one PO item',true);
   const $btn=$('#po_direct_save').prop('disabled',true).text('Saving...');
   const r=await ajax('bsm_purchase_order_manual_save',{vendor_id,warehouse_id,po_date,required_date,remarks,created_by,items:JSON.stringify(items)});
