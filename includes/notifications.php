@@ -239,7 +239,7 @@ trait BSM_Notifications {
             $heads=$wpdb->get_results("SELECT * FROM {$p}purchase_orders WHERE status IN ($states) ORDER BY po_date,id",ARRAY_A)?:[];
             foreach($heads as $h){$lines=[];$amount=0;foreach($this->nt_items('purchase_order_items','purchase_order_id',$h['id']) as $r){$amount+=$r['po_qty']*$r['rate'];$pending=max(0,$r['po_qty']-$this->po_item_received_qty($r['id']));if($pending>0.009)$lines[]=$this->nt_line($r,$pending).' pending';}
                 $text=$h['po_no'].' | '.$this->nt_date($h['po_date'])."\nSupplier: ".$this->nt_label('vendors','vendor_name',$h['vendor_id'])."\nDelivery To: ".$this->nt_label('warehouses','warehouse_name',$h['warehouse_id']);
-                if($type==='pending_po_approval')$blocks[]=$text."\nAmount: ₹".number_format($amount,2).$this->nt_optional('Created By',$this->nt_name($h['created_by']??0,true));elseif($lines)$blocks[]=$text."\n".implode("\n",$lines);
+                if($type==='pending_po_approval')$blocks[]=(count($blocks)+1).'.'.$text."\nAmount: ₹".number_format($amount,2).$this->nt_optional('Created By',$this->nt_name($h['created_by']??0,true));elseif($lines)$blocks[]=$text."\n".implode("\n",$lines);
             }
         }
         if(!$blocks)return '';return '*'.$heading.'*'.($site?"\nSite: ".$this->nt_site($site):'')."\n".(in_array($type,['labour_attendance','site_timesheet','office_timesheet'],true)?'Date: ':'As On: ').$this->nt_date($date)."\n\n".implode("\n\n",$blocks);
