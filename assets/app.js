@@ -1653,7 +1653,7 @@ function fieldHtml(f,val=''){
   }
   if(f.name==='dispatch_from'){
     const selected=v==='site'?'site':'warehouse';
-    return `<div class="bsm-dispatch-source-field"><span class="bsm-field-label">Dispatch From<span class="bsm-required">*</span></span><div class="bsm-dispatch-source-buttons" role="group" aria-label="Dispatch From">${[['warehouse','Warehouse'],['site','Site']].map(([value,label])=>`<button type="button" class="bsm-dispatch-source-button ${selected===value?'is-selected':''}" data-source="${value}" aria-pressed="${selected===value}">${label}</button>`).join('')}</div><input type="hidden" name="dispatch_from" value="${selected}"></div>`;
+    return `<div class="bsm-dispatch-source-field" style="min-width:0;display:flex;flex-direction:column;gap:6px"><span class="bsm-field-label" style="font-size:12px;line-height:18px;color:#475569">Dispatch From<span class="bsm-required">*</span></span><div class="bsm-dispatch-source-buttons" style="display:flex;width:100%;height:44px;border:1px solid #8cb5ff;border-radius:10px;overflow:hidden;background:#fff;box-sizing:border-box" role="group" aria-label="Dispatch From">${[['warehouse','Warehouse'],['site','Site']].map(([value,label])=>`<button type="button" class="bsm-dispatch-source-button ${selected===value?'is-selected':''}" style="flex:1;min-width:0;margin:0;padding:10px 8px;border:0;border-radius:0;box-shadow:none;font-size:13px;font-weight:600;cursor:pointer;background:${selected===value?'#1769ff':'#fff'};color:${selected===value?'#fff':'#1760d9'}" data-source="${value}" aria-pressed="${selected===value}">${label}</button>`).join('')}</div><input type="hidden" name="dispatch_from" value="${selected}"></div>`;
   }
   if(f.type==='hidden') return `<input type="hidden" name="${f.name}" value="${esc(v)}">`;
   if(f.type==='display') input=`<input type="text" class="bsm-display-field bsm-display-${esc(f.name)}" value="${esc(v)}" readonly tabindex="-1" data-display-name="${esc(f.name)}">`;
@@ -3176,7 +3176,7 @@ async function openDispatchFromRequisition(id){
 let dispatchStockRequest=0;
 $(document).on('click','.bsm-dispatch-source-button',function(){
   const $field=$(this).closest('.bsm-dispatch-source-field'),source=$(this).data('source');
-  $field.find('.bsm-dispatch-source-button').each(function(){const active=$(this).data('source')===source;$(this).toggleClass('is-selected',active).attr('aria-pressed',String(active));});
+  $field.find('.bsm-dispatch-source-button').each(function(){const active=$(this).data('source')===source;$(this).toggleClass('is-selected',active).attr('aria-pressed',String(active)).css({background:active?'#1769ff':'#fff',color:active?'#fff':'#1760d9'});});
   $field.find('[name="dispatch_from"]').val(source).trigger('change');
 });
 function setupDispatchSource(){
