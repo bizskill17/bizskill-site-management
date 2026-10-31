@@ -243,8 +243,13 @@ trait BSM_Notifications {
             foreach([end($due)] as $time){if(!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/',$time)||$now->format('H:i')<$time)continue;
                 // Catch up today's missed slots, never yesterday's summaries.
                 $slot=$now->format('Y-m-d').':'.$time;
-                foreach($definition[1]==='office'?[0]:$sites as $site){$key='schedule:'.$type.':'.$slot.':'.$site;$done=$wpdb->get_var($wpdb->prepare("SELECT state FROM {$this->prefix}notification_state WHERE record_key=%s",$key));if($done!==null)continue;
-                    $message=$this->nt_summary($type,$site,$now->format('Y-m-d'));if($message!=='')$this->nt_queue($type,[$site],$slot,$message,$key);
+                foreach($definition[1]==='office'?[0]:$sites as $site){$key='schedule:'.$type.':'.$slot.':'.$site;$done=$wpdb->get_var($wpdb->prepare("SELECT state FROM {$this->prefix}notification_state WHERE record_key=%s",$key));if($done!==null){
+                        // Recover daily slots previously marked done while their report was empty.
+                        if($definition[2]!=='daily'||(int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$this->prefix}notification_queue WHERE notification_type=%s AND site_id=%d AND reference_no=%s",$type,$site,$slot))>0)continue;
+                    }
+                    $message=$this->nt_summary($type,$site,$now->format('Y-m-d'));
+                    if($message==='')continue;
+                    $this->nt_queue($type,[$site],$slot,$message,$key);
                     $wpdb->replace($this->prefix.'notification_state',['record_key'=>$key,'state'=>'done']);
                 }
             }
