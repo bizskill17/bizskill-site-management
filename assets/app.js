@@ -1651,6 +1651,10 @@ function fieldHtml(f,val=''){
     const old=[...selected].filter(x=>!opts.some(o=>String(o.label)===x)).map(x=>`<label class="bsm-site-section-option"><input type="checkbox" value="${esc(x)}" checked><span>${esc(x)} (Existing)</span></label>`).join('');
     return `<div class="bsm-site-section-field"><span class="bsm-field-label">Section</span><div class="bsm-site-section-multi"><button type="button" class="bsm-site-section-toggle">${selected.size?esc([...selected].join(', ')):'Select Sections'} <span>⌄</span></button><div class="bsm-site-section-menu"><input class="bsm-site-section-search" type="text" aria-label="Search Sections" placeholder="" autocomplete="off">${options}${old}${!opts.length&&!old?'<div class="bsm-site-section-empty">Add Sections in Section Master first.</div>':''}</div></div><input type="hidden" name="site_sections" value="${esc([...selected].join(', '))}"></div>`;
   }
+  if(f.name==='dispatch_from'){
+    const selected=v==='site'?'site':'warehouse';
+    return `<div class="bsm-dispatch-source-field"><span class="bsm-field-label">Dispatch From<span class="bsm-required">*</span></span><div class="bsm-dispatch-source-buttons" role="group" aria-label="Dispatch From">${[['warehouse','Warehouse'],['site','Site']].map(([value,label])=>`<button type="button" class="bsm-dispatch-source-button ${selected===value?'is-selected':''}" data-source="${value}" aria-pressed="${selected===value}">${label}</button>`).join('')}</div><input type="hidden" name="dispatch_from" value="${selected}"></div>`;
+  }
   if(f.type==='hidden') return `<input type="hidden" name="${f.name}" value="${esc(v)}">`;
   if(f.type==='display') input=`<input type="text" class="bsm-display-field bsm-display-${esc(f.name)}" value="${esc(v)}" readonly tabindex="-1" data-display-name="${esc(f.name)}">`;
   else if(f.type==='textarea')input=`<textarea name="${f.name}" ${req} ${ro}>${esc(v)}</textarea>`;
@@ -3170,6 +3174,11 @@ async function openDispatchFromRequisition(id){
   $('#bsm-documents').html('<div class="bsm-docbox"><label><span class="bsm-field-label">Upload Photo</span><input type="file" id="bsm-dispatch-photo" accept="image/jpeg,image/png,image/webp"></label></div>');positionDispatchPhoto();$('#bsm-form').data('module','material_dispatches').data('requisition-id',id);setupDispatchSource();$('#bsm-modal').show();
 }
 let dispatchStockRequest=0;
+$(document).on('click','.bsm-dispatch-source-button',function(){
+  const $field=$(this).closest('.bsm-dispatch-source-field'),source=$(this).data('source');
+  $field.find('.bsm-dispatch-source-button').each(function(){const active=$(this).data('source')===source;$(this).toggleClass('is-selected',active).attr('aria-pressed',String(active));});
+  $field.find('[name="dispatch_from"]').val(source).trigger('change');
+});
 function setupDispatchSource(){
   const $f=$('#bsm-form-fields'),source=$f.find('[name="dispatch_from"]').val()||'warehouse';
   $f.find('[name="warehouse_id"]').closest('label').toggle(source==='warehouse');
