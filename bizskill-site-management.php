@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.064
+ * Version: 0.0.065
  * Author: BizSkill
  */
 
@@ -12,7 +12,7 @@ require_once __DIR__ . '/includes/workforce-transfers.php';
 
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
-    const VERSION = '0.0.064';
+    const VERSION = '0.0.065';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -5189,7 +5189,7 @@ final class BSM_Site_Management {
                 if(!isset($map[$key])) $map[$key]=[
                     'location_type'=>$type,'location_id'=>(int)$location_id,'location'=>$location,
                     'item_id'=>(int)$item_id,'item_name'=>$item_name,'unit_id'=>(int)$unit_id,'unit'=>$unit,
-                    'opening'=>0.0,'inward'=>0.0,'receipt'=>0.0,'dispatch'=>0.0,'consumption'=>0.0,'return_qty'=>0.0,'balance'=>0.0
+                    'opening'=>0.0,'inward'=>0.0,'receipt'=>0.0,'dispatch'=>0.0,'consumption'=>0.0,'return_qty'=>0.0,'site_transfer'=>0.0,'balance'=>0.0
                 ];
                 $map[$key][$field]+=(float)$qty;
             };
@@ -5296,13 +5296,13 @@ final class BSM_Site_Management {
             foreach($this->ops_transfer_movements($site,$item,$from,$to) as $x){
                 $site_name=(string)$wpdb->get_var($wpdb->prepare("SELECT site_name FROM {$p}sites WHERE id=%d",$x['site_id']));
                 if($x['in'])$add('Site',$x['site_id'],$site_name,$x['item_id'],$x['item_name'],$x['unit_id'],$x['unit'],'receipt',$x['in']);
-                if($x['out'])$add('Site',$x['site_id'],$site_name,$x['item_id'],$x['item_name'],$x['unit_id'],$x['unit'],'return_qty',$x['out']);
+                if($x['out'])$add('Site',$x['site_id'],$site_name,$x['item_id'],$x['item_name'],$x['unit_id'],$x['unit'],'site_transfer',$x['out']);
             }
 
             foreach($map as &$x){
                 if($x['location_type']==='Warehouse') $x['balance']=$x['opening']+$x['inward']+$x['return_qty']-$x['dispatch'];
-                else $x['balance']=$x['opening']+$x['receipt']-$x['consumption']-$x['return_qty'];
-                foreach(['opening','inward','receipt','dispatch','consumption','return_qty','balance'] as $f)$x[$f]=round((float)$x[$f],2);
+                else $x['balance']=$x['opening']+$x['receipt']-$x['consumption']-$x['return_qty']-$x['site_transfer'];
+                foreach(['opening','inward','receipt','dispatch','consumption','return_qty','site_transfer','balance'] as $f)$x[$f]=round((float)$x[$f],2);
             }
             unset($x);
             $rows=array_values($map);

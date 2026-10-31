@@ -3527,7 +3527,7 @@ function inventoryCols(scope){
   return scope==='ho' ? [
     {key:'category_name',label:'Item Category'},{key:'item_name',label:'Item'},{key:'unit',label:'Unit'},{key:'opening',label:'Opening',num:true},{key:'inward',label:'Inward',num:true},{key:'dispatch',label:'Outward',num:true},{key:'balance',label:'Balance',num:true}
   ] : [
-    {key:'category_name',label:'Item Category'},{key:'item_name',label:'Item'},{key:'unit',label:'Unit'},{key:'opening',label:'Opening',num:true},{key:'receipt',label:'Received',num:true},{key:'consumption',label:'Consumed',num:true},{key:'return_qty',label:'Returned',num:true},{key:'balance',label:'Balance',num:true}
+    {key:'category_name',label:'Item Category'},{key:'item_name',label:'Item'},{key:'unit',label:'Unit'},{key:'opening',label:'Opening',num:true},{key:'receipt',label:'Received',num:true},{key:'consumption',label:'Consumed',num:true},{key:'return_qty',label:'Returned',num:true},{key:'site_transfer',label:'Site Transfer',num:true},{key:'balance',label:'Balance',num:true}
   ];
 }
 function inventoryGroupedHtml(rows,scope){
@@ -3623,6 +3623,7 @@ function materialStockColumns(){return [
   {key:'dispatch',label:'Dispatch',type:'number'},
   {key:'consumption',label:'Consumption',type:'number'},
   {key:'return_qty',label:'Return',type:'number'},
+  {key:'site_transfer',label:'Site Transfer',type:'number'},
   {key:'balance',label:'Balance',type:'number'}
 ];}
 function drawMaterialStock(){
