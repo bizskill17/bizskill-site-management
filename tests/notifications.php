@@ -205,4 +205,11 @@ check((int)$wpdb->get_var("SELECT COUNT(*) FROM bsm_notification_queue WHERE sit
 $host->call('nt_scheduled');
 check((int)$wpdb->get_var("SELECT COUNT(*) FROM bsm_notification_queue WHERE site_id=1")===2,'Repeated daily checks do not queue duplicate summaries');
 
+
+$siteMessage=$host->call('nt_summary','site_timesheet',1,$today);
+check(str_contains($siteMessage,'09:00 AM–11:00 AM | Site inspection')&&!str_contains($siteMessage,'Site inspection | 2 hours'),'Site timesheet activity lines omit individual hours');
+check(str_contains($siteMessage,'Total: 2 hours')&&str_contains($siteMessage,'Total Recorded Hours: 6'),'Site timesheet retains employee and overall totals');
+$officeMessage=$host->call('nt_summary','office_timesheet',0,$today);
+check(str_contains($officeMessage,'Site inspection | 2 hours'),'Office timesheet keeps existing activity hour format');
+
 echo "\n$count notification checks passed. No network calls made.\n";
