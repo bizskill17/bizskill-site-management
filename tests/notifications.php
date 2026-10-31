@@ -212,4 +212,9 @@ check(str_contains($siteMessage,'Total: 2 hours')&&str_contains($siteMessage,'To
 $officeMessage=$host->call('nt_summary','office_timesheet',0,$today);
 check(str_contains($officeMessage,'Site inspection | 2 hours'),'Office timesheet keeps existing activity hour format');
 
+
+$wpdb->query('DELETE FROM bsm_notification_queue');
+check($host->call('nt_last_sent')==='','No successful sends has no last send time');
+$wpdb->query("INSERT INTO bsm_notification_queue(event_key,status,updated_at) VALUES('accepted-time','accepted','2026-10-31 12:10:00'),('failed-time','failed','2026-10-31 13:00:00')");
+check($host->call('nt_last_sent')==='31/10/2026 5:40PM','Last accepted send uses IST and ignores later failures');
 echo "\n$count notification checks passed. No network calls made.\n";
