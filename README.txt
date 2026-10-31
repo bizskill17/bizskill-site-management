@@ -89,3 +89,5 @@ Version 0.1.443: Customer Master GST Type (Intra-State, Inter-State, No GST) in 
 0.1.465: Bill Type on purchase and pending invoice upload; validation, table display, exports, and conditional non-GST calculations.
 
 Version 0.0.043: Cache-busted frontend assets to display Project Tracker actions, and linked Sub-task Edit/Delete to the correct record.
+
+Version 0.0.064: Pending Dispatch supports Warehouse or Site sources. Site dispatches validate source stock and approved pending quantities, post source-site stock outward, and retain the existing Site Receipt workflow. Source details are included in dispatch records, item exports, PDFs and Site Transfer Master. Adds atomic dispatch saves and regression coverage.

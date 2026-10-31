@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.063
+ * Version: 0.0.064
  * Author: BizSkill
  */
 
@@ -12,7 +12,7 @@ require_once __DIR__ . '/includes/workforce-transfers.php';
 
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
-    const VERSION = '0.0.063';
+    const VERSION = '0.0.064';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -111,6 +111,7 @@ final class BSM_Site_Management {
         add_action('wp_ajax_bsm_requisition_approval_get', [$this, 'ajax_requisition_approval_get']);
         add_action('wp_ajax_bsm_requisition_approval_save', [$this, 'ajax_requisition_approval_save']);
         add_action('wp_ajax_bsm_pending_dispatch', [$this, 'ajax_pending_dispatch']);
+        add_action('wp_ajax_bsm_dispatch_source_stock', [$this, 'ajax_dispatch_source_stock']);
         add_action('wp_ajax_bsm_dispatch_prefill', [$this, 'ajax_dispatch_prefill']);
         add_action('wp_ajax_bsm_site_receipt_prefill', [$this, 'ajax_site_receipt_prefill']);
         add_action('wp_ajax_bsm_site_stock_available', [$this, 'ajax_site_stock_available']);
@@ -358,6 +359,7 @@ final class BSM_Site_Management {
             $this->migrate_phase_0122();
             $this->migrate_requisition_table();
             $this->migrate_dispatch_items_table();
+            $this->migrate_material_dispatch_courier();
             $this->migrate_site_receipt_items_table();
             $this->migrate_material_returns_table();
             $this->migrate_customer_gst_type();
@@ -1155,6 +1157,8 @@ final class BSM_Site_Management {
         $exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table));
         if ($exists !== $table) return;
         $cols = [
+            'from_site_id' => "BIGINT UNSIGNED NULL",
+            'dispatch_from' => "VARCHAR(20) NOT NULL DEFAULT 'warehouse'",
             'courier_no'   => "VARCHAR(100) NULL AFTER `driver_mobile`",
             'courier_name' => "VARCHAR(190) NULL AFTER `courier_no`",
         ];
@@ -1406,7 +1410,7 @@ final class BSM_Site_Management {
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, inward_id BIGINT UNSIGNED NOT NULL, item_id BIGINT UNSIGNED NOT NULL, return_qty DECIMAL(18,2) DEFAULT 0, qty DECIMAL(18,2) DEFAULT 0, approved_qty DECIMAL(18,2) DEFAULT 0, unit_id BIGINT UNSIGNED NULL, item_price DECIMAL(18,2) DEFAULT 0, rate DECIMAL(18,2) DEFAULT 0, remarks VARCHAR(255) NULL, taxable_amount DECIMAL(18,2) DEFAULT 0, gst_rate DECIMAL(8,2) DEFAULT 0, cgst_amount DECIMAL(18,2) DEFAULT 0, sgst_amount DECIMAL(18,2) DEFAULT 0, igst_amount DECIMAL(18,2) DEFAULT 0, total_amount DECIMAL(18,2) DEFAULT 0, PRIMARY KEY(id), KEY inward_id(inward_id)
         ) $c;";
         $sql[] = "CREATE TABLE {$p}material_dispatches (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, dispatch_no VARCHAR(80), warehouse_id BIGINT UNSIGNED NOT NULL, site_id BIGINT UNSIGNED NOT NULL, requisition_id BIGINT UNSIGNED NULL, dispatch_date DATE NOT NULL, vehicle_no VARCHAR(80), driver_name VARCHAR(150), driver_mobile VARCHAR(30), courier_no VARCHAR(100), courier_name VARCHAR(190), transport_details TEXT, remarks TEXT, status VARCHAR(30) DEFAULT 'draft', created_by BIGINT UNSIGNED, created_at DATETIME, updated_at DATETIME, PRIMARY KEY(id), UNIQUE KEY dispatch_no(dispatch_no), KEY site_id(site_id)
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, dispatch_no VARCHAR(80), dispatch_from VARCHAR(20) NOT NULL DEFAULT 'warehouse', from_site_id BIGINT UNSIGNED NULL, warehouse_id BIGINT UNSIGNED NOT NULL, site_id BIGINT UNSIGNED NOT NULL, requisition_id BIGINT UNSIGNED NULL, dispatch_date DATE NOT NULL, vehicle_no VARCHAR(80), driver_name VARCHAR(150), driver_mobile VARCHAR(30), courier_no VARCHAR(100), courier_name VARCHAR(190), transport_details TEXT, remarks TEXT, status VARCHAR(30) DEFAULT 'draft', created_by BIGINT UNSIGNED, created_at DATETIME, updated_at DATETIME, PRIMARY KEY(id), UNIQUE KEY dispatch_no(dispatch_no), KEY site_id(site_id)
         ) $c;";
         $sql[] = "CREATE TABLE {$p}material_dispatch_items (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, dispatch_id BIGINT UNSIGNED NOT NULL, requisition_item_id BIGINT UNSIGNED NULL, item_id BIGINT UNSIGNED NOT NULL, qty DECIMAL(18,2) DEFAULT 0, unit_id BIGINT UNSIGNED NULL, rate DECIMAL(18,2) DEFAULT 0, remarks VARCHAR(255) NULL, PRIMARY KEY(id), KEY dispatch_id(dispatch_id)
@@ -1699,6 +1703,7 @@ final class BSM_Site_Management {
                 if($exists("SELECT (SELECT COUNT(*) FROM {$p}sites WHERE customer_id=%d)+(SELECT COUNT(*) FROM {$p}customer_receipts WHERE customer_id=%d)+(SELECT COUNT(*) FROM {$p}gst_invoices WHERE customer_id=%d)",$id,$id,$id)) $lock_delete('This Customer is already linked with a Site or transaction and cannot be deleted. You can mark it Inactive instead.');
                 break;
             case 'sites':
+                if($exists("SELECT COUNT(*) FROM {$p}material_dispatches WHERE from_site_id=%d",$id)) $lock_delete('This Site has outgoing dispatches and cannot be deleted. Mark it Inactive instead.');
                 if($exists("SELECT (SELECT COUNT(*) FROM {$p}material_requisitions WHERE site_id=%d)+(SELECT COUNT(*) FROM {$p}material_dispatches WHERE site_id=%d)+(SELECT COUNT(*) FROM {$p}site_receipts WHERE site_id=%d)+(SELECT COUNT(*) FROM {$p}site_consumptions WHERE site_id=%d)+(SELECT COUNT(*) FROM {$p}material_returns WHERE site_id=%d)+(SELECT COUNT(*) FROM {$p}labour_attendance WHERE site_id=%d)+(SELECT COUNT(*) FROM {$p}site_expenses WHERE site_id=%d)",$id,$id,$id,$id,$id,$id,$id)) $lock_delete('This Site already has transactions and cannot be deleted. You can mark it Inactive instead.');
                 break;
             case 'vendors':
@@ -1739,6 +1744,7 @@ final class BSM_Site_Management {
                 if($r){
                     $used=$exists("SELECT COUNT(*) FROM {$p}site_consumptions sc JOIN {$p}site_consumption_items sci ON sci.consumption_id=sc.id JOIN {$p}site_receipt_items sri ON sri.receipt_id=%d AND sri.item_id=sci.item_id WHERE sc.site_id=%d AND sc.consumption_date>=%s",$id,(int)$r['site_id'],$r['receipt_date'])
                       || $exists("SELECT COUNT(*) FROM {$p}material_returns mr JOIN {$p}material_return_items mri ON mri.return_id=mr.id JOIN {$p}site_receipt_items sri ON sri.receipt_id=%d AND sri.item_id=mri.item_id WHERE mr.site_id=%d AND mr.return_date>=%s",$id,(int)$r['site_id'],$r['receipt_date']);
+                    $used=$used || $exists("SELECT COUNT(*) FROM {$p}material_dispatches md JOIN {$p}material_dispatch_items mdi ON mdi.dispatch_id=md.id JOIN {$p}site_receipt_items sri ON sri.receipt_id=%d AND sri.item_id=mdi.item_id WHERE md.from_site_id=%d AND LOWER(COALESCE(md.status,''))<>'cancelled'",$id,(int)$r['site_id']);
                     if($used) $lock_both('Stock from this Receipt has already been used. The Receipt cannot be edited or deleted.');
                 }
                 break;
@@ -2464,20 +2470,21 @@ final class BSM_Site_Management {
         if($site_scope!==null && $site_scope){$ph=implode(',',array_fill(0,count($site_scope),'%d'));$where.=" AND d.site_id IN ($ph)";foreach($site_scope as $sid)$args[]=(int)$sid;}
         if($search!==''){
             $needle='%'.$wpdb->esc_like($search).'%';
-            $where.=" AND (d.dispatch_no LIKE %s OR COALESCE(r.requisition_no,'') LIKE %s OR COALESCE(s.site_name,'') LIKE %s OR COALESCE(w.warehouse_name,'') LIKE %s OR COALESCE(c.category_name,'') LIKE %s OR COALESCE(i.item_name,'') LIKE %s OR COALESCE(u.unit_name,'') LIKE %s OR COALESCE(d.status,'') LIKE %s OR COALESCE(di.remarks,'') LIKE %s OR COALESCE(d.vehicle_no,'') LIKE %s OR COALESCE(d.driver_name,'') LIKE %s OR COALESCE(d.driver_mobile,'') LIKE %s OR COALESCE(d.courier_no,'') LIKE %s OR COALESCE(d.courier_name,'') LIKE %s)";
-            for($n=0;$n<14;$n++)$args[]=$needle;
+            $where.=" AND (d.dispatch_no LIKE %s OR COALESCE(r.requisition_no,'') LIKE %s OR COALESCE(s.site_name,'') LIKE %s OR COALESCE(w.warehouse_name,'') LIKE %s OR COALESCE(fs.site_name,'') LIKE %s OR COALESCE(c.category_name,'') LIKE %s OR COALESCE(i.item_name,'') LIKE %s OR COALESCE(u.unit_name,'') LIKE %s OR COALESCE(d.status,'') LIKE %s OR COALESCE(di.remarks,'') LIKE %s OR COALESCE(d.vehicle_no,'') LIKE %s OR COALESCE(d.driver_name,'') LIKE %s OR COALESCE(d.driver_mobile,'') LIKE %s OR COALESCE(d.courier_no,'') LIKE %s OR COALESCE(d.courier_name,'') LIKE %s)";
+            for($n=0;$n<15;$n++)$args[]=$needle;
         }
         $from=" FROM {$p}material_dispatch_items di
             INNER JOIN {$p}material_dispatches d ON d.id=di.dispatch_id
             LEFT JOIN {$p}material_requisitions r ON r.id=d.requisition_id
             LEFT JOIN {$p}sites s ON s.id=d.site_id
+            LEFT JOIN {$p}sites fs ON fs.id=d.from_site_id
             LEFT JOIN {$p}warehouses w ON w.id=d.warehouse_id
             LEFT JOIN {$p}items i ON i.id=di.item_id
             LEFT JOIN {$p}item_categories c ON c.id=i.category_id
             LEFT JOIN {$p}units u ON u.id=di.unit_id
             WHERE $where";
         $countSql="SELECT COUNT(*) $from";
-        $dataSql="SELECT di.id,d.id dispatch_id,d.dispatch_no,d.dispatch_date,d.status,d.site_id,s.site_name,d.warehouse_id,w.warehouse_name,d.requisition_id,r.requisition_no,d.vehicle_no,d.driver_name,d.driver_mobile,d.courier_no,d.courier_name,i.category_id,c.category_name,di.item_id,i.item_name,di.qty,di.unit_id,u.unit_name,di.rate,di.remarks $from ORDER BY d.dispatch_date DESC,d.id DESC,di.id ASC";
+        $dataSql="SELECT di.id,d.id dispatch_id,d.dispatch_no,d.dispatch_date,d.status,d.site_id,s.site_name,d.warehouse_id,w.warehouse_name,d.from_site_id,fs.site_name from_site_name,d.requisition_id,r.requisition_no,d.vehicle_no,d.driver_name,d.driver_mobile,d.courier_no,d.courier_name,i.category_id,c.category_name,di.item_id,i.item_name,di.qty,di.unit_id,u.unit_name,di.rate,di.remarks $from ORDER BY d.dispatch_date DESC,d.id DESC,di.id ASC";
         if(!$export_all)$dataSql.=$wpdb->prepare(' LIMIT %d OFFSET %d',$per,$offset);
         if($args){$countSql=$wpdb->prepare($countSql,$args);$dataSql=$wpdb->prepare($dataSql,$args);}
         $total=(int)$wpdb->get_var($countSql);
@@ -2985,7 +2992,7 @@ final class BSM_Site_Management {
     public function ajax_save() {
         $this->verify_ajax(); global $wpdb;
         $key=sanitize_key($_POST['module']??''); $this->deny_employee_settings($key); $m=$this->module($key); if(!$m) wp_send_json_error(['message'=>'Invalid module']);
-        if(in_array($key,['site_consumptions','material_returns'],true)){
+        if(in_array($key,['site_consumptions','material_returns','material_dispatches'],true)){
             try{$ops_stock_lock=$this->ops_lock('stock_dispatch');}catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);}
             register_shutdown_function(function()use($wpdb,$ops_stock_lock){$wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)',$ops_stock_lock));});
         }
@@ -3508,20 +3515,53 @@ final class BSM_Site_Management {
             unset($it);
         }
 
+        if($key==='material_dispatches'){
+            $source=sanitize_key($data['dispatch_from']??'warehouse');
+            if(!in_array($source,['warehouse','site'],true))wp_send_json_error(['message'=>'Select Dispatch From']);
+            $data['dispatch_from']=$source;
+            $location=(int)($data[$source==='site'?'from_site_id':'warehouse_id']??0);
+            if(!$location)wp_send_json_error(['message'=>$source==='site'?'From Site is required':'Warehouse is required']);
+            if($source==='site'){
+                try{$this->ops_site($location);}catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);}
+                if($location===(int)($data['site_id']??0))wp_send_json_error(['message'=>'From Site and To Site must be different']);
+                $data['warehouse_id']=0;
+            }else{
+                if(!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$this->prefix}warehouses WHERE id=%d",$location)))wp_send_json_error(['message'=>'Select a valid Warehouse']);
+                $data['from_site_id']=null;
+            }
+            $used=[];$clean=[];
+            foreach($items as $it){
+                $q=round((float)($it['qty']??0),2);
+                if(!is_finite($q)||$q<0)wp_send_json_error(['message'=>'Invalid Dispatch Qty']);
+                if($q==0)continue;
+                $iid=(int)($it['item_id']??0);if(!$iid)wp_send_json_error(['message'=>'Item is required']);
+                $stock=$this->dispatch_source_stock($source,$location,$iid,$id);
+                $used[$iid]=round(($used[$iid]??0)+$q,2);
+                if($used[$iid]>(float)$stock['available_qty']+0.0001)wp_send_json_error(['message'=>'Dispatch Qty cannot exceed Available Stock']);
+                $it['qty']=$q;$it['rate']=$stock['rate']??0;unset($it['available_qty']);$clean[]=$it;
+            }
+            if(!$clean)wp_send_json_error(['message'=>'Enter Dispatch Qty for at least one item']);
+            $items=$clean;$data['status']='dispatched';
+        }
+
         if($key==='material_dispatches' && !empty($data['requisition_id'])){
             // Dispatch status is workflow-controlled and is not shown on the form.
             $data['status']='dispatched';
             unset($data['transport_details']);
             $rid=(int)$data['requisition_id'];
+            $req_site=(int)$wpdb->get_var($wpdb->prepare("SELECT site_id FROM {$this->prefix}material_requisitions WHERE id=%d",$rid));
+            if($req_site!==(int)($data['site_id']??0))wp_send_json_error(['message'=>'To Site must match the requisition']);
+            $seen_req=[];
             $req_status=$wpdb->get_var($wpdb->prepare("SELECT status FROM {$this->prefix}material_requisitions WHERE id=%d",$rid));
             if(!in_array($req_status,['approved','partially_dispatched'],true)) wp_send_json_error(['message'=>'This requisition is not approved for dispatch']);
             foreach($items as &$it){
-                $ri=(int)($it['requisition_item_id']??0); if(!$ri) wp_send_json_error(['message'=>'Invalid requisition item']);
+                $ri=(int)($it['requisition_item_id']??0); if(isset($seen_req[$ri]))wp_send_json_error(['message'=>'Duplicate requisition item']);$seen_req[$ri]=true; if(!$ri) wp_send_json_error(['message'=>'Invalid requisition item']);
                 $req_item=$wpdb->get_row($wpdb->prepare("SELECT item_id,unit_id,approved_qty FROM {$this->prefix}material_requisition_items WHERE id=%d AND requisition_id=%d",$ri,$rid),ARRAY_A);
                 if(!$req_item) wp_send_json_error(['message'=>'Requisition item not found']);
+                if((int)$it['item_id']!==(int)$req_item['item_id'])wp_send_json_error(['message'=>'Invalid requisition item']);
                 $it['item_id']=(int)$req_item['item_id'];
                 $it['unit_id']=(int)$req_item['unit_id'];
-                $it['rate']=$this->warehouse_item_rate((int)($data['warehouse_id']??0),(int)$req_item['item_id']);
+                // Source stock validation has already assigned the source valuation rate.
                 $exclude=$id?" AND d.id<>".(int)$id:'';
                 $already=(float)$wpdb->get_var("SELECT COALESCE(SUM(di.qty),0) FROM {$this->prefix}material_dispatch_items di JOIN {$this->prefix}material_dispatches d ON d.id=di.dispatch_id WHERE di.requisition_item_id=".$ri." AND d.requisition_id=".$rid." AND d.status<>'cancelled'".$exclude);
                 $pending=max(0,(float)$req_item['approved_qty']-$already);
@@ -3626,6 +3666,11 @@ final class BSM_Site_Management {
             $data[$is_quote?'grand_total':'invoice_total']=round($sum_total+$other+$otherGst+$round,2);
             unset($data['pdf_url']);
         }
+        if($key==='material_dispatches'){
+            if($wpdb->query('START TRANSACTION')===false)wp_send_json_error(['message'=>'Unable to start dispatch transaction']);
+            $dispatch_committed=false;
+            register_shutdown_function(function()use($wpdb,&$dispatch_committed){if(!$dispatch_committed)$wpdb->query('ROLLBACK');});
+        }
         $row=$this->sanitize_row($m['table'],$data);
         if($key==='labour_contractors' && $contractor_employees_input!==null){
             try{$id=$this->ops_save_contractor_employees($id,$row,$contractor_employees_input);}catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);}
@@ -3638,11 +3683,16 @@ final class BSM_Site_Management {
             }
         }
         if(!empty($m['child'])) {
-            $child=$this->prefix.$m['child']; $wpdb->delete($child,[$m['fk']=>$id]);
-            foreach($items as $it){ if(!is_array($it)) continue; $it[$m['fk']]=$id; $clean=$this->sanitize_row($m['child'],$it); if(!empty($clean['item_id']) || in_array($key,['gst_invoices','quotations','tax_invoices'],true) || !empty($clean['description'])) $wpdb->insert($child,$clean); }
+            $child=$this->prefix.$m['child']; $deleted=$wpdb->delete($child,[$m['fk']=>$id]);
+            if($key==='material_dispatches' && $deleted===false)wp_send_json_error(['message'=>'Unable to replace dispatch items']);
+            foreach($items as $it){ if(!is_array($it)) continue; $it[$m['fk']]=$id; $clean=$this->sanitize_row($m['child'],$it); if(!empty($clean['item_id']) || in_array($key,['gst_invoices','quotations','tax_invoices'],true) || !empty($clean['description'])) $ok=$wpdb->insert($child,$clean); if($key==='material_dispatches' && $ok===false)wp_send_json_error(['message'=>'Unable to save dispatch items']); }
         }
         if($key==='material_dispatches' && !empty($data['requisition_id'])) $this->update_requisition_dispatch_status((int)$data['requisition_id']);
         $this->sync_ledgers($key,$id);
+        if($key==='material_dispatches'){
+            if($wpdb->last_error || $wpdb->query('COMMIT')===false)wp_send_json_error(['message'=>'Unable to save dispatch stock']);
+            $dispatch_committed=true;
+        }
         if($key==='items') $this->sync_item_opening_stock($id);
         // Keep the two Pending Receipt workflow views in sync with completed receipts.
         if($key==='material_inwards' && (($data['inward_type']??'')==='return') && !empty($data['return_id'])){
@@ -3743,7 +3793,7 @@ final class BSM_Site_Management {
         }
         if($key==='material_dispatches'){
             $items=$wpdb->get_results($wpdb->prepare("SELECT * FROM {$p}material_dispatch_items WHERE dispatch_id=%d",$id),ARRAY_A);
-            foreach($items as $it) $wpdb->insert($p.'stock_ledger',['transaction_date'=>$r['dispatch_date'],'location_type'=>'WAREHOUSE','warehouse_id'=>$r['warehouse_id'],'item_id'=>$it['item_id'],'transaction_type'=>'SITE_DISPATCH','reference_type'=>$key,'reference_id'=>$id,'qty_in'=>0,'qty_out'=>$it['qty'],'unit_id'=>$it['unit_id'],'rate'=>$it['rate'],'created_at'=>$now]);
+            foreach($items as $it) { $ok=$wpdb->insert($p.'stock_ledger',['transaction_date'=>$r['dispatch_date'],'location_type'=>!empty($r['from_site_id'])?'SITE':'WAREHOUSE','site_id'=>$r['from_site_id']??null,'warehouse_id'=>$r['warehouse_id'],'item_id'=>$it['item_id'],'transaction_type'=>'SITE_DISPATCH','reference_type'=>$key,'reference_id'=>$id,'qty_in'=>0,'qty_out'=>$it['qty'],'unit_id'=>$it['unit_id'],'rate'=>$it['rate'],'created_at'=>$now]); if($ok===false)wp_send_json_error(['message'=>'Unable to save dispatch stock ledger']); }
         }
         if($key==='site_receipts'){
             $items=$wpdb->get_results($wpdb->prepare("SELECT * FROM {$p}site_receipt_items WHERE receipt_id=%d",$id),ARRAY_A);
@@ -4053,6 +4103,26 @@ final class BSM_Site_Management {
         $this->verify_ajax(); global $wpdb; $p=$this->prefix;
         $rows=$wpdb->get_results("SELECT r.id,r.requisition_no,r.required_date,r.site_id,s.site_name,ROUND(SUM(ri.approved_qty),2) approved_qty,ROUND(COALESCE(SUM(ds.dispatched_qty),0),2) dispatched_qty,ROUND(SUM(ri.approved_qty)-COALESCE(SUM(ds.dispatched_qty),0),2) pending_qty FROM {$p}material_requisitions r JOIN {$p}material_requisition_items ri ON ri.requisition_id=r.id LEFT JOIN {$p}sites s ON s.id=r.site_id LEFT JOIN (SELECT di.requisition_item_id,SUM(di.qty) dispatched_qty FROM {$p}material_dispatch_items di JOIN {$p}material_dispatches d ON d.id=di.dispatch_id WHERE d.status<>'cancelled' GROUP BY di.requisition_item_id) ds ON ds.requisition_item_id=ri.id WHERE r.status IN ('approved','partially_dispatched') GROUP BY r.id HAVING pending_qty>0.0001 ORDER BY r.required_date,r.id",ARRAY_A);
         $scope=$this->employee_site_scope(); if($scope!==null && $scope) $rows=array_values(array_filter($rows,fn($x)=>in_array((int)$x['site_id'],$scope,true)));
+        wp_send_json_success(['rows'=>$rows]);
+    }
+
+    private function dispatch_source_stock($source,$location,$item,$exclude=0){
+        global $wpdb;$p=$this->prefix;
+        $stock=$source==='site'?$this->site_available_stock($location,$item):['available_qty'=>$this->warehouse_item_stock($location,$item),'rate'=>$this->warehouse_item_rate($location,$item)];
+        if($exclude){
+            $column=$source==='site'?'from_site_id':'warehouse_id';
+            $stock['available_qty']+=(float)$wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(di.qty),0) FROM {$p}material_dispatch_items di JOIN {$p}material_dispatches d ON d.id=di.dispatch_id WHERE d.id=%d AND d.$column=%d AND di.item_id=%d AND LOWER(COALESCE(d.status,''))<>'cancelled'",$exclude,$location,$item));
+        }
+        return $stock;
+    }
+
+    public function ajax_dispatch_source_stock(){
+        $this->verify_ajax();
+        $source=sanitize_key($_POST['dispatch_from']??'warehouse');
+        $location=(int)($_POST['location_id']??0);$rows=[];
+        if(!in_array($source,['site','warehouse'],true))wp_send_json_error(['message'=>'Invalid dispatch source']);
+        if($source==='site' && $location){try{$this->ops_site($location);}catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);}}
+        foreach(array_slice((array)($_POST['item_ids']??[]),0,500) as $item){$item=(int)$item;$rows[$item]=$this->dispatch_source_stock($source,$location,$item,(int)($_POST['dispatch_id']??0));}
         wp_send_json_success(['rows'=>$rows]);
     }
 
@@ -4505,7 +4575,7 @@ final class BSM_Site_Management {
 
     private function generate_dispatch_pdf($id){
         global $wpdb;$p=$this->prefix;
-        $h=$wpdb->get_row($wpdb->prepare("SELECT d.*,w.warehouse_name,s.site_name,r.requisition_no FROM {$p}material_dispatches d LEFT JOIN {$p}warehouses w ON w.id=d.warehouse_id LEFT JOIN {$p}sites s ON s.id=d.site_id LEFT JOIN {$p}material_requisitions r ON r.id=d.requisition_id WHERE d.id=%d",$id),ARRAY_A);if(!$h)return '';
+        $h=$wpdb->get_row($wpdb->prepare("SELECT d.*,w.warehouse_name,fs.site_name from_site_name,s.site_name,r.requisition_no FROM {$p}material_dispatches d LEFT JOIN {$p}warehouses w ON w.id=d.warehouse_id LEFT JOIN {$p}sites fs ON fs.id=d.from_site_id LEFT JOIN {$p}sites s ON s.id=d.site_id LEFT JOIN {$p}material_requisitions r ON r.id=d.requisition_id WHERE d.id=%d",$id),ARRAY_A);if(!$h)return '';
         $rows=$wpdb->get_results($wpdb->prepare("SELECT di.*,i.item_name,i.hsn_code,u.unit_name FROM {$p}material_dispatch_items di LEFT JOIN {$p}items i ON i.id=di.item_id LEFT JOIN {$p}units u ON u.id=di.unit_id WHERE di.dispatch_id=%d ORDER BY di.id",$id),ARRAY_A)?:[];
         $company=$wpdb->get_row("SELECT * FROM {$p}company_settings ORDER BY id DESC LIMIT 1",ARRAY_A)?:[];
         $theme=$this->bsm_pdf_theme_rgb($company);[$logoJpeg,$logoW,$logoH]=$this->bsm_pdf_image_jpeg($company['logo_url']??'');
@@ -4520,7 +4590,7 @@ final class BSM_Site_Management {
         $rect($c,36,724,523,36,$theme,$theme,0);$txt($c,225,736,'DISPATCH SLIP',17,true,[1,1,1]);
 
         $rect($c,36,626,330,86,[0.985,0.992,1]);$rect($c,376,626,183,86,[0.965,0.98,0.995]);
-        $left=[['Dispatch No.',$h['dispatch_no']??'-'],['Date',!empty($h['dispatch_date'])?date('d/m/Y',strtotime($h['dispatch_date'])):'-'],['Requisition',$h['requisition_no']??'-'],['Warehouse',$h['warehouse_name']??'-'],['Site',$h['site_name']??'-']];
+        $left=[['Dispatch No.',$h['dispatch_no']??'-'],['Date',!empty($h['dispatch_date'])?date('d/m/Y',strtotime($h['dispatch_date'])):'-'],['Requisition',$h['requisition_no']??'-'],['From',!empty($h['from_site_id'])?($h['from_site_name']??'-'):($h['warehouse_name']??'-')],['To Site',$h['site_name']??'-']];
         $y=696;foreach($left as $mv){$txt($c,47,$y,$mv[0],7,true);$txt($c,112,$y,(string)$mv[1],7);$y-=14;}
         $right=[['Vehicle No.',$h['vehicle_no']??'-'],['Driver Name',$h['driver_name']??'-'],['Driver Mobile',$h['driver_mobile']??'-'],['Courier No.',$h['courier_no']??'-'],['Courier Name',$h['courier_name']??'-']];
         $y=696;foreach($right as $mv){$txt($c,388,$y,$mv[0],7,true);$txt($c,455,$y,(string)$mv[1],7);$y-=14;}
@@ -5156,7 +5226,7 @@ final class BSM_Site_Management {
 
             // Dispatch: decreases warehouse stock and is displayed against destination Site.
             [$dw,$da]=$dateWhere('h','dispatch_date');
-            $w="h.status<>'cancelled'".$dw;$a=$da;
+            $w="h.status<>'cancelled' AND COALESCE(h.from_site_id,0)=0".$dw;$a=$da;
             if($warehouse){$w.=' AND h.warehouse_id=%d';$a[]=$warehouse;}
             if($site){$w.=' AND h.site_id=%d';$a[]=$site;}
             if($item){$w.=' AND d.item_id=%d';$a[]=$item;}

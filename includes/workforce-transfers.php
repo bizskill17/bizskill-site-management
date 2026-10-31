@@ -200,7 +200,16 @@ trait BSM_Workforce_Transfers {
                 $qty=(float)$wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(received_qty),0) FROM {$p}site_transfer_receipts WHERE $rw",$ra));
                 if($qty) $out[]=['site_id'=>(int)$r['to_site_id'],'item_id'=>(int)$r['item_id'],'unit_id'=>(int)$r['unit_id'],'item_name'=>$r['item_name'],'unit'=>$r['unit_name'],'in'=>$qty,'out'=>0,'rate'=>(float)$r['rate'],'date'=>$date];
             }
-        } return $out;
+        }
+        // Requisition site dispatches use normal Site Receipts for the inbound leg.
+        $w="h.from_site_id>0 AND LOWER(COALESCE(h.status,''))<>'cancelled'";$args=[];
+        if($site){$w.=' AND h.from_site_id=%d';$args[]=$site;}
+        if($item){$w.=' AND d.item_id=%d';$args[]=$item;}
+        if($start){$w.=' AND h.dispatch_date>=%s';$args[]=$start;}
+        if($end){$w.=' AND h.dispatch_date<=%s';$args[]=$end;}
+        $sql="SELECT h.from_site_id site_id,h.dispatch_date date,d.item_id,d.unit_id,d.qty,d.rate,i.item_name,u.unit_name unit FROM {$p}material_dispatches h JOIN {$p}material_dispatch_items d ON d.dispatch_id=h.id LEFT JOIN {$p}items i ON i.id=d.item_id LEFT JOIN {$p}units u ON u.id=d.unit_id WHERE $w";
+        foreach($wpdb->get_results($args?$wpdb->prepare($sql,$args):$sql,ARRAY_A) as $r){$r['in']=0;$r['out']=(float)$r['qty'];$out[]=$r;}
+        return $out;
     }
     private function ops_stock_delta($site,$item) { $n=0;foreach($this->ops_transfer_movements((int)$site,(int)$item) as $r)$n+=$r['in']-$r['out'];return $n; }
     private function ops_time_rows($d,$user) {
@@ -349,7 +358,12 @@ trait BSM_Workforce_Transfers {
                 $w='1=1';$a=[];$scope=$this->employee_site_scope();if($scope){$list=implode(',',array_map('intval',$scope));$w.=" AND (t.from_site_id IN ($list) OR t.to_site_id IN ($list))";}
                 if(!empty($d['site_id'])){$w.=' AND (t.from_site_id=%d OR t.to_site_id=%d)';$a[]=(int)$d['site_id'];$a[]=(int)$d['site_id'];}
                 if(!empty($d['from'])){$w.=' AND t.transfer_date>=%s';$a[]=$this->ops_date($d['from']);}if(!empty($d['to'])){$w.=' AND t.transfer_date<=%s';$a[]=$this->ops_date($d['to']);}if(!empty($d['status'])){$w.=' AND t.status=%s';$a[]=sanitize_key($d['status']);}
-                $sql="SELECT t.*,s.site_name from_site,d.site_name to_site FROM {$p}site_transfers t JOIN {$p}sites s ON s.id=t.from_site_id JOIN {$p}sites d ON d.id=t.to_site_id WHERE $w ORDER BY t.id DESC";$result=['rows'=>$wpdb->get_results($a?$wpdb->prepare($sql,$a):$sql,ARRAY_A)];break;
+                $sql="SELECT t.*,s.site_name from_site,d.site_name to_site FROM {$p}site_transfers t JOIN {$p}sites s ON s.id=t.from_site_id JOIN {$p}sites d ON d.id=t.to_site_id WHERE $w ORDER BY t.id DESC";$rows=$wpdb->get_results($a?$wpdb->prepare($sql,$a):$sql,ARRAY_A);
+                $rw=str_replace(['t.transfer_date','t.to_site_id'],['t.dispatch_date','t.site_id'],$w)." AND t.from_site_id>0";
+                $rsql="SELECT t.id,t.dispatch_no transfer_no,t.dispatch_date transfer_date,t.from_site_id,t.site_id to_site_id,t.status,s.site_name from_site,d.site_name to_site,'material_dispatches' record_type FROM {$p}material_dispatches t JOIN {$p}sites s ON s.id=t.from_site_id JOIN {$p}sites d ON d.id=t.site_id WHERE $rw";
+                $rows=array_merge($rows,$wpdb->get_results($a?$wpdb->prepare($rsql,$a):$rsql,ARRAY_A));
+                usort($rows,function($a,$b){return strcmp($b['transfer_date'],$a['transfer_date'])?:((int)$b['id']<=>(int)$a['id']);});
+                $result=['rows'=>$rows];break;
             case 'transfer_get':
                 $t=$wpdb->get_row($wpdb->prepare("SELECT t.*,s.site_name from_site,d.site_name to_site FROM {$p}site_transfers t JOIN {$p}sites s ON s.id=t.from_site_id JOIN {$p}sites d ON d.id=t.to_site_id WHERE t.id=%d",(int)($d['id']??0)),ARRAY_A);if(!$t)throw new Exception('Transfer not found.');
                 $scope=$this->employee_site_scope();if($scope&&!in_array((int)$t['from_site_id'],$scope,true)&&!in_array((int)$t['to_site_id'],$scope,true))throw new Exception('Transfer access denied.');

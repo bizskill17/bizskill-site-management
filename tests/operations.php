@@ -33,6 +33,8 @@ $wpdb=new DB();$host=new Host();
 $source=file_get_contents(__DIR__.'/../includes/workforce-transfers.php');preg_match_all('/"CREATE TABLE \{\$p\}(.*?)ENGINE=InnoDB \$c;"/s',$source,$m);
 foreach($m[1] as $sql){$sql='CREATE TABLE bsm_'.$sql;$sql=preg_replace('/id bigint unsigned NOT NULL AUTO_INCREMENT,/','id INTEGER PRIMARY KEY AUTOINCREMENT,',$sql);$sql=preg_replace('/^\s*(?:PRIMARY KEY|UNIQUE KEY|KEY)\s+[^\n]+\n/m','',$sql);$sql=preg_replace('/,\s*\)/',')',$sql);$sql=str_replace('bigint unsigned','INTEGER',$sql);if($wpdb->query($sql)===false)throw new Exception($wpdb->last_error);}
 foreach([
+ "CREATE TABLE bsm_material_dispatches (id INTEGER PRIMARY KEY,dispatch_no TEXT,dispatch_date TEXT,from_site_id INTEGER,warehouse_id INTEGER,site_id INTEGER,status TEXT)",
+ 'CREATE TABLE bsm_material_dispatch_items (id INTEGER PRIMARY KEY,dispatch_id INTEGER,item_id INTEGER,unit_id INTEGER,qty REAL,rate REAL)',
  'CREATE TABLE bsm_users (id INTEGER PRIMARY KEY,name TEXT,wp_user_id INTEGER,role TEXT,status TEXT,allowed_views TEXT,assigned_sites TEXT)',
  'CREATE TABLE bsm_sites (id INTEGER PRIMARY KEY,site_name TEXT,status TEXT)',
  'CREATE TABLE bsm_items (id INTEGER PRIMARY KEY,item_name TEXT,unit_id INTEGER,status TEXT)',
@@ -157,4 +159,54 @@ callop('time_update',['id'=>$office_id,'from_time'=>'09:30','to_time'=>'10:30','
 check($wpdb->get_var('SELECT activity FROM bsm_time_entries WHERE id='.$office_id)==='Employee edit','Employee may edit own unapproved entry');
 $other=(int)$wpdb->get_var('SELECT id FROM bsm_time_entries WHERE employee_id=2 LIMIT 1');fails('time_delete',['id'=>$other],'own unapproved');
 callop('time_delete',['id'=>$office_id]);check(!$wpdb->get_var('SELECT id FROM bsm_time_entries WHERE id='.$office_id),'Employee may delete own unapproved entry');
+// Requisition dispatches share stock availability with standalone transfers.
+$admin=true;$scope=null;$before=$host->stock(1,1);$destBefore=$host->stock(2,1);
+$wpdb->insert('bsm_material_dispatches',['id'=>100,'dispatch_no'=>'DIS-100','dispatch_date'=>'2026-10-28','from_site_id'=>1,'site_id'=>2,'status'=>'dispatched']);
+$wpdb->insert('bsm_material_dispatch_items',['id'=>100,'dispatch_id'=>100,'item_id'=>1,'unit_id'=>1,'qty'=>20,'rate'=>25]);
+check($host->stock(1,1)===$before-20,'Requisition dispatch deducts stock from source site');
+check($host->stock(2,1)===$destBefore,'Dispatch does not credit destination before normal Site Receipt');
+$listed=callop('transfer_list',['site_id'=>1]);
+$linked=array_values(array_filter($listed['rows'],fn($r)=>($r['record_type']??'')==='material_dispatches'));
+check(count($linked)===1&&$linked[0]['transfer_no']==='DIS-100','Requisition dispatch appears in Site Transfer Master with source marker');
+check(count(array_filter(callop('transfer_list',['site_id'=>3])['rows'],fn($r)=>($r['record_type']??'')==='material_dispatches'))===0,'Transfer filter excludes unrelated requisition dispatches');
+$wpdb->update('bsm_material_dispatches',['status'=>'cancelled'],['id'=>100]);
+check($host->stock(1,1)===$before,'Cancelled requisition dispatch restores source availability');
+$wpdb->update('bsm_material_dispatches',['status'=>'received'],['id'=>100]);
+check($host->stock(1,1)===$before-20,'Received dispatch continues to deduct source stock exactly once');
+// Execute the production dispatch validation blocks with the real regression DB.
+$main=file_get_contents(__DIR__.'/../bizskill-site-management.php');
+$start=strpos($main,"        if(\$key==='material_dispatches'){",strpos($main,'public function ajax_save()'));
+$end=strpos($main,"        if(\$key==='labour_attendance'){",$start);
+$validation=substr($main,$start,$end-$start);
+$start=strpos($main,'    private function dispatch_source_stock(');$end=strpos($main,'    public function ajax_dispatch_source_stock',$start);
+$helper=substr($main,$start,$end-$start);
+eval('class DispatchValidationHost extends Host { private $prefix="bsm_";
+ private function site_available_stock($site,$item){return ["available_qty"=>$this->stock($site,$item),"rate"=>25];}
+ private function warehouse_item_stock($site,$item){return 75;}
+ private function warehouse_item_rate($site,$item){return 50;}
+ private function ops_site($id){if(!in_array($id,[1,2,3],true))throw new Exception("Select a valid Site");}
+ '.$helper.' public function validate($data,$items,$id=0){global $wpdb;$key="material_dispatches";'.$validation.'return [$data,$items];}}');
+$validator=new DispatchValidationHost();
+$wpdb->query('CREATE TABLE bsm_warehouses (id INTEGER PRIMARY KEY)');$wpdb->insert('bsm_warehouses',['id'=>1]);
+$wpdb->query('CREATE TABLE bsm_material_requisitions (id INTEGER PRIMARY KEY,site_id INTEGER,status TEXT)');
+$wpdb->query('CREATE TABLE bsm_material_requisition_items (id INTEGER PRIMARY KEY,requisition_id INTEGER,item_id INTEGER,unit_id INTEGER,approved_qty REAL)');
+$wpdb->query('ALTER TABLE bsm_material_dispatches ADD COLUMN requisition_id INTEGER');
+$wpdb->query('ALTER TABLE bsm_material_dispatch_items ADD COLUMN requisition_item_id INTEGER');
+$wpdb->insert('bsm_material_requisitions',['id'=>1,'site_id'=>2,'status'=>'approved']);
+$wpdb->insert('bsm_material_requisition_items',['id'=>1,'requisition_id'=>1,'item_id'=>1,'unit_id'=>1,'approved_qty'=>5]);
+$dispatch=['dispatch_from'=>'site','from_site_id'=>1,'site_id'=>2,'requisition_id'=>1];$line=['item_id'=>1,'qty'=>2,'requisition_item_id'=>1];
+[$saved,$lines]=$validator->validate($dispatch,[$line,['item_id'=>1,'qty'=>0]]);
+check($saved['warehouse_id']===0&&$saved['status']==='dispatched'&&count($lines)===1,'Site dispatch clears Warehouse and omits zero-quantity lines');
+check($lines[0]['rate']===25&&$lines[0]['unit_id']===1,'Site dispatch derives valuation and Unit on server');
+function rejectDispatch($validator,$data,$items,$message){try{$validator->validate($data,$items);}catch(Exception $e){check(stripos($e->getMessage(),$message)!==false,'Dispatch rejects '.$message);return;}throw new Exception('Dispatch should reject '.$message);}
+rejectDispatch($validator,array_merge($dispatch,['from_site_id'=>2]),[$line],'must be different');
+rejectDispatch($validator,array_merge($dispatch,['from_site_id'=>0]),[$line],'From Site is required');
+rejectDispatch($validator,$dispatch,[array_merge($line,['qty'=>1000])],'Available Stock');
+rejectDispatch($validator,$dispatch,[array_merge($line,['qty'=>6])],'Pending Approved Qty');
+rejectDispatch($validator,$dispatch,[$line,$line],'Duplicate requisition item');
+rejectDispatch($validator,$dispatch,[array_merge($line,['qty'=>-1])],'Invalid Dispatch Qty');
+rejectDispatch($validator,$dispatch,[array_merge($line,['qty'=>0])],'at least one item');
+rejectDispatch($validator,array_merge($dispatch,['site_id'=>3]),[$line],'To Site must match');
+[$saved,$lines]=$validator->validate(['warehouse_id'=>1,'site_id'=>2],[$line]);
+check($saved['dispatch_from']==='warehouse'&&$saved['from_site_id']===null&&$lines[0]['rate']===50,'Legacy Warehouse dispatch defaults remain compatible');
 echo "\n{$GLOBALS['passes']} regression checks passed.\n";
