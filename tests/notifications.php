@@ -54,7 +54,7 @@ $wpdb->query("INSERT INTO bsm_material_requisitions VALUES(1,'REQ-1',1,'2026-10-
 $wpdb->query('CREATE TABLE bsm_material_requisition_items(id INTEGER PRIMARY KEY,requisition_id INTEGER,item_id INTEGER,unit_id INTEGER,requested_qty REAL,approved_qty REAL)');$wpdb->query('INSERT INTO bsm_material_requisition_items VALUES(1,1,1,1,32,30)');
 foreach(['material_dispatches','site_receipts','material_inwards','purchase_orders','site_transfers','site_transfer_receipts'] as $source)$wpdb->query("CREATE TABLE bsm_$source(id INTEGER PRIMARY KEY,status TEXT)");
 $count=0;function check($condition,$label){global $count;if(!$condition)throw new Exception('FAIL: '.$label);$count++;echo "PASS: $label\n";}
-check(count($host->call('nt_catalog'))===14,'All 14 notification types registered');
+check(count($host->call('nt_catalog'))===15,'All 15 notification types registered');
 $secret=$host->call('nt_encrypt','secret-pass');check($secret!=='secret-pass'&&$host->call('nt_password',$secret)==='secret-pass','Password encrypted and recovered');check($host->call('nt_password',base64_encode('tampered'))==='','Tampered credentials rejected');
 check($host->call('nt_admin')===true,'Admin allowed');$admin=false;check($host->call('nt_admin')===false,'Non-admin denied');$admin=true;
 $options['bsm_notification_settings']=['enabled'=>true,'username'=>'sender','password'=>$secret,'office_group'=>'office','types'=>array_fill_keys(array_keys($host->call('nt_catalog')),true)];
@@ -229,4 +229,21 @@ $wpdb->query($wpdb->prepare("INSERT INTO bsm_time_entries VALUES(3,%s,2,0,0,0,'1
 $office=$host->call('nt_summary','office_timesheet',0,$today);
 check(str_contains($office,"\n\n1.Rahul\n* ")&&str_contains($office,"\n\n2.Priya\n* 10:00 AM–11:00 AM | Invoice checking"),'Office summary numbers multiple employees and uses asterisk activity lines');
 check(str_ends_with($office,'Total Employees Reported: 2')&&!str_contains($office,'Total Recorded Hours:'),'Office summary ends with employee count only');
+
+$wpdb->query('ALTER TABLE bsm_purchase_orders ADD required_date TEXT');
+$wpdb->query("UPDATE bsm_purchase_orders SET required_date='2026-11-03',status='pending_approval' WHERE id=1");
+$po=$wpdb->get_row('SELECT * FROM bsm_purchase_orders WHERE id=1');
+$event=$host->call('nt_event_message','po_created','purchase_orders',$po);
+check($event['sites']===[0]&&str_starts_with($event['message'],"PURCHASE ORDER CREATED\n\nDate: 31/10/2026"),'PO created message routes to Office and uses approved heading');
+check(str_contains($event['message'],"Required Date: 03/11/2026\n\n1.Binding Wire — 50 Kg × ₹100 = ₹5,000\n\nPO Amount: ₹5,000\nCreated By: Rahul"),'PO created message includes numbered items, rates, totals and creator');
+check(!str_contains($event['message'],'PO: ')&&!str_contains($event['message'],'Status:'),'PO created message omits PO number and status');
+check(count($host->call('nt_record_events','purchase_orders',$po,null))===1,'New pending PO emits one creation event');
+check($host->call('nt_record_events','purchase_orders',$po,'pending_approval')===[],'Editing existing pending PO does not emit creation event');
+$options['bsm_notification_settings']['types']=['po_created'=>true];
+$wpdb->query('DELETE FROM bsm_notification_queue');
+$host->call('nt_queue','po_created',[0],$event['reference'],$event['message'],'purchase_orders:1:po_created');
+$host->call('nt_queue','po_created',[0],$event['reference'],$event['message'],'purchase_orders:1:po_created');
+check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===1,'PO creation queue prevents duplicate messages');
+$po['required_date']='';
+check(!str_contains($host->call('nt_event_message','po_created','purchase_orders',$po)['message'],'Required Date:'),'Blank optional required date is omitted');
 echo "\n$count notification checks passed. No network calls made.\n";
