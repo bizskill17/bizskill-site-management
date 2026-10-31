@@ -18,6 +18,7 @@ trait BSM_Notifications {
             'pending_po'=>['PO Made but Not Received','office','scheduled'],
             'po_received'=>['PO Material Received','office','instant'],
             'pending_po_approval'=>['Pending PO Approval','office','scheduled'],
+            'po_created'=>['Purchase Order Created','office','instant'],
             'po_approved'=>['PO Approved','office','instant']
         ];
     }
@@ -149,7 +150,10 @@ trait BSM_Notifications {
         }elseif($source==='material_dispatches'&&!in_array($old,['dispatched','partly_received','partially_received','received'],true)&&in_array($status,['dispatched','partly_received','partially_received','received'],true))$types[]='material_dispatched';
         elseif($source==='site_receipts'&&($old===null||$old==='draft')&&!in_array($status,['draft','cancelled'],true))$types[]='site_received';
         elseif($source==='material_inwards'&&$old===null&&!in_array($status,['cancelled','rejected'],true)&&!empty($r['purchase_order_id']))$types[]='po_received';
-        elseif($source==='purchase_orders'&&$status==='approved'&&$old!=='approved')$types[]='po_approved';
+        elseif($source==='purchase_orders'){
+            if($old===null&&in_array($status,['created','pending_approval','approved'],true))$types[]='po_created';
+            if($status==='approved'&&$old!=='approved')$types[]='po_approved';
+        }
         elseif($source==='site_transfers'&&in_array($status,['dispatched','partially_received','received'],true)&&!in_array($old,['dispatched','partially_received','received'],true))$types[]='material_dispatched';
         elseif($source==='site_transfer_receipts'&&$old===null)$types[]='site_received';
         foreach($types as $type){$event=$this->nt_event_message($type,$source,$r);if($event){if($source==='site_transfer_receipts')$event['event_id']='transfer-receipt:'.$r['transfer_id'].':'.$r['created_at'];$events[]=$event;}}
@@ -186,6 +190,16 @@ trait BSM_Notifications {
             $received=$wpdb->get_results($wpdb->prepare("SELECT rr.*,d.qty,d.received_qty received_total,d.damaged_qty damaged_total,i.item_name,u.unit_name FROM {$p}site_transfer_receipts rr JOIN {$p}site_transfer_items d ON d.id=rr.transfer_item_id LEFT JOIN {$p}items i ON i.id=d.item_id LEFT JOIN {$p}units u ON u.id=d.unit_id WHERE rr.transfer_id=%d AND rr.created_at=%s $batch_filter ORDER BY rr.id",$r['transfer_id'],$r['created_at']),ARRAY_A)?:[];
             foreach($received as $line)$message.='• '.$line['item_name'].' | '.$this->nt_num($line['received_qty']).' '.$line['unit_name'].' | '.$this->nt_num($line['damaged_qty']).' '.$line['unit_name'].' | '.$this->nt_num(max(0,$line['qty']-$line['received_total']-$line['damaged_total'])).' '.$line['unit_name']."\n";
             $message.='Received By: '.$this->nt_name($r['created_by'],true);
+        }elseif($source==='purchase_orders'&&$type==='po_created'){
+            $sites=[0];$reference=$r['po_no'];
+            $message="PURCHASE ORDER CREATED\n\nDate: ".$this->nt_date($r['po_date'])."\nSupplier: ".$this->nt_label('vendors','vendor_name',$r['vendor_id'])."\nDelivery To: ".$this->nt_label('warehouses','warehouse_name',$r['warehouse_id']).$this->nt_optional('Required Date',$this->nt_date($r['required_date']??''))."\n\n";
+            $total=0;$number=0;
+            foreach($this->nt_items('purchase_order_items','purchase_order_id',$id) as $line){
+                $amount=round((float)$line['po_qty']*(float)$line['rate'],2);$total+=$amount;
+                $money=function($value){return rtrim(rtrim(number_format((float)$value,2,'.',','),'0'),'.');};
+                $message.=(++$number).'.'.$line['item_name'].' — '.$this->nt_num($line['po_qty']).' '.$line['unit_name'].' × ₹'.$money($line['rate']).' = ₹'.$money($amount)."\n";
+            }
+            $message.="\nPO Amount: ₹".rtrim(rtrim(number_format($total,2,'.',','),'0'),'.')."\nCreated By: ".$this->nt_name($r['created_by']??0,true);
         }elseif($source==='purchase_orders'){
             $sites=[0];$reference=$r['po_no'];$message="*PURCHASE ORDER APPROVED*\nPO: $reference\nSupplier: ".$this->nt_label('vendors','vendor_name',$r['vendor_id'])."\nDelivery To: ".$this->nt_label('warehouses','warehouse_name',$r['warehouse_id'])."\nApproval Date: ".$this->nt_date($r['approved_at']??'')."\n\n";$total=0;
             foreach($this->nt_items('purchase_order_items','purchase_order_id',$id) as $line){$message.=$this->nt_line($line,$line['po_qty'])."\n";$total+=$line['po_qty']*$line['rate'];}$message.='PO Amount: ₹'.number_format($total,2)."\nApproved By: ".$this->nt_name($r['approved_by']??0,true);
@@ -296,7 +310,7 @@ trait BSM_Notifications {
             $date=substr($row['reference_no'],0,10);if(!preg_match('/^\d{4}-\d{2}-\d{2}$/',$date))return false;
             return $this->nt_summary($type,(int)$row['site_id'],$date)!=='';
         }
-        $sources=['requisition_submitted'=>['material_requisitions','requisition_no'],'requisition_approved'=>['material_requisitions','requisition_no'],'material_dispatched'=>['material_dispatches','dispatch_no'],'site_received'=>['site_receipts','receipt_no'],'po_approved'=>['purchase_orders','po_no'],'po_received'=>['purchase_orders','po_no']];
+        $sources=['po_created'=>['purchase_orders','po_no'],'requisition_submitted'=>['material_requisitions','requisition_no'],'requisition_approved'=>['material_requisitions','requisition_no'],'material_dispatched'=>['material_dispatches','dispatch_no'],'site_received'=>['site_receipts','receipt_no'],'po_approved'=>['purchase_orders','po_no'],'po_received'=>['purchase_orders','po_no']];
         if(!isset($sources[$type]))return true;[$table,$column]=$sources[$type];$status=$wpdb->get_var($wpdb->prepare("SELECT status FROM {$p}$table WHERE $column=%s",$row['reference_no']));
         if($status===null&&in_array($type,['site_received','material_dispatched'],true))$status=$wpdb->get_var($wpdb->prepare("SELECT status FROM {$p}site_transfers WHERE transfer_no=%s",$row['reference_no']));
         return $status!==null&&!in_array($status,['cancelled','rejected'],true);
@@ -329,7 +343,7 @@ trait BSM_Notifications {
                 if($op==='test'){$group=$this->nt_group($site);if(!$group)throw new Exception('Save the destination Group ID first.');$s=$this->nt_settings();if(!$s['username']||!$this->nt_password($s['password']))throw new Exception('Save connection credentials first.');$this->nt_queue('test',[$site],'Connection test',"*SITE MANAGEMENT TEST*\nDestination: ".($site?$this->nt_site($site):'Office')."\nConnection test requested by ".wp_get_current_user()->display_name,'test:'.wp_generate_uuid4(),true);wp_send_json_success(['message'=>'Test queued. Check Notification Log after the next cron run.']);}
                 $def=$this->nt_catalog()[$type];$date=(new DateTimeImmutable('now',new DateTimeZone('Asia/Kolkata')))->format('Y-m-d');$message='';
                 if($def[2]!=='instant')$message=$this->nt_summary($type,$site,$date);
-                else{$sources=['requisition_submitted'=>'material_requisitions','requisition_approved'=>'material_requisitions','material_dispatched'=>'material_dispatches','site_received'=>'site_receipts','po_received'=>'material_inwards','po_approved'=>'purchase_orders'];$source=$sources[$type];$where=$site?$wpdb->prepare('site_id=%d',$site):'1=1';if($source==='material_inwards')$where.=' AND purchase_order_id>0';if(in_array($type,['po_approved','requisition_approved'],true))$where.=" AND status='approved'";$r=$wpdb->get_row("SELECT * FROM {$p}$source WHERE $where ORDER BY id DESC LIMIT 1",ARRAY_A);if($r){$event=$this->nt_event_message($type,$source,$r);$message=$event['message']??'';}}
+                else{$sources=['po_created'=>'purchase_orders','requisition_submitted'=>'material_requisitions','requisition_approved'=>'material_requisitions','material_dispatched'=>'material_dispatches','site_received'=>'site_receipts','po_received'=>'material_inwards','po_approved'=>'purchase_orders'];$source=$sources[$type];$where=$site?$wpdb->prepare('site_id=%d',$site):'1=1';if($source==='material_inwards')$where.=' AND purchase_order_id>0';if(in_array($type,['po_approved','requisition_approved'],true))$where.=" AND status='approved'";$r=$wpdb->get_row("SELECT * FROM {$p}$source WHERE $where ORDER BY id DESC LIMIT 1",ARRAY_A);if($r){$event=$this->nt_event_message($type,$source,$r);$message=$event['message']??'';}}
                 wp_send_json_success(['message'=>$message?:'No matching records available for preview.','group'=>$this->nt_group($site)]);
             }
             if($op==='retry'){
