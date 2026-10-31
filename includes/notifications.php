@@ -22,7 +22,7 @@ trait BSM_Notifications {
         ];
     }
     public function notifications_boot() {
-        add_filter('cron_schedules',function($s){$s['bsm_minute']=['interval'=>60,'display'=>'Every minute'];return $s;});
+        add_filter('cron_schedules',function($s){$s['bsm_five_minutes']=['interval'=>300,'display'=>'Every 5 minutes'];return $s;});
         add_action('init',[$this,'notifications_upgrade'],20);
         add_action('bsm_notifications_tick',[$this,'notifications_tick']);
         add_action('wp_ajax_bsm_notifications',[$this,'ajax_notifications']);
@@ -67,7 +67,14 @@ trait BSM_Notifications {
                 $this->nt_scan(true);update_option('bsm_notifications_schema','1',false);
             }
         }
-        if(get_option('bsm_notifications_schema')==='1'&&!wp_next_scheduled('bsm_notifications_tick'))wp_schedule_event(time()+60,'bsm_minute','bsm_notifications_tick');
+        if(get_option('bsm_notifications_schema')==='1'){
+            // Replace the old one-minute event without accumulating duplicate cron entries.
+            $scheduled=wp_get_scheduled_event('bsm_notifications_tick');
+            if($scheduled&&($scheduled->schedule!=='bsm_five_minutes'||(int)$scheduled->interval!==300)){
+                wp_clear_scheduled_hook('bsm_notifications_tick');$scheduled=false;
+            }
+            if(!$scheduled)wp_schedule_event(time()+300,'bsm_five_minutes','bsm_notifications_tick');
+        }
     }
     private function nt_settings(){
         $s=get_option('bsm_notification_settings',[]);return array_merge(['enabled'=>false,'username'=>'','password'=>'','office_group'=>'','types'=>[],'times'=>[],'days'=>[1,2,3,4,5,6],'include_holidays'=>true,'retention'=>90],is_array($s)?$s:[]);
