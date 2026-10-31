@@ -177,4 +177,14 @@ $dispatch['dispatch_photo_url']='';
 $event=$host->call('nt_event_message','material_dispatched','material_dispatches',$dispatch);
 check($event['attachment_url']==='','Dispatch without photo remains text only');
 
+
+$wpdb->query("INSERT INTO bsm_material_dispatches(id,status,dispatch_no,site_id,dispatch_date) VALUES(2,'dispatched','DIS-2',2,'2026-10-31')");
+$wpdb->query('INSERT INTO bsm_material_dispatch_items VALUES(2,2,1,1,1,25)');
+$receiptSummary=$host->call('nt_summary','pending_receipt',2,'2026-10-31');
+check(str_contains($receiptSummary,"\n\n1.DIS-1 | 31/10/2026")&&str_contains($receiptSummary,"\n\n2.DIS-2 | 31/10/2026"),'Pending receipt dispatches numbered consecutively');
+check(str_contains($receiptSummary,"\n* Binding Wire — 25 Kg pending receipt"),'Pending receipt item lines use requested asterisk format');
+$wpdb->query('UPDATE bsm_site_receipt_items SET received_qty=20 WHERE id=1');
+$wpdb->query('INSERT INTO bsm_site_receipt_items VALUES(2,1,2,1,1,25,0)');
+check($host->call('nt_summary','pending_receipt',2,'2026-10-31')==='','Fully received dispatches produce no pending receipt message');
+
 echo "\n$count notification checks passed. No network calls made.\n";
