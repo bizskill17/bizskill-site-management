@@ -2,12 +2,13 @@
 /** Standalone notification tests. HTTP and WordPress APIs are mocked; no network sends. */
 define('ABSPATH',__DIR__.'/');define('ARRAY_A','ARRAY_A');define('DAY_IN_SECONDS',86400);
 require __DIR__.'/../includes/notifications.php';
-$options=[];$sent=[];$response=['code'=>200,'body'=>'{"success":true}'];$admin=true;
+$options=['bsm_notification_attachments_schema'=>'1'];$sent=[];$response=['code'=>200,'body'=>'{"success":true}'];$admin=true;
 function get_option($k,$d=false){return $GLOBALS['options'][$k]??$d;}
 function update_option($k,$v,$autoload=false){$GLOBALS['options'][$k]=$v;return true;}
 function delete_option($k){unset($GLOBALS['options'][$k]);}
 function wp_salt($x){return 'test-only-unique-auth-salt';}
 function wp_json_encode($v){return json_encode($v,JSON_UNESCAPED_UNICODE);}
+function esc_url_raw($url,$protocols=[]){return preg_match('~^https?://~',$url)?$url:'';}
 function esc_sql($v){return str_replace("'","''",$v);}
 function current_user_can($cap){return $GLOBALS['admin'];}
 function get_userdata($id){return (object)['display_name'=>'Admin'];}
@@ -41,7 +42,7 @@ class NotificationHost {
  private function po_item_received_qty($id){global $wpdb;return (float)$wpdb->get_var($wpdb->prepare('SELECT COALESCE(SUM(qty),0) FROM bsm_material_inward_items WHERE purchase_order_item_id=%d',$id));}
 }
 $wpdb=new NotificationDB;$host=new NotificationHost;
-$wpdb->query("CREATE TABLE bsm_notification_queue(id INTEGER PRIMARY KEY,event_key TEXT UNIQUE,notification_type TEXT,site_id INTEGER,group_id TEXT,reference_no TEXT,message TEXT,status TEXT,attempts INTEGER DEFAULT 0,cycle_attempts INTEGER DEFAULT 0,history TEXT,next_attempt TEXT,created_at TEXT,updated_at TEXT,response TEXT)");
+$wpdb->query("CREATE TABLE bsm_notification_queue(id INTEGER PRIMARY KEY,event_key TEXT UNIQUE,notification_type TEXT,site_id INTEGER,group_id TEXT,reference_no TEXT,message TEXT,attachment_url TEXT,status TEXT,attempts INTEGER DEFAULT 0,cycle_attempts INTEGER DEFAULT 0,history TEXT,next_attempt TEXT,created_at TEXT,updated_at TEXT,response TEXT)");
 $wpdb->query('CREATE TABLE bsm_notification_state(record_key TEXT PRIMARY KEY,state TEXT)');
 $wpdb->query('CREATE TABLE bsm_sites(id INTEGER PRIMARY KEY,site_name TEXT,whatsapp_group_id TEXT,status TEXT)');
 $wpdb->query("INSERT INTO bsm_sites VALUES(1,'Source','group-A','active'),(2,'Destination','group-B','active'),(3,'Same group','group-A','active'),(4,'Missing','','active')");
@@ -153,5 +154,27 @@ $options['bsm_notification_settings']['times']=['pending_requisition'=>['00:00']
 $wpdb->query('DELETE FROM bsm_notification_queue');$wpdb->query("DELETE FROM bsm_notification_state WHERE record_key LIKE 'schedule:%'");
 $host->call('nt_scheduled');
 check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===0,'Empty pending approval report is never queued');
+
+
+$dispatch['dispatch_photo_url']='https://example.com/dispatch.jpg';
+$event=$host->call('nt_event_message','material_dispatched','material_dispatches',$dispatch);
+check($event['attachment_url']===$dispatch['dispatch_photo_url'],'Dispatch event includes uploaded photo');
+$options['bsm_notification_settings']['types']=['material_dispatched'=>true];
+$options['bsm_notification_settings']['enabled']=true;
+$options['bsm_notification_settings']['username']='test';
+$options['bsm_notification_settings']['password']=$host->call('nt_encrypt','test');
+delete_option('bsm_notifications_blocked');
+$response=['code'=>200,'body'=>'{"success":true}'];
+$wpdb->query('DELETE FROM bsm_notification_queue');
+$host->call('nt_queue','material_dispatched',[2],'DIS-1',str_repeat("Item detail\n",400),'photo-test',false,$event['attachment_url']);
+check((int)$wpdb->get_var("SELECT COUNT(*) FROM bsm_notification_queue WHERE attachment_url<>''")===1,'Split messages attach photo only once');
+$host->call('nt_worker');
+$photoPayload=json_decode($sent[count($sent)-count($host->call('nt_parts',str_repeat("Item detail\n",400)))][1]['body'],true);
+check(($photoPayload['filePathUrl']??[])===[$dispatch['dispatch_photo_url']],'Provider payload sends photo with message');
+$sentBefore=count($sent);$host->call('nt_worker');
+check(count($sent)===$sentBefore,'Accepted photo message is not sent twice');
+$dispatch['dispatch_photo_url']='';
+$event=$host->call('nt_event_message','material_dispatched','material_dispatches',$dispatch);
+check($event['attachment_url']==='','Dispatch without photo remains text only');
 
 echo "\n$count notification checks passed. No network calls made.\n";
