@@ -141,4 +141,17 @@ $wpdb->query("DELETE FROM bsm_notification_state WHERE record_key LIKE 'schedule
 $host->call('nt_scheduled');
 check($before===1&&(int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===1,'Unique event key prevents duplicates even if schedule marker is missing');
 
+
+$wpdb->query("INSERT INTO bsm_material_requisitions VALUES(2,'REQ-2',1,'2026-10-31','2026-11-03',1,10,'pending_approval','','')");
+$wpdb->query('INSERT INTO bsm_material_requisition_items VALUES(2,2,1,1,100,0)');
+$message=$host->call('nt_summary','pending_requisition',1,$today);
+check(str_contains($message,"\n\n1.REQ-1 | ")&&str_contains($message,"\n\n2.REQ-2 | "),'Pending requisitions numbered consecutively');
+$wpdb->query("UPDATE bsm_material_requisitions SET status='approved'");
+check($host->call('nt_summary','pending_requisition',1,$today)==='','No pending requisitions produces no message');
+$options['bsm_notification_settings']['types']=['pending_requisition'=>true];
+$options['bsm_notification_settings']['times']=['pending_requisition'=>['00:00']];
+$wpdb->query('DELETE FROM bsm_notification_queue');$wpdb->query("DELETE FROM bsm_notification_state WHERE record_key LIKE 'schedule:%'");
+$host->call('nt_scheduled');
+check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===0,'Empty pending approval report is never queued');
+
 echo "\n$count notification checks passed. No network calls made.\n";
