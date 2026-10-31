@@ -200,7 +200,7 @@ trait BSM_Notifications {
             $states=$type==='pending_requisition'?"'pending_approval','submitted','draft'":"'approved','partially_dispatched','dispatched'";
             $heads=$wpdb->get_results($wpdb->prepare("SELECT * FROM {$p}material_requisitions WHERE site_id=%d AND status IN ($states) ORDER BY required_date,id",$site),ARRAY_A)?:[];
             foreach($heads as $h){$lines=[];foreach($this->nt_items('material_requisition_items','requisition_id',$h['id']) as $r){$qty=(float)$r['requested_qty'];if($type==='pending_dispatch'){$dispatched=(float)$wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(d.qty),0) FROM {$p}material_dispatch_items d JOIN {$p}material_dispatches h ON h.id=d.dispatch_id WHERE d.requisition_item_id=%d AND h.status<>'cancelled'",$r['id']));$qty=max(0,$r['approved_qty']-$dispatched);}if($qty>0.009)$lines[]=$this->nt_line($r,$qty);}
-                if($lines)$blocks[]=$h['requisition_no'].' | '.$this->nt_date($h['requisition_date']).$this->nt_optional('Required Date',$this->nt_date($h['required_date']??''))."\n".implode("\n",$lines).$this->nt_optional('Submitted By',$this->nt_name($h['requested_by']??0));
+                if($lines)$blocks[]=($type==='pending_requisition'?(count($blocks)+1).'.':'').$h['requisition_no'].' | '.$this->nt_date($h['requisition_date']).$this->nt_optional('Required Date',$this->nt_date($h['required_date']??''))."\n".implode("\n",$lines).$this->nt_optional('Submitted By',$this->nt_name($h['requested_by']??0));
             }
         }elseif($type==='pending_receipt'){
             $heads=$wpdb->get_results($wpdb->prepare("SELECT * FROM {$p}material_dispatches WHERE site_id=%d AND status NOT IN ('cancelled','draft') ORDER BY dispatch_date,id",$site),ARRAY_A)?:[];
