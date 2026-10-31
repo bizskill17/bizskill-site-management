@@ -87,7 +87,7 @@ $office=$host->call('nt_summary','office_timesheet',0,$today);check(str_contains
 $site=$host->call('nt_summary','site_timesheet',1,$today);check(str_contains($site,'Rahul')&&str_contains($site,'Contract Worker'),'Site timesheet includes employees assigned to the site');check(str_contains($site,'Total Recorded Hours: 6'),'Site timesheet totals both worker types');check($host->call('nt_summary','site_timesheet',2,$today)==='','Empty site summaries are skipped');
 $wpdb->query('CREATE TABLE bsm_labour_attendance(id INTEGER PRIMARY KEY,site_id INTEGER,attendance_date TEXT,contractor_id INTEGER,no_of_labour INTEGER,remarks TEXT,updated_by INTEGER,created_by INTEGER)');
 $hours=wp_json_encode(['employee_hours'=>[['employee_name'=>'Worker A','working_hours'=>5],['employee_name'=>'Worker B','working_hours'=>9.2]]]);$wpdb->query($wpdb->prepare('INSERT INTO bsm_labour_attendance VALUES(1,1,%s,1,2,%s,10,10)',$today,$hours));
-$attendance=$host->call('nt_summary','labour_attendance',1,$today);check(str_contains($attendance,'14.2')&&str_contains($attendance,'Worker A — 5 hours'),'Labour summary uses employee names and Working Hours');
+$attendance=$host->call('nt_summary','labour_attendance',1,$today);check(str_contains($attendance,'1.ABC Contractor')&&str_contains($attendance,'* Worker A — 5 hours')&&str_contains($attendance,'* Worker B — 9.2 hours')&&!str_contains($attendance,'Updated By:')&&!str_contains($attendance,'Total Working Hours:'),'Labour summary uses employee names and Working Hours');
 $options['bsm_notification_settings']['days']=[(int)(new DateTimeImmutable('now',new DateTimeZone('Asia/Kolkata')))->format('N')];$options['bsm_notification_settings']['types']=array_fill_keys(array_keys($host->call('nt_catalog')),false);$options['bsm_notification_settings']['types']['office_timesheet']=true;$options['bsm_notification_settings']['times']=['office_timesheet'=>['00:00','00:01']];
 $wpdb->query('DELETE FROM bsm_notification_queue');$host->call('nt_scheduled');check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===1,'Missed schedules catch up only the latest due slot');$host->call('nt_scheduled');check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===1,'Scheduled summary sent only once per IST slot');
 $wpdb->query("DELETE FROM bsm_notification_state WHERE record_key LIKE 'schedule:%'");$options['bsm_notification_settings']['days']=[];$host->call('nt_scheduled');check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===1,'Working days control scheduled messages');
@@ -217,4 +217,10 @@ $wpdb->query('DELETE FROM bsm_notification_queue');
 check($host->call('nt_last_sent')==='','No successful sends has no last send time');
 $wpdb->query("INSERT INTO bsm_notification_queue(event_key,status,updated_at) VALUES('accepted-time','accepted','2026-10-31 12:10:00'),('failed-time','failed','2026-10-31 13:00:00')");
 check($host->call('nt_last_sent')==='31/10/2026 5:40PM','Last accepted send uses IST and ignores later failures');
+
+$wpdb->query("INSERT INTO bsm_labour_contractors VALUES(2,'Tutan Deb')");
+$moreHours=wp_json_encode(['employee_hours'=>[['employee_name'=>'Atul Roy','working_hours'=>3.3]]]);
+$wpdb->query($wpdb->prepare('INSERT INTO bsm_labour_attendance VALUES(2,1,%s,2,1,%s,10,10)',$today,$moreHours));
+$attendance=$host->call('nt_summary','labour_attendance',1,$today);
+check(str_contains($attendance,"\n\n1.ABC Contractor\n* Worker A — 5 hours")&&str_contains($attendance,"\n\n2.Tutan Deb\n* Atul Roy — 3.3 hours"),'Attendance numbers contractors and preserves decimal employee hours');
 echo "\n$count notification checks passed. No network calls made.\n";
