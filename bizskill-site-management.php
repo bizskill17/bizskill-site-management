@@ -2,17 +2,19 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.065
+ * Version: 0.0.066
  * Author: BizSkill
  */
 
 if (!defined('ABSPATH')) exit;
 
 require_once __DIR__ . '/includes/workforce-transfers.php';
+require_once __DIR__ . '/includes/notifications.php';
 
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
-    const VERSION = '0.0.065';
+    use BSM_Notifications;
+    const VERSION = '0.0.066';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -26,6 +28,8 @@ final class BSM_Site_Management {
     private function __construct() {
         global $wpdb;
         $this->prefix = $wpdb->prefix . 'bsm_';
+        $this->notifications_boot();
+        register_deactivation_hook(__FILE__,function(){wp_clear_scheduled_hook('bsm_notifications_tick');});
 
         register_activation_hook(__FILE__, [$this, 'activate']);
         add_action('init', [$this, 'register_roles']);
@@ -330,6 +334,8 @@ final class BSM_Site_Management {
             'invoice_form' => ['Invoice Form', 'invoice-form'],
             'invoice_master' => ['Invoice Master', 'invoice-master'],
             'invoice_items' => ['Invoice Items Master', 'invoice-items'],
+            'notifications' => ['Notification', 'notification'],
+            'pending_po_approval' => ['Pending PO Approval','pending-po-approval'],
             'company_settings' => ['Company Settings', 'company-settings'],
             'view_settings' => ['Show / Hide Views', 'view-settings'],
         ];
@@ -585,11 +591,11 @@ final class BSM_Site_Management {
     private function refresh_purchase_order_status($po_id) {
         global $wpdb;$p=$this->prefix;$po_id=(int)$po_id;if(!$po_id)return;
         $status=(string)$wpdb->get_var($wpdb->prepare("SELECT status FROM {$p}purchase_orders WHERE id=%d",$po_id));
-        if($status==='cancelled')return;
+        if(in_array($status,['cancelled','pending_approval','rejected'],true))return;
         $items=$wpdb->get_results($wpdb->prepare("SELECT id,po_qty FROM {$p}purchase_order_items WHERE purchase_order_id=%d",$po_id),ARRAY_A)?:[];
         $total=0.0;$received=0.0;
         foreach($items as $it){$total+=(float)$it['po_qty'];$received+=min((float)$it['po_qty'],$this->po_item_received_qty((int)$it['id']));}
-        $new=$received<=0.009?'created':(($received+0.009>=$total&&$total>0)?'fully_received':'partly_received');
+        $new=$received<=0.009?($status==='approved'?'approved':'created'):(($received+0.009>=$total&&$total>0)?'fully_received':'partly_received');
         $wpdb->update($p.'purchase_orders',['status'=>$new,'updated_at'=>current_time('mysql')],['id'=>$po_id]);
     }
 
@@ -613,7 +619,7 @@ final class BSM_Site_Management {
         $rows=[];
         foreach($groups as $iid=>$g){
             $physical=$this->warehouse_item_stock($warehouse,$iid);
-            $po_items=$wpdb->get_results($wpdb->prepare("SELECT poi.id,poi.po_qty FROM {$p}purchase_order_items poi JOIN {$p}purchase_orders po ON po.id=poi.purchase_order_id WHERE po.warehouse_id=%d AND poi.item_id=%d AND LOWER(COALESCE(po.status,'')) NOT IN ('cancelled','fully_received')",$warehouse,$iid),ARRAY_A)?:[];
+            $po_items=$wpdb->get_results($wpdb->prepare("SELECT poi.id,poi.po_qty FROM {$p}purchase_order_items poi JOIN {$p}purchase_orders po ON po.id=poi.purchase_order_id WHERE po.warehouse_id=%d AND poi.item_id=%d AND LOWER(COALESCE(po.status,'')) NOT IN ('cancelled','rejected','fully_received')",$warehouse,$iid),ARRAY_A)?:[];
             $po_progress=0.0;foreach($po_items as $pi)$po_progress+=max(0,(float)$pi['po_qty']-$this->po_item_received_qty((int)$pi['id']));
             $planning=round($physical+$po_progress,2);$pending=max(0,round((float)$g['approved_qty']-$planning,2));if($pending<=0.009)continue;
             $coverage=max(0,$planning);$alloc=[];$detail_ids=[];
@@ -645,7 +651,7 @@ final class BSM_Site_Management {
     private function create_purchase_order_record($vendor_id,$warehouse_id,$po_date,$required_date,$remarks,$items){
         global $wpdb;$p=$this->prefix;$now=current_time('mysql');$uid=$this->plugin_user_id();
         $po_no=$this->next_no('purchase_orders','PO');
-        $ok=$wpdb->insert($p.'purchase_orders',['po_no'=>$po_no,'po_date'=>$po_date,'vendor_id'=>$vendor_id,'warehouse_id'=>$warehouse_id,'required_date'=>$required_date?:null,'remarks'=>$remarks,'status'=>'created','created_by'=>$uid?:null,'created_at'=>$now,'updated_at'=>$now]);
+        $ok=$wpdb->insert($p.'purchase_orders',['po_no'=>$po_no,'po_date'=>$po_date,'vendor_id'=>$vendor_id,'warehouse_id'=>$warehouse_id,'required_date'=>$required_date?:null,'remarks'=>$remarks,'status'=>'pending_approval','created_by'=>$uid?:null,'created_at'=>$now,'updated_at'=>$now]);
         if(!$ok)return ['error'=>$wpdb->last_error?:'Unable to create PO'];$po_id=(int)$wpdb->insert_id;
         foreach($items as $it){
             $ok=$wpdb->insert($p.'purchase_order_items',['purchase_order_id'=>$po_id,'requisition_item_id'=>null,'item_id'=>(int)$it['item_id'],'unit_id'=>(int)$it['unit_id'],'approved_qty_snapshot'=>(float)($it['approved_qty_snapshot']??0),'stock_snapshot'=>(float)($it['stock_snapshot']??0),'pending_qty_snapshot'=>(float)($it['pending_qty_snapshot']??0),'po_qty'=>(float)$it['po_qty'],'fixed_price'=>(float)($it['fixed_price']??0),'rate'=>(float)($it['rate']??0),'created_at'=>$now]);
@@ -703,13 +709,13 @@ final class BSM_Site_Management {
 
     public function ajax_purchase_order_pending_receipt(){
         $this->verify_ajax();$this->migrate_purchase_orders();global $wpdb;$p=$this->prefix;
-        $sql="SELECT poi.id po_item_id,po.id purchase_order_id,po.po_no,po.po_date,po.vendor_id,v.vendor_name,po.warehouse_id,w.warehouse_name,poi.item_id,i.item_name,poi.unit_id,u.unit_name,poi.fixed_price,poi.rate,poi.po_qty,COALESCE(i.gst_rate,0) gst_rate,COALESCE((SELECT SUM(mii.qty) FROM {$p}material_inward_items mii JOIN {$p}material_inwards mi ON mi.id=mii.inward_id WHERE mii.purchase_order_item_id=poi.id AND LOWER(COALESCE(mi.status,''))<>'cancelled'),0) received_qty FROM {$p}purchase_order_items poi JOIN {$p}purchase_orders po ON po.id=poi.purchase_order_id LEFT JOIN {$p}vendors v ON v.id=po.vendor_id LEFT JOIN {$p}warehouses w ON w.id=po.warehouse_id LEFT JOIN {$p}items i ON i.id=poi.item_id LEFT JOIN {$p}units u ON u.id=poi.unit_id WHERE LOWER(COALESCE(po.status,''))<>'cancelled' ORDER BY po.po_date,po.id,poi.id";
+        $sql="SELECT poi.id po_item_id,po.id purchase_order_id,po.po_no,po.po_date,po.vendor_id,v.vendor_name,po.warehouse_id,w.warehouse_name,poi.item_id,i.item_name,poi.unit_id,u.unit_name,poi.fixed_price,poi.rate,poi.po_qty,COALESCE(i.gst_rate,0) gst_rate,COALESCE((SELECT SUM(mii.qty) FROM {$p}material_inward_items mii JOIN {$p}material_inwards mi ON mi.id=mii.inward_id WHERE mii.purchase_order_item_id=poi.id AND LOWER(COALESCE(mi.status,''))<>'cancelled'),0) received_qty FROM {$p}purchase_order_items poi JOIN {$p}purchase_orders po ON po.id=poi.purchase_order_id LEFT JOIN {$p}vendors v ON v.id=po.vendor_id LEFT JOIN {$p}warehouses w ON w.id=po.warehouse_id LEFT JOIN {$p}items i ON i.id=poi.item_id LEFT JOIN {$p}units u ON u.id=poi.unit_id WHERE LOWER(COALESCE(po.status,'')) NOT IN ('cancelled','pending_approval','rejected') ORDER BY po.po_date,po.id,poi.id";
         $rows=$wpdb->get_results($sql,ARRAY_A)?:[];$out=[];foreach($rows as $x){$x['pending_qty']=max(0,round((float)$x['po_qty']-(float)$x['received_qty'],2));if($x['pending_qty']>0.009)$out[]=$x;}wp_send_json_success(['rows'=>$out]);
     }
 
     public function ajax_purchase_order_receive_save(){
         $this->verify_ajax();$this->migrate_purchase_orders();global $wpdb;$p=$this->prefix;$poi=(int)($_POST['po_item_id']??0);$qty=round((float)($_POST['qty']??0),2);$date=sanitize_text_field($_POST['inward_date']??'');$inv=sanitize_text_field($_POST['supplier_invoice_no']??'');$invdate=sanitize_text_field($_POST['supplier_invoice_date']??'');if(!$poi||$qty<=0)wp_send_json_error(['message'=>'Enter Received Qty']);if(!$date)$date=current_time('Y-m-d');
-        $x=$wpdb->get_row($wpdb->prepare("SELECT poi.*,po.vendor_id,po.warehouse_id,po.id po_id,po.status,i.gst_rate FROM {$p}purchase_order_items poi JOIN {$p}purchase_orders po ON po.id=poi.purchase_order_id LEFT JOIN {$p}items i ON i.id=poi.item_id WHERE poi.id=%d",$poi),ARRAY_A);if(!$x||$x['status']==='cancelled')wp_send_json_error(['message'=>'PO Item not available']);$received=$this->po_item_received_qty($poi);$pending=max(0,round((float)$x['po_qty']-$received,2));if($qty>$pending+0.009)wp_send_json_error(['message'=>'Received Qty cannot exceed Pending Receipt Qty']);
+        $x=$wpdb->get_row($wpdb->prepare("SELECT poi.*,po.vendor_id,po.warehouse_id,po.id po_id,po.status,i.gst_rate FROM {$p}purchase_order_items poi JOIN {$p}purchase_orders po ON po.id=poi.purchase_order_id LEFT JOIN {$p}items i ON i.id=poi.item_id WHERE poi.id=%d",$poi),ARRAY_A);if(!$x||in_array($x['status'],['cancelled','pending_approval','rejected'],true))wp_send_json_error(['message'=>'PO must be approved before receipt.']);$received=$this->po_item_received_qty($poi);$pending=max(0,round((float)$x['po_qty']-$received,2));if($qty>$pending+0.009)wp_send_json_error(['message'=>'Received Qty cannot exceed Pending Receipt Qty']);
         $no=$this->next_no('material_inwards','MIN');$now=current_time('mysql');$uid=get_current_user_id();$taxable=round($qty*(float)$x['rate'],2);$gst=(float)$x['gst_rate'];
         $gst_type=(string)$wpdb->get_var($wpdb->prepare("SELECT gst_type FROM {$p}vendors WHERE id=%d",(int)$x['vendor_id']));
         if(!in_array($gst_type,['intra_state','inter_state','no_gst'],true))$gst_type='no_gst';
@@ -737,6 +743,7 @@ final class BSM_Site_Management {
         $receivedTotal=(float)$wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(mii.qty),0) FROM {$p}material_inward_items mii JOIN {$p}material_inwards mi ON mi.id=mii.inward_id WHERE mi.purchase_order_id=%d AND LOWER(COALESCE(mi.status,''))<>'cancelled'",$id));
         $vendor=(int)($data['vendor_id']??$po['vendor_id']);$warehouse=(int)($data['warehouse_id']??$po['warehouse_id']);if($receivedTotal>0.009){$vendor=(int)$po['vendor_id'];$warehouse=(int)$po['warehouse_id'];}
         $upd=['po_date'=>sanitize_text_field($data['po_date']??$po['po_date']),'vendor_id'=>$vendor,'warehouse_id'=>$warehouse,'required_date'=>sanitize_text_field($data['required_date']??'')?:null,'remarks'=>sanitize_textarea_field($data['remarks']??''),'updated_at'=>current_time('mysql')];
+        if(in_array($po['status'],['approved','pending_approval','rejected'],true)||!empty($po['approved_by'])){$upd['status']='pending_approval';$upd['approved_by']=null;$upd['approved_at']=null;}
         // DDL auto-commits; migrate the legacy unique index BEFORE starting a transaction.
         $indexes=$wpdb->get_results("SHOW INDEX FROM `{$it}` WHERE Key_name='boq_item'",ARRAY_A);
         if($indexes && count($indexes)===2 && ($indexes[0]['Non_unique']??0)==0) {
@@ -1566,6 +1573,7 @@ final class BSM_Site_Management {
             'ajax' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('bsm_nonce'),
             'loggedIn' => is_user_logged_in(),
+            'notificationAdmin' => current_user_can('manage_options'),
             'currentUser' => is_user_logged_in() ? [
                 'id' => get_current_user_id(), 'plugin_id' => $plugin_user_id, 'name' => wp_get_current_user()->display_name,
                 'role' => implode(', ', wp_get_current_user()->roles),
@@ -2997,6 +3005,8 @@ final class BSM_Site_Management {
             register_shutdown_function(function()use($wpdb,$ops_stock_lock){$wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)',$ops_stock_lock));});
         }
         $data=json_decode(stripslashes($_POST['data']??'{}'),true);
+        if($key==='sites'&&!$this->nt_admin())unset($data['whatsapp_group_id']);
+        if($key==='material_inwards'&&!empty($data['purchase_order_id'])){$po_state=$wpdb->get_var($wpdb->prepare("SELECT status FROM {$this->prefix}purchase_orders WHERE id=%d",(int)$data['purchase_order_id']));if(in_array($po_state,['pending_approval','rejected'],true))wp_send_json_error(['message'=>'Approve the PO before recording receipt.']);}
         if($key==='sites'){
             if (!$this->ensure_site_sections_column()) wp_send_json_error(['message'=>'Section database column could not be created. Check database permissions.']);
             $raw=(string)($data['site_sections']??'');
