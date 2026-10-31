@@ -187,4 +187,22 @@ $wpdb->query('UPDATE bsm_site_receipt_items SET received_qty=20 WHERE id=1');
 $wpdb->query('INSERT INTO bsm_site_receipt_items VALUES(2,1,2,1,1,25,0)');
 check($host->call('nt_summary','pending_receipt',2,'2026-10-31')==='','Fully received dispatches produce no pending receipt message');
 
+
+$options['bsm_notification_settings']['types']=['labour_attendance'=>true,'site_timesheet'=>true];
+$options['bsm_notification_settings']['times']=['labour_attendance'=>['00:00'],'site_timesheet'=>['00:00']];
+$options['bsm_notification_settings']['include_holidays']=true;
+$wpdb->query('DELETE FROM bsm_notification_queue');$wpdb->query("DELETE FROM bsm_notification_state WHERE record_key LIKE 'schedule:%'");
+$wpdb->query('UPDATE bsm_labour_attendance SET site_id=2');
+$wpdb->query('UPDATE bsm_time_entries SET site_id=2');
+foreach(['labour_attendance','site_timesheet'] as $type)$wpdb->replace('bsm_notification_state',['record_key'=>'schedule:'.$type.':'.$today.':00:00:1','state'=>'done']);
+$host->call('nt_scheduled');
+check((int)$wpdb->get_var("SELECT COUNT(*) FROM bsm_notification_queue WHERE site_id=1")===0,'Empty daily reports send no message');
+$wpdb->query('UPDATE bsm_labour_attendance SET site_id=1');
+$wpdb->query('UPDATE bsm_time_entries SET site_id=1');
+$host->call('nt_scheduled');
+check((int)$wpdb->get_var("SELECT COUNT(*) FROM bsm_notification_queue WHERE site_id=1 AND notification_type='labour_attendance'")===1,'Labour attendance recovers an empty completed slot when data is added');
+check((int)$wpdb->get_var("SELECT COUNT(*) FROM bsm_notification_queue WHERE site_id=1 AND notification_type='site_timesheet'")===1,'Site timesheet recovers an empty completed slot when data is added');
+$host->call('nt_scheduled');
+check((int)$wpdb->get_var("SELECT COUNT(*) FROM bsm_notification_queue WHERE site_id=1")===2,'Repeated daily checks do not queue duplicate summaries');
+
 echo "\n$count notification checks passed. No network calls made.\n";
