@@ -70,7 +70,7 @@ trait BSM_Notifications {
         if(get_option('bsm_notifications_schema')==='1'&&!wp_next_scheduled('bsm_notifications_tick'))wp_schedule_event(time()+60,'bsm_minute','bsm_notifications_tick');
     }
     private function nt_settings(){
-        $s=get_option('bsm_notification_settings',[]);return array_merge(['enabled'=>false,'username'=>'','password'=>'','office_group'=>'','types'=>[],'times'=>[],'days'=>[1,2,3,4,5,6],'retention'=>90],is_array($s)?$s:[]);
+        $s=get_option('bsm_notification_settings',[]);return array_merge(['enabled'=>false,'username'=>'','password'=>'','office_group'=>'','types'=>[],'times'=>[],'days'=>[1,2,3,4,5,6],'include_holidays'=>true,'retention'=>90],is_array($s)?$s:[]);
     }
     private function nt_admin(){return current_user_can('manage_options');}
     private function nt_encrypt($password){
@@ -220,7 +220,12 @@ trait BSM_Notifications {
     }
     private function nt_scheduled(){
         $s=$this->nt_settings();if(!$s['enabled'])return;$now=new DateTimeImmutable('now',new DateTimeZone('Asia/Kolkata'));if(!in_array((int)$now->format('N'),array_map('intval',$s['days']),true))return;
-        global $wpdb;$sites=$wpdb->get_col("SELECT id FROM {$this->prefix}sites WHERE status='active'")?:[];
+        global $wpdb;
+        if(empty($s['include_holidays'])){
+            $holidays=$wpdb->get_col($wpdb->prepare("SELECT employee_ids FROM {$this->prefix}holidays WHERE holiday_date=%s",$now->format('Y-m-d')))?:[];
+            foreach($holidays as $ids){$raw=trim((string)$ids);if($raw===''||$raw==='null'||json_decode($raw,true)===[])return;}
+        }
+        $sites=$wpdb->get_col("SELECT id FROM {$this->prefix}sites WHERE status='active'")?:[];
         foreach($this->nt_catalog() as $type=>$definition){if($definition[2]==='instant'||empty($s['types'][$type]))continue;
             $due=array_values(array_filter($s['times'][$type]??[],function($t)use($now){return $t<=$now->format('H:i');}));sort($due);if(!$due)continue;
             foreach([end($due)] as $time){if(!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/',$time)||$now->format('H:i')<$time)continue;
@@ -288,7 +293,7 @@ trait BSM_Notifications {
         global $wpdb;$p=$this->prefix;$op=sanitize_key($_POST['op']??'get');$d=json_decode(wp_unslash($_POST['data']??'{}'),true);$d=is_array($d)?$d:[];
         try{
             if($op==='save'){
-                $old=$this->nt_settings();$s=$old;$s['enabled']=!empty($d['enabled']);$s['username']=sanitize_text_field($d['username']??'');$s['office_group']=sanitize_text_field($d['office_group']??'');$s['retention']=max(7,min(365,(int)($d['retention']??90)));$s['days']=array_values(array_intersect([1,2,3,4,5,6,7],array_map('intval',(array)($d['days']??[]))));$s['types']=[];$s['times']=[];
+                $old=$this->nt_settings();$s=$old;$s['enabled']=!empty($d['enabled']);$s['include_holidays']=!empty($d['include_holidays']);$s['username']=sanitize_text_field($d['username']??'');$s['office_group']=sanitize_text_field($d['office_group']??'');$s['retention']=max(7,min(365,(int)($d['retention']??90)));$s['days']=array_values(array_intersect([1,2,3,4,5,6,7],array_map('intval',(array)($d['days']??[]))));$s['types']=[];$s['times']=[];
                 foreach($this->nt_catalog() as $key=>$def){$s['types'][$key]=!empty($d['types'][$key]);if($def[2]!=='instant'){$times=array_unique(array_filter(array_map('trim',explode(',',(string)($d['times'][$key]??'')))));if(count($times)>6)throw new Exception('Use at most six times per notification.');foreach($times as $t)if(!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/',$t))throw new Exception('Schedule times must use HH:MM, separated by commas.');if($s['types'][$key]&&!$times)throw new Exception('Enter a schedule for '.$def[0].'.');sort($times);$s['times'][$key]=array_values($times);}}
                 if(!empty($d['password']))$s['password']=$this->nt_encrypt((string)$d['password']);
                 if($s['enabled']&&(!$s['username']||!$this->nt_password($s['password'])))throw new Exception('Enter Username and Password before enabling notifications.');
