@@ -210,7 +210,7 @@ $siteMessage=$host->call('nt_summary','site_timesheet',1,$today);
 check(str_contains($siteMessage,'09:00 AM–11:00 AM | Site inspection')&&!str_contains($siteMessage,'Site inspection | 2 hours'),'Site timesheet activity lines omit individual hours');
 check(str_contains($siteMessage,"\n\n1.Rahul\n* 09:00 AM–11:00 AM | Site inspection\nTotal: 2 hours")&&str_contains($siteMessage,'2.Contract Worker')&&!str_contains($siteMessage,'Total Recorded Hours:'),'Site timesheet numbers employees and uses asterisk activities with individual totals');
 $officeMessage=$host->call('nt_summary','office_timesheet',0,$today);
-check(str_contains($officeMessage,'Site inspection | 2 hours'),'Office timesheet keeps existing activity hour format');
+check(str_contains($officeMessage,"* 09:00 AM–11:00 AM | Site inspection\nTotal: 2 hours")&&!str_contains($officeMessage,' | Office | '),'Office timesheet shows only time and activity with employee total');
 
 
 $wpdb->query('DELETE FROM bsm_notification_queue');
@@ -227,6 +227,6 @@ check(str_contains($attendance,"\n\n1.ABC Contractor\n* Worker A — 5 hours")&&
 $wpdb->query("INSERT INTO bsm_users VALUES(2,20,'Priya')");
 $wpdb->query($wpdb->prepare("INSERT INTO bsm_time_entries VALUES(3,%s,2,0,0,0,'10:00:00','11:00:00',60,'Invoice checking')",$today));
 $office=$host->call('nt_summary','office_timesheet',0,$today);
-check(str_contains($office,"\n\n1.Rahul\n* ")&&str_contains($office,"\n\n2.Priya\n* 10:00 AM–11:00 AM | Office | Invoice checking | 1 hour"),'Office summary numbers multiple employees and uses asterisk activity lines');
-check(str_contains($office,"Total Employees Reported: 2\nTotal Recorded Hours: 3"),'Office summary totals all reported employees and hours');
+check(str_contains($office,"\n\n1.Rahul\n* ")&&str_contains($office,"\n\n2.Priya\n* 10:00 AM–11:00 AM | Invoice checking"),'Office summary numbers multiple employees and uses asterisk activity lines');
+check(str_ends_with($office,'Total Employees Reported: 2')&&!str_contains($office,'Total Recorded Hours:'),'Office summary ends with employee count only');
 echo "\n$count notification checks passed. No network calls made.\n";
