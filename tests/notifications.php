@@ -84,7 +84,7 @@ $wpdb->query('CREATE TABLE bsm_time_entries(id INTEGER PRIMARY KEY,work_date TEX
 $today=(new DateTimeImmutable('now',new DateTimeZone('Asia/Kolkata')))->format('Y-m-d');
 $wpdb->query($wpdb->prepare("INSERT INTO bsm_time_entries VALUES(1,%s,1,0,0,1,'09:00:00','11:00:00',120,'Site inspection'),(2,%s,0,1,1,1,'09:00:00','13:00:00',240,'Plumbing')",$today,$today));
 $office=$host->call('nt_summary','office_timesheet',0,$today);check(str_contains($office,'Rahul')&&!str_contains($office,'Contract Worker'),'Office timesheet excludes contractor employees');check(str_contains($office,'2 hours'),'Office hours total is correct');
-$site=$host->call('nt_summary','site_timesheet',1,$today);check(str_contains($site,'Rahul')&&str_contains($site,'Contract Worker'),'Site timesheet includes employees assigned to the site');check(str_contains($site,'Total Recorded Hours: 6'),'Site timesheet totals both worker types');check($host->call('nt_summary','site_timesheet',2,$today)==='','Empty site summaries are skipped');
+$site=$host->call('nt_summary','site_timesheet',1,$today);check(str_contains($site,'Rahul')&&str_contains($site,'Contract Worker'),'Site timesheet includes employees assigned to the site');check(str_contains($site,'Total: 2 hours')&&str_contains($site,'Total: 4 hours')&&!str_contains($site,'Total Recorded Hours:'),'Site timesheet shows per-employee totals only');check($host->call('nt_summary','site_timesheet',2,$today)==='','Empty site summaries are skipped');
 $wpdb->query('CREATE TABLE bsm_labour_attendance(id INTEGER PRIMARY KEY,site_id INTEGER,attendance_date TEXT,contractor_id INTEGER,no_of_labour INTEGER,remarks TEXT,updated_by INTEGER,created_by INTEGER)');
 $hours=wp_json_encode(['employee_hours'=>[['employee_name'=>'Worker A','working_hours'=>5],['employee_name'=>'Worker B','working_hours'=>9.2]]]);$wpdb->query($wpdb->prepare('INSERT INTO bsm_labour_attendance VALUES(1,1,%s,1,2,%s,10,10)',$today,$hours));
 $attendance=$host->call('nt_summary','labour_attendance',1,$today);check(str_contains($attendance,'1.ABC Contractor')&&str_contains($attendance,'* Worker A — 5 hours')&&str_contains($attendance,'* Worker B — 9.2 hours')&&!str_contains($attendance,'Updated By:')&&!str_contains($attendance,'Total Working Hours:'),'Labour summary uses employee names and Working Hours');
@@ -208,7 +208,7 @@ check((int)$wpdb->get_var("SELECT COUNT(*) FROM bsm_notification_queue WHERE sit
 
 $siteMessage=$host->call('nt_summary','site_timesheet',1,$today);
 check(str_contains($siteMessage,'09:00 AM–11:00 AM | Site inspection')&&!str_contains($siteMessage,'Site inspection | 2 hours'),'Site timesheet activity lines omit individual hours');
-check(str_contains($siteMessage,'Total: 2 hours')&&str_contains($siteMessage,'Total Recorded Hours: 6'),'Site timesheet retains employee and overall totals');
+check(str_contains($siteMessage,"\n\n1.Rahul\n* 09:00 AM–11:00 AM | Site inspection\nTotal: 2 hours")&&str_contains($siteMessage,'2.Contract Worker')&&!str_contains($siteMessage,'Total Recorded Hours:'),'Site timesheet numbers employees and uses asterisk activities with individual totals');
 $officeMessage=$host->call('nt_summary','office_timesheet',0,$today);
 check(str_contains($officeMessage,'Site inspection | 2 hours'),'Office timesheet keeps existing activity hour format');
 
