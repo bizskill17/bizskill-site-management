@@ -534,13 +534,13 @@ input:focus,select:focus,textarea:focus{border-color:#6aa0ff;box-shadow:0 0 0 3p
 .bsm-inline-form-host .bsm-purchase-lines th:nth-child(3),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(3){width:8%;}
 .bsm-inline-form-host .bsm-purchase-lines th:nth-child(4),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(4){width:10%;}
 .bsm-inline-form-host .bsm-purchase-lines th:nth-child(5),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(5){width:9%;}
-.bsm-inline-form-host .bsm-purchase-lines th:nth-child(7),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(7){width:11%;}
-.bsm-inline-form-host .bsm-purchase-lines th:nth-child(8),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(8){width:9%;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(6),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(6){width:11%;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(7),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(7){width:9%;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(8),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(8),
 .bsm-inline-form-host .bsm-purchase-lines th:nth-child(9),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(9),
-.bsm-inline-form-host .bsm-purchase-lines th:nth-child(10),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(10),
-.bsm-inline-form-host .bsm-purchase-lines th:nth-child(11),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(11){width:10%;}
-.bsm-inline-form-host .bsm-purchase-lines th:nth-child(12),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(12){width:11%;}
-.bsm-inline-form-host .bsm-purchase-lines th:nth-child(13),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(13){width:72px;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(10),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(10){width:10%;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(11),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(11){width:11%;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(12),.bsm-inline-form-host .bsm-purchase-lines td:nth-child(12){width:72px;}
 .bsm-native-gst-rate{appearance:auto!important;-webkit-appearance:auto!important;background:#fff!important;padding-right:24px!important;cursor:pointer;}
 @media(max-width:760px){
   .bsm-inline-form-host .bsm-purchase-lines{overflow:visible;}
@@ -560,18 +560,18 @@ input:focus,select:focus,textarea:focus{border-color:#6aa0ff;box-shadow:0 0 0 3p
 .bsm-inline-form-host .bsm-purchase-lines td:nth-child(4){width:9%!important;}
 .bsm-inline-form-host .bsm-purchase-lines th:nth-child(5),
 .bsm-inline-form-host .bsm-purchase-lines td:nth-child(5){width:8%!important;}
+.bsm-inline-form-host .bsm-purchase-lines th:nth-child(6),
+.bsm-inline-form-host .bsm-purchase-lines td:nth-child(6){width:10%!important;}
 .bsm-inline-form-host .bsm-purchase-lines th:nth-child(7),
-.bsm-inline-form-host .bsm-purchase-lines td:nth-child(7){width:10%!important;}
+.bsm-inline-form-host .bsm-purchase-lines td:nth-child(7){width:9%!important;}
 .bsm-inline-form-host .bsm-purchase-lines th:nth-child(8),
-.bsm-inline-form-host .bsm-purchase-lines td:nth-child(8){width:9%!important;}
+.bsm-inline-form-host .bsm-purchase-lines td:nth-child(8),
 .bsm-inline-form-host .bsm-purchase-lines th:nth-child(9),
 .bsm-inline-form-host .bsm-purchase-lines td:nth-child(9),
 .bsm-inline-form-host .bsm-purchase-lines th:nth-child(10),
-.bsm-inline-form-host .bsm-purchase-lines td:nth-child(10),
+.bsm-inline-form-host .bsm-purchase-lines td:nth-child(10){width:9%!important;}
 .bsm-inline-form-host .bsm-purchase-lines th:nth-child(11),
-.bsm-inline-form-host .bsm-purchase-lines td:nth-child(11){width:9%!important;}
-.bsm-inline-form-host .bsm-purchase-lines th:nth-child(12),
-.bsm-inline-form-host .bsm-purchase-lines td:nth-child(12){width:10%!important;}
+.bsm-inline-form-host .bsm-purchase-lines td:nth-child(11){width:10%!important;}
 .bsm-inline-form-host .bsm-purchase-lines .bsm-select-search{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .bsm-inline-form-host .bsm-purchase-lines select.bsm-native-gst-rate{display:block!important;width:100%!important;min-width:74px!important;height:32px!important;padding:4px 24px 4px 8px!important;border:1px solid #7eb6ff;border-radius:6px;background:#fff;color:#102746;font:inherit;}
 @media(max-width:760px){
@@ -1491,8 +1491,8 @@ input[type="date"]::-webkit-datetime-edit,
   .bsm-inline-form-host .bsm-purchase-lines td:nth-child(4),
   .bsm-inline-form-host .bsm-purchase-lines th:nth-child(5),
   .bsm-inline-form-host .bsm-purchase-lines td:nth-child(5),
-  .bsm-inline-form-host .bsm-purchase-lines th:nth-child(6),
-  .bsm-inline-form-host .bsm-purchase-lines td:nth-child(6){width:10%!important;}
+  .bsm-inline-form-host .bsm-purchase-lines th:nth-child(5),
+  .bsm-inline-form-host .bsm-purchase-lines td:nth-child(5){width:10%!important;}
   .bsm-inline-form-host .bsm-purchase-lines th:last-child,
   .bsm-inline-form-host .bsm-purchase-lines td:last-child{width:14%!important;min-width:110px!important;}
   .bsm-inline-form-host .bsm-purchase-lines td:nth-child(1) .bsm-searchable-select,
