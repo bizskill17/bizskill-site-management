@@ -16,6 +16,12 @@ function is_wp_error($r){return $r instanceof Error;}
 function wp_remote_retrieve_response_code($r){return $r['code'];}
 function wp_remote_retrieve_body($r){return $r['body'];}
 function get_transient($k){return true;}
+$cron_event=false;$cron_schedules=[];$cron_created=0;$cron_cleared=0;
+function add_filter($name,$callback){if($name==='cron_schedules')$GLOBALS['cron_schedules']=$callback([]);}
+function add_action(...$args){}
+function wp_get_scheduled_event($hook){return $GLOBALS['cron_event'];}
+function wp_clear_scheduled_hook($hook){$GLOBALS['cron_event']=false;$GLOBALS['cron_cleared']++;}
+function wp_schedule_event($time,$schedule,$hook){$GLOBALS['cron_created']++;$GLOBALS['cron_event']=(object)['timestamp'=>$time,'schedule'=>$schedule,'interval'=>$GLOBALS['cron_schedules'][$schedule]['interval']];}
 class NotificationDB {
  public $pdo,$insert_id;
  function __construct(){$this->pdo=new PDO('sqlite::memory:');$this->pdo->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);}
@@ -120,5 +126,19 @@ $wpdb->query('DELETE FROM bsm_notification_queue');$wpdb->query("DELETE FROM bsm
 $options['bsm_notification_settings']['include_holidays']=false;
 $wpdb->query("UPDATE bsm_holidays SET employee_ids='[1]'");
 $host->call('nt_scheduled');check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===1,'Individual employee holidays do not stop all summaries');
+
+
+$host->notifications_boot();$options['bsm_notifications_schema']='1';
+$cron_event=(object)['timestamp'=>time()+60,'schedule'=>'bsm_minute','interval'=>60];
+$host->notifications_upgrade();
+check($cron_event->interval===300&&$cron_event->schedule==='bsm_five_minutes','Existing one-minute cron migrates to five minutes');
+check($cron_cleared===1&&$cron_created===1,'Migration replaces old event exactly once');
+$host->notifications_upgrade();check($cron_created===1,'Repeated page loads do not duplicate cron events');
+$wpdb->query('DELETE FROM bsm_notification_queue');$wpdb->query("DELETE FROM bsm_notification_state WHERE record_key LIKE 'schedule:%'");
+$host->call('nt_scheduled');
+$before=(int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue');
+$wpdb->query("DELETE FROM bsm_notification_state WHERE record_key LIKE 'schedule:%'");
+$host->call('nt_scheduled');
+check($before===1&&(int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===1,'Unique event key prevents duplicates even if schedule marker is missing');
 
 echo "\n$count notification checks passed. No network calls made.\n";
