@@ -306,6 +306,11 @@ trait BSM_Notifications {
         $wpdb->query($wpdb->prepare("DELETE FROM {$this->prefix}notification_queue WHERE created_at<%s AND status IN ('accepted','skipped','failed')",$cutoff));
         $wpdb->query($wpdb->prepare("DELETE FROM {$this->prefix}notification_state WHERE record_key LIKE 'schedule:%%' AND SUBSTRING_INDEX(SUBSTRING_INDEX(record_key,':',3),':',-1)<%s",substr($cutoff,0,10)));set_transient('bsm_notification_cleanup',1,DAY_IN_SECONDS);
     }
+    private function nt_last_sent(){
+        global $wpdb;
+        $last=$wpdb->get_var("SELECT MAX(updated_at) FROM {$this->prefix}notification_queue WHERE status='accepted'");
+        return $last?(new DateTimeImmutable($last,new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('Asia/Kolkata'))->format('d/m/Y g:iA'):'';
+    }
     public function ajax_notifications(){
         $this->verify_ajax();if(!$this->nt_admin())wp_send_json_error(['message'=>'Only Admin can manage notifications.'],403);
         global $wpdb;$p=$this->prefix;$op=sanitize_key($_POST['op']??'get');$d=json_decode(wp_unslash($_POST['data']??'{}'),true);$d=is_array($d)?$d:[];
@@ -339,7 +344,7 @@ trait BSM_Notifications {
             if($op==='get'){
                 $s=$this->nt_settings();$s['password_saved']=!empty($s['password']);unset($s['password']);$logs=$wpdb->get_results("SELECT q.*,s.site_name FROM {$p}notification_queue q LEFT JOIN {$p}sites s ON s.id=q.site_id ORDER BY q.id DESC LIMIT 100",ARRAY_A)?:[];
                 foreach($logs as &$log){foreach(['created_at','updated_at','next_attempt'] as $field)$log[$field]=wp_date('d/m/Y h:i:s A',strtotime($log[$field].' UTC'),new DateTimeZone('Asia/Kolkata'));$history=json_decode($log['history']??'[]',true)?:[];foreach($history as &$attempt){if(!empty($attempt['at']))$attempt['at']=wp_date('d/m/Y h:i:s A',strtotime($attempt['at'].' UTC'),new DateTimeZone('Asia/Kolkata'));}unset($attempt);$log['history']=$history?wp_json_encode($history):'';}unset($log);
-                wp_send_json_success(['settings'=>$s,'catalog'=>$this->nt_catalog(),'sites'=>$wpdb->get_results("SELECT id,site_name,whatsapp_group_id FROM {$p}sites ORDER BY site_name",ARRAY_A),'logs'=>$logs,'blocked'=>get_option('bsm_notifications_blocked',''),'last_tick'=>get_option('bsm_notifications_last_tick','')?wp_date('d/m/Y h:i:s A',strtotime(get_option('bsm_notifications_last_tick').' UTC'),new DateTimeZone('Asia/Kolkata')):'']);
+                wp_send_json_success(['settings'=>$s,'catalog'=>$this->nt_catalog(),'sites'=>$wpdb->get_results("SELECT id,site_name,whatsapp_group_id FROM {$p}sites ORDER BY site_name",ARRAY_A),'logs'=>$logs,'last_sent'=>$this->nt_last_sent(),'blocked'=>get_option('bsm_notifications_blocked',''),'last_tick'=>get_option('bsm_notifications_last_tick','')?wp_date('d/m/Y h:i:s A',strtotime(get_option('bsm_notifications_last_tick').' UTC'),new DateTimeZone('Asia/Kolkata')):'']);
             }
             throw new Exception('Unknown notification action.');
         }catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);}
