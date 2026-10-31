@@ -176,8 +176,8 @@ trait BSM_Notifications {
             $message.=$this->nt_optional('Dispatched By',$this->nt_name($r['dispatched_by']??$r['created_by']??0,true))."\nPlease verify the material and record the receipt.";
         }elseif($source==='site_receipts'){
             $dispatch=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}material_dispatches WHERE id=%d",$r['dispatch_id']),ARRAY_A);$sites=[(int)$r['site_id']];if(!empty($dispatch['from_site_id']))$sites[]=(int)$dispatch['from_site_id'];$reference=$r['receipt_no'];
-            $message="*SITE MATERIAL RECEIVED*\nSite: ".$this->nt_site($r['site_id'])."\nReceipt: $reference\nDate: ".$this->nt_date($r['receipt_date'])."\nDispatch: ".($dispatch['dispatch_no']??'')."\n\nItem | Received Now | Pending Receipt\n";
-            foreach($this->nt_items('site_receipt_items','receipt_id',$id) as $line){$pending=$this->nt_dispatch_pending((int)$line['dispatch_item_id']);$message.='• '.$line['item_name'].' | '.$this->nt_num($line['received_qty']).' '.$line['unit_name'].' | '.$this->nt_num($pending).' '.$line['unit_name']."\n";}
+            $message="*SITE MATERIAL RECEIVED*\nSite: ".$this->nt_site($r['site_id'])."\nReceipt: $reference\nDate: ".$this->nt_date($r['receipt_date'])."\nDispatch: ".($dispatch['dispatch_no']??'')."\n\n1.Item | Received Now | Pending Receipt\n";
+            foreach($this->nt_items('site_receipt_items','receipt_id',$id) as $line){$pending=$this->nt_dispatch_pending((int)$line['dispatch_item_id']);$message.='* '.$line['item_name'].' | '.$this->nt_num($line['received_qty']).' '.$line['unit_name'].' | '.$this->nt_num($pending).' '.$line['unit_name']."\n";}
             $message.='Received By: '.$this->nt_name($r['received_by']??0).$this->nt_optional('Remarks',$r['remarks']??'');
         }elseif($source==='site_transfer_receipts'){
             $t=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}site_transfers WHERE id=%d",$r['transfer_id']),ARRAY_A);if(!$t)return null;$sites=[(int)$t['from_site_id'],(int)$t['to_site_id']];$reference=$t['transfer_no'];
