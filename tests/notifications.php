@@ -246,4 +246,23 @@ $host->call('nt_queue','po_created',[0],$event['reference'],$event['message'],'p
 check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===1,'PO creation queue prevents duplicate messages');
 $po['required_date']='';
 check(!str_contains($host->call('nt_event_message','po_created','purchase_orders',$po)['message'],'Required Date:'),'Blank optional required date is omitted');
+
+$options['bsm_notification_settings']['types']=['pending_po'=>true];
+$options['bsm_notification_settings']['times']=['pending_po'=>['00:00']];
+$options['bsm_notification_settings']['include_holidays']=true;
+$wpdb->query('DELETE FROM bsm_notification_queue');
+$wpdb->query("DELETE FROM bsm_notification_state WHERE record_key LIKE 'schedule:%'");
+$wpdb->replace('bsm_notification_state',['record_key'=>'schedule:pending_po:'.$today.':00:00:0','state'=>'done']);
+$wpdb->query("UPDATE bsm_purchase_orders SET status='pending_approval' WHERE id=1");
+$host->call('nt_scheduled');
+check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===0,'Pending receipt reminder excludes unapproved POs');
+$wpdb->query("UPDATE bsm_purchase_orders SET status='approved' WHERE id=1");
+$host->call('nt_scheduled');
+check((int)$wpdb->get_var("SELECT COUNT(*) FROM bsm_notification_queue WHERE notification_type='pending_po' AND site_id=0")===1,'PO pending receipt reminder recovers after approval when old slot had no message');
+$host->call('nt_scheduled');
+check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===1,'Repeated pending PO checks do not queue duplicates');
+$wpdb->query('DELETE FROM bsm_notification_queue');$wpdb->query("DELETE FROM bsm_notification_state WHERE record_key LIKE 'schedule:%'");
+$wpdb->query('UPDATE bsm_material_inward_items SET qty=50 WHERE id=1');
+$host->call('nt_scheduled');
+check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===0,'Fully received POs send no receipt reminder');
 echo "\n$count notification checks passed. No network calls made.\n";
