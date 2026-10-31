@@ -247,7 +247,7 @@ trait BSM_Workforce_Transfers {
                 $workers=$wpdb->get_results("SELECT w.*,w.employee_name label,c.contractor_name,c.payment_basis FROM {$p}contractor_employees w JOIN {$p}labour_contractors c ON c.id=w.contractor_id ORDER BY w.employee_name",ARRAY_A);
                 if(!$admin)foreach($workers as &$worker){unset($worker['mobile'],$worker['address'],$worker['bank_name'],$worker['ifsc'],$worker['account_number']);}unset($worker);
                 $destinations=$wpdb->get_results("SELECT id,site_name label FROM {$p}sites WHERE status='active' ORDER BY site_name",ARRAY_A);
-                $result=['destinations'=>$destinations,'can_punch_contractor'=>$this->ops_can_punch_contractor($user),'admin'=>$admin,'employee_id'=>(int)$user['id'],'employees'=>$employees,'workers'=>$workers];break;
+                $result=['destinations'=>$destinations,'can_punch_contractor'=>$this->ops_can_punch_contractor($user),'admin'=>$admin,'time_admin'=>current_user_can('manage_options'),'employee_id'=>(int)$user['id'],'employees'=>$employees,'workers'=>$workers];break;
             case 'holiday_list':
                 $holidays=$wpdb->get_results("SELECT * FROM {$p}holidays ORDER BY holiday_date DESC",ARRAY_A);
                 if(!$admin)$holidays=array_values(array_filter($holidays,function($h)use($user){$ids=json_decode($h['employee_ids']?:'[]',true)?:[];return !$ids||in_array((int)$user['id'],array_map('intval',$ids),true);}));
@@ -270,7 +270,9 @@ trait BSM_Workforce_Transfers {
                 $this->ops_write($id?$wpdb->update($p.'contractor_employees',$row,['id'=>$id]):$wpdb->insert($p.'contractor_employees',$row));break;
             case 'time_list':$result=['rows'=>$this->ops_time_rows($d,$user)];break;
             case 'time_save':
+                $time_admin=current_user_can('manage_options');
                 $date=$this->ops_date($d['work_date']??'');$eid=(int)($d['employee_id']??0);$wid=(int)($d['worker_id']??0);$site=(int)($d['site_id']??0);$worker=null;
+                if(!$time_admin&&$date!==(new DateTimeImmutable('now',new DateTimeZone('Asia/Kolkata')))->format('Y-m-d'))throw new Exception('Time Sheets can only be submitted for today. Only Admin can change past entries.');
                 if($wid){
                     if(!$this->ops_can_punch_contractor($user))throw new Exception('Only Admin or Site Supervisor can punch Contractor Time Sheets.');
                     $worker=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}contractor_employees WHERE id=%d AND status='active'",$wid),ARRAY_A);if(!$worker)throw new Exception('Select an active Contractor Employee.');$eid=0;if(!$site)throw new Exception('Site is required for Contractor Employee.');$this->ops_site($site);
@@ -285,6 +287,10 @@ trait BSM_Workforce_Transfers {
                 foreach($all as $r){
                     $id=(int)($r['id']??0);if($id&&isset($submitted_ids[$id]))throw new Exception('Duplicate Time Sheet row.');if($id)$submitted_ids[$id]=true;$old=null;foreach($existing as $e)if((int)$e['id']===$id)$old=$e;
                     if($id&&!$old)throw new Exception('Time entry does not belong to this Employee and Date.');
+                    if($old&&!$time_admin){
+                        if(substr($old['from_time'],0,5)!==($r['from_time']??'')||substr($old['to_time'],0,5)!==($r['to_time']??'')||$old['activity']!==($r['activity']??'')||((int)$old['worker_id']>0&&(int)$old['site_id']!==$site))throw new Exception('Only Admin can edit saved Time Sheets.');
+                        $saved[]=$id;$intervals[]=$this->ops_time_interval($date,$old['from_time'],$old['to_time']);continue;
+                    }
                     if($old && ($old['status']==='approved'||(int)$old['bill_id'])){$saved[]=$id;$intervals[]=$this->ops_time_interval($date,$old['from_time'],$old['to_time']);continue;}
                     $from=sanitize_text_field($r['from_time']??'');$to=sanitize_text_field($r['to_time']??'');$activity=sanitize_textarea_field($r['activity']??'');
                     if(!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/',$from)||!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/',$to)||$to===$from||!$activity)throw new Exception('Enter Activity and different From and To times for each row.');
@@ -301,9 +307,10 @@ trait BSM_Workforce_Transfers {
                 $adjacent=$wpdb->get_results($wpdb->prepare("SELECT work_date,from_time,to_time FROM {$p}time_entries WHERE employee_id=%d AND worker_id=%d AND work_date BETWEEN %s AND %s AND work_date<>%s",$eid,$wid,$previous,$next,$date),ARRAY_A);
                 foreach($adjacent as $entry)$intervals[]=$this->ops_time_interval($entry['work_date'],$entry['from_time'],$entry['to_time']);
                 usort($intervals,function($a,$b){return $a[0]<=>$b[0];});for($i=1;$i<count($intervals);$i++)if($intervals[$i][0]<$intervals[$i-1][1])throw new Exception('Time entries cannot overlap for the same Employee.');
-                foreach($existing as $e)if(!in_array((int)$e['id'],array_map('intval',$saved),true))$this->ops_write($wpdb->delete($p.'time_entries',['id'=>$e['id']]));
+                foreach($existing as $e)if(!in_array((int)$e['id'],array_map('intval',$saved),true)){if(!$time_admin)throw new Exception('Only Admin can delete saved Time Sheets.');$this->ops_write($wpdb->delete($p.'time_entries',['id'=>$e['id']]));}
                 $wpdb->query('COMMIT');break;
             case 'time_update':case 'time_delete':
+                if(!current_user_can('manage_options'))throw new Exception('Only Admin can edit or delete Time Sheets.');
                 $id=(int)($d['id']??0);$entry=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}time_entries WHERE id=%d",$id),ARRAY_A);if(!$entry)throw new Exception('Time entry not found.');
                 if((int)$entry['worker_id']>0 && !$this->ops_can_punch_contractor($user))throw new Exception('Only Admin or Site Supervisor can change Contractor Time Sheets.');
                 $lock=$this->ops_lock('time_'.((int)$entry['worker_id']?'w'.$entry['worker_id']:'e'.$entry['employee_id']));$wpdb->query('START TRANSACTION');
