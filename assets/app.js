@@ -56,7 +56,7 @@ App.configs = {
   item_categories:{title:'Item Categories', fields:[F('category_name','Category Name',{required:true}),F('status','Status',status())], columns:[C('category_name','Category'),C('status','Status')]},
   units:{title:'Units', fields:[F('unit_name','Unit Name',{required:true}),F('status','Status',status())], columns:[C('unit_name','Unit'),C('status','Status')]},
   gst_rates:{title:'GST Rates', fields:[F('gst_rate','GST Rate %',Object.assign({required:true},money)),F('status','Status',status())], columns:[C('gst_rate','GST Rate %','number'),C('status','Status')]},
-  items:{title:'Items', fields:[F('item_name','Item Name',{required:true}),F('category_id','Category',ref('categories')),F('unit_id','Unit',ref('units')),F('hsn_code','HSN Code'),F('gst_rate','GST Rate %',Object.assign({addMaster:'gst_rates'},ref('gst_rates'))),F('opening_qty','Opening Qty',qty),F('opening_rate','Price',money),F('minimum_stock','Minimum Stock',qty),F('status','Status',status())], columns:[C('item_name','Item'),C('category_id','Category','ref:categories'),C('unit_id','Unit','ref:units'),C('hsn_code','HSN'),C('opening_qty','Opening Qty','number'),C('opening_rate','Price','money'),C('gst_rate','GST %','number'),C('status','Status')]},
+  items:{title:'Items', fields:[F('item_name','Item Name',{required:true}),F('category_id','Category',ref('categories')),F('unit_id','Unit',ref('units')),F('hsn_code','HSN Code'),F('gst_rate','GST Rate %',Object.assign({addMaster:'gst_rates'},ref('gst_rates'))),F('opening_qty','Opening Qty',qty),F('minimum_stock','Minimum Stock',qty),F('status','Status',status())], columns:[C('item_name','Item'),C('category_id','Category','ref:categories'),C('unit_id','Unit','ref:units'),C('hsn_code','HSN'),C('opening_qty','Opening Qty','number'),C('gst_rate','GST %','number'),C('status','Status')]},
   site_opening_stock:{title:'Site Opening Stock', fields:[F('site_id','Site',Object.assign({required:true},ref('sites'))),F('opening_date','Opening Date',Object.assign({required:true},date)),F('item_id','Item',Object.assign({required:true},ref('items'))),F('opening_qty','Opening Qty',Object.assign({required:true},qty)),F('opening_rate','Opening Rate',money),F('unit_id','Unit',Object.assign({readonly:true},ref('units'))),F('remarks','Remarks')], columns:[C('site_id','Site','ref:sites'),C('opening_date','Opening Date','date'),C('item_id','Item','ref:items'),C('opening_qty','Opening Qty','number'),C('opening_rate','Opening Rate','money'),C('unit_id','Unit','ref:units')]},
   warehouses:{title:'Warehouses', fields:[F('warehouse_name','Warehouse Name',{required:true}),F('address','Address',textarea),F('manager_user_id','Manager',ref('users')),F('status','Status',status())], columns:[C('warehouse_name','Warehouse'),C('manager_user_id','Manager','ref:users'),C('status','Status')]},
   expense_categories:{title:'Expense Categories', fields:[F('category_name','Category Name',{required:true}),F('status','Status',status())], columns:[C('category_name','Category'),C('status','Status')]},
@@ -67,7 +67,7 @@ App.configs = {
   quotations:{title:'Quotation', fields:[F('quotation_no','Quotation No.',{type:'hidden'}),F('quotation_date','Date',Object.assign({required:true},date)),F('customer_id','Customer Name',Object.assign({required:true},ref('customers'))),F('site_id','Site',Object.assign({required:true},ref('sites'))),F('billing_address','Billing Address',{type:'hidden'}),F('customer_gstin','GSTIN',{type:'hidden'}),F('billing_state_id','State',{type:'hidden'}),F('place_of_supply_state_id','Place of Supply',{type:'hidden'}),F('valid_till','Valid Till',date),F('taxable_amount','Amount',{type:'hidden'}),F('cgst_amount','CGST',{type:'hidden'}),F('sgst_amount','SGST',{type:'hidden'}),F('igst_amount','GST',{type:'hidden'}),F('other_charges','Other Charge',money),F('gst_on_other_charge','GST on Other Charge',money),F('round_off','Round Off',money),F('grand_total','Total Amount',{type:'hidden'}),F('terms','Terms & Conditions',textarea),F('remarks','Notes',{type:'hidden'})], columns:[C('quotation_no','Quotation No.'),C('quotation_date','Date','date'),C('customer_id','Customer','ref:customers'),C('taxable_amount','Amount','money'),C('grand_total','Total','money'),C('pdf_url','PDF','document')], items:[F('item_id','Item',Object.assign({required:true},ref('items'))),F('description','Description'),F('hsn_sac','HSN / SAC',{type:'hidden'}),F('qty','Qty',Object.assign({required:true},qty)),F('unit_id','Unit',Object.assign({required:true},ref('units'))),F('rate','Rate',Object.assign({required:true},money)),F('gst_rate','GST %',ref('gst_rates')),F('cgst_amount','CGST',{type:'hidden'}),F('sgst_amount','SGST',{type:'hidden'}),F('igst_amount','GST',Object.assign({readonly:true},money)),F('amount','Amount',Object.assign({readonly:true},money)),F('total_amount','Total',{type:'hidden'})]},
   tax_invoices:{title:'Tax Invoice', fields:[F('invoice_no','Invoice No.',{type:'hidden'}),F('invoice_date','Date',Object.assign({required:true},date)),F('customer_id','Customer Name',Object.assign({required:true},ref('customers'))),F('site_id','Site',Object.assign({required:true},ref('sites'))),F('billing_address','Billing Address',{type:'hidden'}),F('customer_gstin','GSTIN',{type:'hidden'}),F('billing_state_id','State',{type:'hidden'}),F('place_of_supply_state_id','Place of Supply',{type:'hidden'}),F('taxable_amount','Amount',{type:'hidden'}),F('cgst_amount','CGST',{type:'hidden'}),F('sgst_amount','SGST',{type:'hidden'}),F('igst_amount','GST',{type:'hidden'}),F('other_charges','Other Charge',money),F('gst_on_other_charge','GST on Other Charge',money),F('round_off','Round Off',money),F('invoice_total','Total Amount',{type:'hidden'}),F('terms','Terms & Conditions',textarea),F('remarks','Notes',{type:'hidden'})], columns:[C('invoice_no','Invoice No.'),C('invoice_date','Date','date'),C('customer_id','Customer','ref:customers'),C('site_id','Site','ref:sites'),C('taxable_amount','Taxable','money'),C('invoice_total','Total','money'),C('pdf_url','PDF','document')], items:[F('item_id','Item',Object.assign({required:true},ref('items'))),F('description','Description'),F('hsn_sac','HSN / SAC',{type:'hidden'}),F('qty','Qty',Object.assign({required:true},qty)),F('unit_id','Unit',Object.assign({required:true},ref('units'))),F('rate','Rate',Object.assign({required:true},money)),F('gst_rate','GST %',ref('gst_rates')),F('igst_amount','IGST',Object.assign({readonly:true},money)),F('cgst_amount','CGST',Object.assign({readonly:true},money)),F('sgst_amount','SGST',Object.assign({readonly:true},money)),F('amount','Amount',Object.assign({readonly:true},money)),F('total_amount','Total',{type:'hidden'})]},
 
-  material_inwards:{title:'Material Inward', fields:[F('purchase_order_id','',{type:'hidden'}),F('inward_type','Inward Type',{type:'select',required:true,options:[['return','Return'],['purchase','Purchase']]}),F('return_id','Return No.',ref('returns')),F('site_id','Site',Object.assign({readonly:true},ref('sites'))),F('warehouse_id','Warehouse',Object.assign({required:true,readonly:true},ref('warehouses'))),F('received_by','Received By',Object.assign({readonly:true},ref('users'))),F('vendor_id','Supplier',ref('vendors')),F('inward_date','Inward Date',Object.assign({required:true},date)),F('supplier_invoice_no','Supplier Invoice No.'),F('supplier_invoice_date','Supplier Invoice Date',date),F('bill_type','Bill Type',{type:'select',options:[['','Select Bill Type'],['gst_bill','GST Bill'],['non_gst_bill','Non GST Bill']]}),F('taxable_amount','Taxable Amount',Object.assign({readonly:true},money)),F('other_expenses','Other Expenses',money),F('other_expense_gst','GST on Other Expense',money),F('round_off','Round Off',Object.assign({step:'0.01'},money)),F('total_amount','Total Amount',Object.assign({readonly:true},money))], columns:[C('inward_no','Inward'),C('inward_date','Date','date'),C('vendor_id','Supplier','ref:vendors'),C('total_amount','Total','money'),C('status','Status')], items:[F('purchase_order_item_id','',{type:'hidden'}),F('item_id','Item',ref('items')),F('return_qty','Return Qty',Object.assign({readonly:true},qty)),F('qty','Qty',qty),F('unit_id','Unit',Object.assign({readonly:true},ref('units'))),F('item_price','Fixed Price',{type:'number',readonly:true,step:'0.01'}),F('rate','Rate',money),F('remarks','Remark'),F('taxable_amount','Taxable',Object.assign({readonly:true},money)),F('gst_rate','GST %',Object.assign({addMaster:'gst_rates'},ref('gst_rates'))),F('cgst_amount','CGST',Object.assign({readonly:true},money)),F('sgst_amount','SGST',Object.assign({readonly:true},money)),F('igst_amount','IGST',Object.assign({readonly:true},money)),F('total_amount','Total',Object.assign({readonly:true},money))]},
+  material_inwards:{title:'Material Inward', fields:[F('purchase_order_id','',{type:'hidden'}),F('inward_type','Inward Type',{type:'select',required:true,options:[['return','Return'],['purchase','Purchase']]}),F('return_id','Return No.',ref('returns')),F('site_id','Site',Object.assign({readonly:true},ref('sites'))),F('warehouse_id','Warehouse',Object.assign({required:true,readonly:true},ref('warehouses'))),F('received_by','Received By',Object.assign({readonly:true},ref('users'))),F('vendor_id','Supplier',ref('vendors')),F('inward_date','Inward Date',Object.assign({required:true},date)),F('supplier_invoice_no','Supplier Invoice No.'),F('supplier_invoice_date','Supplier Invoice Date',date),F('bill_type','Bill Type',{type:'select',options:[['','Select Bill Type'],['gst_bill','GST Bill'],['non_gst_bill','Non GST Bill']]}),F('taxable_amount','Taxable Amount',Object.assign({readonly:true},money)),F('other_expenses','Other Expenses',money),F('other_expense_gst','GST on Other Expense',money),F('round_off','Round Off',Object.assign({step:'0.01'},money)),F('total_amount','Total Amount',Object.assign({readonly:true},money))], columns:[C('inward_no','Inward'),C('inward_date','Date','date'),C('vendor_id','Supplier','ref:vendors'),C('total_amount','Total','money'),C('status','Status')], items:[F('purchase_order_item_id','',{type:'hidden'}),F('item_id','Item',ref('items')),F('return_qty','Return Qty',Object.assign({readonly:true},qty)),F('qty','Qty',qty),F('unit_id','Unit',Object.assign({readonly:true},ref('units'))),F('rate','Rate',money),F('remarks','Remark'),F('taxable_amount','Taxable',Object.assign({readonly:true},money)),F('gst_rate','GST %',Object.assign({addMaster:'gst_rates'},ref('gst_rates'))),F('cgst_amount','CGST',Object.assign({readonly:true},money)),F('sgst_amount','SGST',Object.assign({readonly:true},money)),F('igst_amount','IGST',Object.assign({readonly:true},money)),F('total_amount','Total',Object.assign({readonly:true},money))]},
   material_dispatches:{title:'Dispatch Master', fields:[F('dispatch_from','Dispatch From',{type:'select',required:true,options:[['warehouse','Warehouse'],['site','Site']]}),F('warehouse_id','Warehouse',ref('warehouses')),F('from_site_id','From Site',ref('sites')),F('site_id','To Site',Object.assign({required:true},ref('sites'))),F('requisition_id','Requisition',ref('requisitions')),F('dispatch_date','Dispatch Date',Object.assign({required:true},date)),F('vehicle_no','Vehicle No.'),F('driver_name','Driver Name'),F('driver_mobile','Driver Mobile'),F('courier_no','Courier No.'),F('courier_name','Courier Name')], columns:[C('dispatch_no','Dispatch'),C('dispatch_date','Date','date'),C('dispatch_from','Dispatch From'),C('warehouse_id','Warehouse','ref:warehouses'),C('from_site_id','From Site','ref:sites'),C('site_id','To Site','ref:sites'),C('vehicle_no','Vehicle No.'),C('driver_name','Driver Name'),C('driver_mobile','Driver Mobile'),C('dispatch_photo_url','Photo','photo'),C('courier_no','Courier No.'),C('courier_name','Courier Name'),C('status','Status')], items:[F('requisition_item_id','',{type:'hidden'}),F('item_id','Item',ref('items')),F('approved_qty','Approved Qty',{type:'number',readonly:true,step:'0.01'}),F('already_dispatched','Already Dispatched',{type:'number',readonly:true,step:'0.01'}),F('pending_qty','Pending Qty',{type:'number',readonly:true,step:'0.01'}),F('available_qty','Available Stock',{type:'number',readonly:true,step:'0.01'}),F('qty','Dispatch Qty',qty),F('unit_id','Unit',Object.assign({readonly:true},ref('units')))]},
   site_receipts:{title:'Site Receipts', fields:[F('dispatch_id','Dispatch',Object.assign({required:true},ref('dispatches'))),F('site_id','Site',Object.assign({required:true,readonly:true},ref('sites'))),F('receipt_date','Receipt Date',Object.assign({required:true},date)),F('received_by','Received By',Object.assign({readonly:true},ref('users')))], columns:[C('receipt_no','Receipt'),C('receipt_date','Date','date'),C('site_id','Site','ref:sites'),C('dispatch_id','Dispatch','ref:dispatches')], items:[F('dispatch_item_id','',{type:'hidden'}),F('item_id','Item',Object.assign({readonly:true},ref('items'))),F('dispatch_qty','Dispatch Qty',Object.assign({readonly:true},qty)),F('received_qty','Received Qty',qty),F('damaged_qty','Damaged Qty',qty),F('short_qty','Short Qty',qty),F('unit_id','Unit',Object.assign({readonly:true},ref('units')))]},
   site_consumptions:{title:'Consumption Master', fields:[F('site_id','Site',Object.assign({required:true},ref('sites'))),F('consumption_date','Date',Object.assign({required:true},date)),F('created_by_display','Consumption Entry By',{type:'display'})], columns:[C('consumption_no','Consumption'),C('consumption_date','Date','date'),C('site_id','Site','ref:sites'),C('created_by_name','Consumption Entry By'),C('status','Status')], items:[F('item_id','Item',Object.assign({required:true},ref('items'))),F('available_qty','Available Qty',{readonly:true}),F('qty','Qty',Object.assign({required:true},qty)),F('unit_id','Unit',Object.assign({required:true,readonly:true},ref('units'))),F('remarks','Remarks')]},
@@ -359,9 +359,9 @@ async function openDirectForm(viewKey,moduleKey,title,mode=''){
       const $po=$('#bsm-form-fields input[name="purchase_order_id"]');if($po.length)$po.val(p.purchase_order_id||'');
       const $v=$('#bsm-form-fields select[name="vendor_id"]');if($v.length){$v.val(String(p.vendor_id||'')).prop('disabled',true);bsmRefreshSearchableSelect($v[0]);}
       const $w=$('#bsm-form-fields select[name="warehouse_id"]');if($w.length){$w.val(String(p.warehouse_id||'')).prop('disabled',true);bsmRefreshSearchableSelect($w[0]);}
-      const cfg=App.configs.material_inwards;const lines=(p.items||[]).filter(it=>Number(it.pending_qty||0)>0.009).map(it=>({purchase_order_item_id:it.po_item_id,item_id:it.item_id,qty:Number(it.pending_qty||0),unit_id:it.unit_id,item_price:Number(it.fixed_price||0),rate:Number(it.rate||0),gst_rate:Number(it.gst_rate||0)}));renderItems(cfg,lines);
+      const cfg=App.configs.material_inwards;const lines=(p.items||[]).filter(it=>Number(it.pending_qty||0)>0.009).map(it=>({purchase_order_item_id:it.po_item_id,item_id:it.item_id,qty:Number(it.pending_qty||0),unit_id:it.unit_id,rate:Number(it.rate||0),gst_rate:Number(it.gst_rate||0)}));renderItems(cfg,lines);
       hidePurchaseItemUnusedColumns();
-      $('#bsm-lines-body .bsm-line').each(function(){const $tr=$(this);const $item=$tr.find('select[name="item_id"]');if($item.length){$item.prop('disabled',true);bsmRefreshSearchableSelect($item[0]);}autoSelectUnitFromItem($tr);syncPurchaseUnitDisplay($tr);syncPurchaseItemPrice($tr);});
+      $('#bsm-lines-body .bsm-line').each(function(){const $tr=$(this);const $item=$tr.find('select[name="item_id"]');if($item.length){$item.prop('disabled',true);bsmRefreshSearchableSelect($item[0]);}autoSelectUnitFromItem($tr);syncPurchaseUnitDisplay($tr);});
       $('#bsm-lines-body .bsm-add-line-inline').hide();
       const $grid=$('#bsm-form-fields');if(!$grid.find('.bsm-po-source-display').length)$grid.prepend(`<label class="bsm-po-source-display"><span class="bsm-field-label">PO No. <span class="bsm-required">*</span></span><input value="${esc(p.po_no||'')}" readonly required></label>`);
       setTimeout(()=>{if($v.length)loadMaterialInwardVendorGST($v.val()||'');},0);
@@ -689,7 +689,6 @@ function directPoItemRow(){
     <td><select class="po-direct-item">${poItemOptions()}</select></td>
     <td class="po-direct-unit">-</td>
     <td><input type="number" class="po-direct-qty num" min="0.01" step="0.01" value=""></td>
-    <td><input type="number" class="po-direct-fixed-price num" min="0" step="0.01" value="" readonly></td>
     <td><input type="number" class="po-direct-rate num" readonly></td>
     <td class="num po-direct-amount">0.00</td>
     <td class="po-direct-actions">
@@ -718,7 +717,7 @@ async function renderPurchaseOrderForm(){
         <div class="bsm-lines-head"><h3>Items</h3></div>
         <div class="bsm-table-wrap">
           <table>
-            <thead><tr><th>Item</th><th>Unit</th><th class="num">PO Qty</th><th class="num">Fixed Price</th><th class="num">Rate</th><th class="num">Amount</th><th></th></tr></thead>
+            <thead><tr><th>Item</th><th>Unit</th><th class="num">PO Qty</th><th class="num">Rate</th><th class="num">Amount</th><th></th></tr></thead>
             <tbody id="po_direct_items">${directPoItemRow()}</tbody>
           </table>
         </div>
@@ -732,12 +731,10 @@ async function renderPurchaseOrderForm(){
 }
 async function refreshDirectPoItemRow($row){
   const iid=$row.find('.po-direct-item').val();
-  if(!iid){$row.find('.po-direct-unit').text('-');$row.find('.po-direct-fixed-price,.po-direct-rate').val('');$row.find('.po-direct-amount').text('0.00');return;}
+  if(!iid){$row.find('.po-direct-unit').text('-');$row.find('.po-direct-rate').val('');$row.find('.po-direct-amount').text('0.00');return;}
   const item=(App.options.items||[]).find(x=>String(x.id)===String(iid))||{};
   const unitLabel=labelFor('units',item.unit_id)||item.unit_name||'-';
   $row.find('.po-direct-unit').text(unitLabel);
-  const fixedPrice=Number(item.opening_rate||item.price||0);
-  if(!$row.find('.po-direct-fixed-price').val())$row.find('.po-direct-fixed-price').val(fixedPrice.toFixed(2));
   syncDirectPoChosen($row);
   updateDirectPoAmount($row);
 }
@@ -828,7 +825,7 @@ function poItemQuotes(row){
   return poMasterQuotes({...row,remarks:JSON.stringify({supplier_quotations:lines})});
 }
 async function loadPurchaseOrderItemsMaster(exportAll=false){
-  const r=await ajax('bsm_purchase_order_items_master',{search:$('#po_items_search').val()||'',vendor_id:$('#po_items_vendor').val()||''});if(!r.success){if(!exportAll)$('#po_items_list').html('<div class="bsm-empty">Unable to load PO Items Master.</div>');return null;}const rows=r.data.rows||[];if(exportAll)return rows;const amt=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>PO No.</th><th>PO Date</th><th>Supplier</th><th>Item</th><th>Unit</th><th>Supplier 1</th><th>Rate 1</th><th>Supplier 2</th><th>Rate 2</th><th>Supplier 3</th><th>Rate 3</th><th>Chosen Supplier</th><th>Chosen Rate</th><th class="num">Fixed Price</th><th class="num">Rate</th><th class="num">PO Qty</th><th class="num">Received Qty</th><th class="num">Pending Qty</th><th class="num">Amount</th><th>Status</th></tr></thead><tbody>';rows.forEach((x,i)=>h+=`<tr><td>${i+1}</td><td>${esc(x.po_no||'')}</td><td>${dateFmt(x.po_date)}</td><td>${esc(x.vendor_name||'')}</td><td>${esc(x.item_name||'')}</td><td>${esc(x.unit_name||'')}</td>${poItemQuotes(x).map(v=>`<td>${esc(v)}</td>`).join('')}<td class="num">${amt(x.fixed_price)}</td><td class="num">${amt(x.rate)}</td><td class="num">${Number(x.po_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.received_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.pending_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${amt(Number(x.po_qty||0)*Number(x.rate||0))}</td><td>${esc(String(x.status||'').replaceAll('_',' '))}</td></tr>`);if(!rows.length)h+='<tr><td colspan="21" class="bsm-empty">No PO Item records found.</td></tr>';h+='</tbody></table></div>';$('#po_items_list').html(h);return rows;
+  const r=await ajax('bsm_purchase_order_items_master',{search:$('#po_items_search').val()||'',vendor_id:$('#po_items_vendor').val()||''});if(!r.success){if(!exportAll)$('#po_items_list').html('<div class="bsm-empty">Unable to load PO Items Master.</div>');return null;}const rows=r.data.rows||[];if(exportAll)return rows;const amt=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>PO No.</th><th>PO Date</th><th>Supplier</th><th>Item</th><th>Unit</th><th>Supplier 1</th><th>Rate 1</th><th>Supplier 2</th><th>Rate 2</th><th>Supplier 3</th><th>Rate 3</th><th>Chosen Supplier</th><th>Chosen Rate</th><th class="num">Rate</th><th class="num">PO Qty</th><th class="num">Received Qty</th><th class="num">Pending Qty</th><th class="num">Amount</th><th>Status</th></tr></thead><tbody>';rows.forEach((x,i)=>h+=`<tr><td>${i+1}</td><td>${esc(x.po_no||'')}</td><td>${dateFmt(x.po_date)}</td><td>${esc(x.vendor_name||'')}</td><td>${esc(x.item_name||'')}</td><td>${esc(x.unit_name||'')}</td>${poItemQuotes(x).map(v=>`<td>${esc(v)}</td>`).join('')}<td class="num">${amt(x.rate)}</td><td class="num">${Number(x.po_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.received_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.pending_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${amt(Number(x.po_qty||0)*Number(x.rate||0))}</td><td>${esc(String(x.status||'').replaceAll('_',' '))}</td></tr>`);if(!rows.length)h+='<tr><td colspan="20" class="bsm-empty">No PO Item records found.</td></tr>';h+='</tbody></table></div>';$('#po_items_list').html(h);return rows;
 }
 
 function vendorOptionHtml(selected=''){
@@ -904,8 +901,8 @@ async function openPurchaseApprovalForm(id){
   const r=await ajax('bsm_purchase_approval_get',{id});if(!r.success)return showToast(r.data?.message||'Unable to load',true);const row=r.data;
   App.editId=id;$('#bsm-modal-title').text('Approve Purchase');
   $('#bsm-form-fields').removeClass('bsm-requisition-summary bsm-dispatch-summary').addClass('bsm-approval-summary').html(`<label><span class="bsm-field-label">PO No.</span><input value="${esc(row.inward_no||'')}" readonly></label><label><span class="bsm-field-label">Supplier</span><input value="${esc(row.vendor_name||'')}" readonly></label><label><span class="bsm-field-label">Warehouse</span><input value="${esc(row.warehouse_name||'')}" readonly></label><label><span class="bsm-field-label">Date</span><input value="${dateFmt(row.inward_date)}" readonly></label><label><span class="bsm-field-label">Approved By</span><input value="${esc(BSM.currentUser?.name||'')}" readonly></label>`);
-  let h='<div class="bsm-lines bsm-approval-lines"><div class="bsm-table-wrap"><table><thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Approved Qty</th><th>Unit</th><th class="num">Fixed Price</th><th class="num">Rate</th></tr></thead><tbody id="bsm-purchase-approval-lines">';
-  (row._items||[]).forEach(it=>{const q=Number(it.qty||0),saved=Number(it.approved_qty||0),initial=saved>0?saved:q;h+=`<tr data-id="${it.id}" data-qty="${q}"><td>${esc(it.item_name||'')}</td><td class="num">${q.toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td><input class="bsm-purchase-approved-qty num" type="number" min="0" max="${q}" step="0.01" value="${initial}"></td><td>${esc(it.unit_name||'')}</td><td class="num"><input class="bsm-purchase-master-price num" type="text" value="${Number(it.master_price||0).toFixed(2)}" readonly></td><td><input class="bsm-purchase-approval-rate num" type="number" min="0" step="0.01" value="${Number(it.rate||0).toFixed(2)}"></td></tr>`;});
+  let h='<div class="bsm-lines bsm-approval-lines"><div class="bsm-table-wrap"><table><thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Approved Qty</th><th>Unit</th><th class="num">Rate</th></tr></thead><tbody id="bsm-purchase-approval-lines">';
+  (row._items||[]).forEach(it=>{const q=Number(it.qty||0),saved=Number(it.approved_qty||0),initial=saved>0?saved:q;h+=`<tr data-id="${it.id}" data-qty="${q}"><td>${esc(it.item_name||'')}</td><td class="num">${q.toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td><input class="bsm-purchase-approved-qty num" type="number" min="0" max="${q}" step="0.01" value="${initial}"></td><td>${esc(it.unit_name||'')}</td><td><input class="bsm-purchase-approval-rate num" type="number" min="0" step="0.01" value="${Number(it.rate||0).toFixed(2)}"></td></tr>`;});
   h+='</tbody></table></div></div>';$('#bsm-line-items').html(h);$('#bsm-documents').empty();$('#bsm-form').data('module','purchase_approval');$('#bsm-modal').show();
 }
 async function savePurchaseApproval(){
@@ -1008,9 +1005,9 @@ async function loadPurchaseItemsRegister(exportAll=false){
   if(exportAll)return r.data.rows||[];
   const rows=r.data.rows||[];
   const amt=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
-  let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>Purchase</th><th>Date</th><th>Supplier</th><th>GST Type</th><th>Bill Type</th><th>Supplier Invoice No.</th><th>Item Category</th><th>Item</th><th class="num">Qty</th><th class="num">Approved Qty</th><th>Unit</th><th class="num">Fixed Price</th><th class="num">Rate</th><th class="num">Taxable</th><th class="num">GST %</th><th class="num">CGST</th><th class="num">SGST</th><th class="num">IGST</th><th class="num">Total</th><th>Approved By</th></tr></thead><tbody>';
-  rows.forEach((x,i)=>{h+=`<tr><td>${(r.data.page-1)*20+i+1}</td><td>${esc(x.inward_no||'')}</td><td>${dateFmt(x.inward_date)}</td><td>${esc(x.vendor_name||'')}</td><td>${esc(x.supplier_invoice_no||'')}</td><td>${esc(x.category_name||'')}</td><td>${esc(x.item_name||'')}</td><td class="num">${Number(x.qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number((x.approved_qty||0)!==0?x.approved_qty:x.qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td>${esc(x.unit_name||'')}</td><td class="num">${amt(x.master_price)}</td><td class="num">${amt(x.rate)}</td><td class="num">${amt(x.taxable_amount)}</td><td class="num">${Number(x.gst_rate||0).toFixed(2)}%</td><td class="num">${amt(x.cgst_amount)}</td><td class="num">${amt(x.sgst_amount)}</td><td class="num">${amt(x.igst_amount)}</td><td class="num">${amt(x.total_amount)}</td><td>${esc(x.approved_by_name||'-')}</td></tr>`;});
-  if(!rows.length)h+='<tr><td colspan="19" class="bsm-empty">No purchase item records found.</td></tr>';
+  let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>Purchase</th><th>Date</th><th>Supplier</th><th>GST Type</th><th>Bill Type</th><th>Supplier Invoice No.</th><th>Item Category</th><th>Item</th><th class="num">Qty</th><th class="num">Approved Qty</th><th>Unit</th><th class="num">Rate</th><th class="num">Taxable</th><th class="num">GST %</th><th class="num">CGST</th><th class="num">SGST</th><th class="num">IGST</th><th class="num">Total</th><th>Approved By</th></tr></thead><tbody>';
+  rows.forEach((x,i)=>{h+=`<tr><td>${(r.data.page-1)*20+i+1}</td><td>${esc(x.inward_no||'')}</td><td>${dateFmt(x.inward_date)}</td><td>${esc(x.vendor_name||'')}</td><td>${esc(x.gst_type||'')}</td><td>${esc(x.bill_type||'')}</td><td>${esc(x.supplier_invoice_no||'')}</td><td>${esc(x.category_name||'')}</td><td>${esc(x.item_name||'')}</td><td class="num">${Number(x.qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number((x.approved_qty||0)!==0?x.approved_qty:x.qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td>${esc(x.unit_name||'')}</td><td class="num">${amt(x.rate)}</td><td class="num">${amt(x.taxable_amount)}</td><td class="num">${Number(x.gst_rate||0).toFixed(2)}%</td><td class="num">${amt(x.cgst_amount)}</td><td class="num">${amt(x.sgst_amount)}</td><td class="num">${amt(x.igst_amount)}</td><td class="num">${amt(x.total_amount)}</td><td>${esc(x.approved_by_name||'-')}</td></tr>`;});
+  if(!rows.length)h+='<tr><td colspan="20" class="bsm-empty">No purchase item records found.</td></tr>';
   h+='</tbody></table></div>';
   if(r.data.pages>1)h+=`<div class="bsm-pagination"><button class="bsm-btn page-prev" ${r.data.page<=1?'disabled':''}>Previous</button><span>Page ${r.data.page} of ${r.data.pages}</span><button class="bsm-btn page-next" ${r.data.page>=r.data.pages?'disabled':''}>Next</button></div>`;
   $('#bsm-purchase-items-list').html(h);
@@ -1018,18 +1015,17 @@ async function loadPurchaseItemsRegister(exportAll=false){
 }
 async function exportPurchaseItemsRegister(){
   const rows=await loadPurchaseItemsRegister(true); if(!rows)return;
-  const headers=['Sl','Purchase','Date','Supplier','Supplier Invoice No.','Item Category','Item','Qty','Approved Qty','Unit','Fixed Price','Rate','Taxable','GST %','CGST','SGST','IGST','Total','Approved By'];
-  const data=rows.map((x,i)=>[i+1,x.inward_no||'',dateFmt(x.inward_date),x.vendor_name||'',x.supplier_invoice_no||'',x.category_name||'',x.item_name||'',x.qty||0,((x.approved_qty||0)!==0?x.approved_qty:x.qty||0),x.unit_name||'',x.master_price||0,x.rate||0,x.taxable_amount||0,x.gst_rate||0,x.cgst_amount||0,x.sgst_amount||0,x.igst_amount||0,x.total_amount||0,x.approved_by_name||'']);
+  const headers=['Sl','Purchase','Date','Supplier','Supplier Invoice No.','Item Category','Item','Qty','Approved Qty','Unit','Rate','Taxable','GST %','CGST','SGST','IGST','Total','Approved By'];
+  const data=rows.map((x,i)=>[i+1,x.inward_no||'',dateFmt(x.inward_date),x.vendor_name||'',x.supplier_invoice_no||'',x.category_name||'',x.item_name||'',x.qty||0,((x.approved_qty||0)!==0?x.approved_qty:x.qty||0),x.unit_name||'',x.rate||0,x.taxable_amount||0,x.gst_rate||0,x.cgst_amount||0,x.sgst_amount||0,x.igst_amount||0,x.total_amount||0,x.approved_by_name||'']);
   downloadExcelFile('Purchase Items Master',headers,data);
 }
 
 function purchaseItemDetailsHtml(items){
   const rows=items||[];
   const amt=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
-  let h='<div class="bsm-purchase-item-details"><div class="bsm-purchase-detail-wrap"><table class="bsm-purchase-detail-table"><thead><tr><th>Item</th><th class="num">Qty</th><th>Unit</th><th class="num">Fixed Price</th><th class="num">Rate</th><th class="num">Taxable</th><th class="num">GST %</th><th class="num">CGST</th><th class="num">SGST</th><th class="num">IGST</th><th class="num">Total</th></tr></thead><tbody>';
+  let h='<div class="bsm-purchase-item-details"><div class="bsm-purchase-detail-wrap"><table class="bsm-purchase-detail-table"><thead><tr><th>Item</th><th class="num">Qty</th><th>Unit</th><th class="num">Rate</th><th class="num">Taxable</th><th class="num">GST %</th><th class="num">CGST</th><th class="num">SGST</th><th class="num">IGST</th><th class="num">Total</th></tr></thead><tbody>';
   rows.forEach(it=>{
-    const price=Number(it.item_price||0);
-    h+=`<tr><td>${esc(labelFor('items',it.item_id)||'')}</td><td class="num">${Number(it.qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td>${esc(labelFor('units',it.unit_id)||'')}</td><td class="num">${amt(price)}</td><td class="num">${amt(it.rate)}</td><td class="num">${amt(it.taxable_amount)}</td><td class="num">${Number(it.gst_rate||0).toFixed(2)}%</td><td class="num">${amt(it.cgst_amount)}</td><td class="num">${amt(it.sgst_amount)}</td><td class="num">${amt(it.igst_amount)}</td><td class="num">${amt(it.total_amount)}</td></tr>`;
+    h+=`<tr><td>${esc(labelFor('items',it.item_id)||'')}</td><td class="num">${Number(it.qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td>${esc(labelFor('units',it.unit_id)||'')}</td><td class="num">${amt(it.rate)}</td><td class="num">${amt(it.taxable_amount)}</td><td class="num">${Number(it.gst_rate||0).toFixed(2)}%</td><td class="num">${amt(it.cgst_amount)}</td><td class="num">${amt(it.sgst_amount)}</td><td class="num">${amt(it.igst_amount)}</td><td class="num">${amt(it.total_amount)}</td></tr>`;
   });
   if(!rows.length) h+='<tr><td colspan="11" class="bsm-empty">No item data found.</td></tr>';
   h+='</tbody></table></div></div>';
@@ -1985,7 +1981,7 @@ function addLine(cfg,it={}){
     }
   }
   if(cfg===App.configs.material_inwards){
-    syncPurchaseItemPrice($tr);
+    
     // Purchase GST % is driven by Item Master. Keep the real select for saving/calculation,
     // but show a simple read-only field so users cannot change it manually.
     const $gst=$tr.find('select[name="gst_rate"]');
@@ -2102,14 +2098,14 @@ function setMaterialInwardMode(type){
     applyMaterialInwardGSTType('no_gst');
     // Return receipt approval is intentionally minimal:
     // Item | Return Qty | Received Qty | Unit
-    ['item_price','rate','remarks','taxable_amount','gst_rate','cgst_amount','sgst_amount','igst_amount','total_amount'].forEach(n=>setInwardColumnVisible(n,false));
+    ['rate','remarks','taxable_amount','gst_rate','cgst_amount','sgst_amount','igst_amount','total_amount'].forEach(n=>setInwardColumnVisible(n,false));
     ['return_qty'].forEach(n=>setInwardColumnVisible(n,true));
     const qi=inwardFieldColumnIndex('qty'); if(qi>0) $('#bsm-line-items thead th').eq(qi-1).text('Received Qty');
     $('#bsm-line-items thead th').eq(inwardFieldColumnIndex('return_qty')-1).text('Return Qty');
     showReturnReceiptUnitColumns();
   }else{
     ['return_qty','remarks'].forEach(n=>setInwardColumnVisible(n,false));
-    ['item_price','rate'].forEach(n=>setInwardColumnVisible(n,true));
+    ['rate'].forEach(n=>setInwardColumnVisible(n,true));
     const qi=inwardFieldColumnIndex('qty'); if(qi>0) $('#bsm-line-items thead th').eq(qi-1).text('Qty');
     const vendorId=$fields.find('select[name="vendor_id"]').val()||'';
     if(vendorId) loadMaterialInwardVendorGST(vendorId); else applyMaterialInwardGSTType('no_gst');
@@ -2147,7 +2143,7 @@ async function fillMaterialInwardFromReturn(returnId){
       qty:Number(it.pending_qty??it.qty??0),
       unit_id:resolvedUnitId,
       unit_name:String(it.unit_name||masterItem.unit_name||''),
-      item_price:'',rate:'',remarks:'',taxable_amount:'',gst_rate:'',cgst_amount:'',sgst_amount:'',igst_amount:'',total_amount:''
+      rate:'',remarks:'',taxable_amount:'',gst_rate:'',cgst_amount:'',sgst_amount:'',igst_amount:'',total_amount:''
     };
   });
   renderItems(App.configs.material_inwards,returnLines);
@@ -2174,7 +2170,7 @@ async function fillMaterialInwardFromReturn(returnId){
   });
 
   showReturnReceiptUnitColumns();
-  $('#bsm-lines-body input[name="return_qty"],#bsm-lines-body input[name="item_price"],#bsm-lines-body input[name="rate"],#bsm-lines-body input[name="remarks"]').prop('readonly',true);
+  $('#bsm-lines-body input[name="return_qty"],#bsm-lines-body input[name="rate"],#bsm-lines-body input[name="remarks"]').prop('readonly',true);
   $('#bsm-lines-body input[name="qty"]').prop('readonly',false);
   $('#bsm-lines-body .bsm-add-line-inline,#bsm-lines-body .bsm-remove-line').hide();
 }
@@ -2460,19 +2456,6 @@ function syncSalesUnitDisplay($tr){
   const txt=$unit.find('option:selected').text()||'';
   $display.val(txt==='Select'?'':txt);
 }
-function syncPurchaseItemPrice($tr,force=false){
-  if($('#bsm-form').data('module')!=='material_inwards') return;
-  const $price=$tr.find('input[name="item_price"]');
-  if(!$price.length) return;
-  // Existing saved Purchase Price is a fixed snapshot. Only refresh it when the Item itself changes.
-  if(!force && String($price.val()||'').trim()!=='') return;
-  const itemId=String($tr.find('select[name="item_id"]').val()||'');
-  const item=(App.options.items||[]).find(x=>String(x.id)===itemId);
-  const raw=item&&item.opening_rate!==undefined&&item.opening_rate!==null?String(item.opening_rate):'';
-  const n=Number(raw||0);
-  $price.val(raw!==''&&Number.isFinite(n)?n.toFixed(2):'');
-}
-
 function syncPurchaseItemGst($tr){
   if($('#bsm-form').data('module')!=='material_inwards') return;
   const itemId=String($tr.find('select[name="item_id"]').val()||'');
@@ -2938,7 +2921,7 @@ function quickAddMaster(master,target){
       ${fieldHtml(F('hsn_code','HSN Code'), '')}
       ${fieldHtml(F('gst_rate','GST Rate %',ref('gst_rates')), '')}
       ${fieldHtml(F('opening_qty','Opening Qty',qty), '')}
-      ${fieldHtml(F('opening_rate','Price',money), '')}
+      
       ${fieldHtml(F('minimum_stock','Minimum Stock',qty), '')}
     </div><div id="bsm-quick-msg" class="bsm-form-msg"></div>`;
     $('#bsm-quick-body').html(body);
@@ -4118,7 +4101,7 @@ $(document).on('click','.po-direct-remove',function(){
   if($rows.length<=1){
     const $r=$(this).closest('tr');
     $r.find('.po-direct-item').val('');
-    $r.find('.po-direct-qty,.po-direct-fixed-price,.po-direct-rate').val('');
+    $r.find('.po-direct-qty,.po-direct-rate').val('');
     $r.find('.po-direct-unit').text('-');
     $r.find('.po-direct-amount').text('0.00');
     return;
@@ -4143,13 +4126,12 @@ $(document).on('click','#po_direct_save',async function(){
   $('#po_direct_items .po-direct-row').each(function(){
     const item_id=$(this).find('.po-direct-item').val();
     const po_qty=Number($(this).find('.po-direct-qty').val()||0);
-    const fixed_price=Number($(this).find('.po-direct-fixed-price').val()||0);
     const rate=Number($(this).find('.po-direct-rate').val()||0);
     if(!item_id && po_qty<=0)return;
     if(!item_id || po_qty<=0){invalid=true;return;}
     const quotations=[1,2,3].map(n=>({vendor_id:String($('.po-direct-quote-supplier[data-slot="'+n+'"]').val()||''),rate:$('.po-direct-quote-rate[data-slot="'+n+'"]').val()}));
     if(quotations.some(q=>!q.vendor_id||q.rate===''||!Number.isFinite(Number(q.rate))||Number(q.rate)<0)||!quotations.some(q=>q.vendor_id===String(vendor_id))){invalid=true;return;}
-    items.push({item_id,po_qty,fixed_price,rate,quotations});
+    items.push({item_id,po_qty,rate,quotations});
   });
   if(invalid)return showToast('Select Item, enter PO Qty and three supplier rates, and choose a quoted Supplier above',true);
   if(!items.length)return showToast('Add at least one PO item',true);
@@ -4181,7 +4163,7 @@ $(document).on('click','.po-edit',async function(e){
   App.editId=id;$('#bsm-modal').removeClass('bsm-purchase-edit-modal bsm-site-receipt-modal');$('#bsm-modal-title').text('Edit Purchase Order');$('#bsm-form').data('module','purchase_order_edit');
   const vendorOpts=(App.options.vendors||[]).map(x=>`<option value="${x.id}" ${String(x.id)===String(h.vendor_id)?'selected':''}>${esc(x.label||x.vendor_name||x.name||'')}</option>`).join('');const whOpts=(App.options.warehouses||[]).map(x=>`<option value="${x.id}" ${String(x.id)===String(h.warehouse_id)?'selected':''}>${esc(x.label||x.warehouse_name||x.name||'')}</option>`).join('');
   $('#bsm-form-fields').html(`<label><span class="bsm-field-label">PO No.</span><input value="${esc(h.po_no||'')}" readonly></label><label><span class="bsm-field-label">PO Date</span><input type="date" lang="en-GB" name="po_date" value="${esc(h.po_date||'')}"></label><label><span class="bsm-field-label">Supplier</span><select name="vendor_id" ${locked?'disabled':''}>${vendorOpts}</select></label><label><span class="bsm-field-label">Warehouse</span><select name="warehouse_id" ${locked?'disabled':''}>${whOpts}</select></label><label><span class="bsm-field-label">Required Date</span><input type="date" lang="en-GB" name="required_date" value="${esc(h.required_date||'')}"></label><label class="wide"><span class="bsm-field-label">Remarks</span><textarea name="remarks">${esc(h.remarks||'')}</textarea></label>`);
-  let ih='<div class="bsm-table-wrap"><table><thead><tr><th>Item</th><th>Unit</th><th class="num">Received Qty</th><th class="num">PO Qty</th><th class="num">Fixed Price</th><th class="num">Rate</th></tr></thead><tbody>';items.forEach(it=>{ih+=`<tr data-id="${it.id}"><td>${esc(it.item_name||'')}</td><td>${esc(it.unit_name||'')}</td><td class="num">${Number(it.received_qty||0).toFixed(2)}</td><td><input class="po-edit-qty num" type="number" min="${Number(it.received_qty||0)}" step="0.01" value="${Number(it.po_qty||0).toFixed(2)}"></td><td class="num">${Number(it.fixed_price||0).toFixed(2)}</td><td><input class="po-edit-rate num" type="number" min="0" step="0.01" value="${Number(it.rate||0).toFixed(2)}"></td></tr>`;});ih+='</tbody></table></div>';$('#bsm-line-items').html(ih);$('#bsm-documents').empty();$('#bsm-modal').show();
+  let ih='<div class="bsm-table-wrap"><table><thead><tr><th>Item</th><th>Unit</th><th class="num">Received Qty</th><th class="num">PO Qty</th><th class="num">Rate</th></tr></thead><tbody>';items.forEach(it=>{ih+=`<tr data-id="${it.id}"><td>${esc(it.item_name||'')}</td><td>${esc(it.unit_name||'')}</td><td class="num">${Number(it.received_qty||0).toFixed(2)}</td><td><input class="po-edit-qty num" type="number" min="${Number(it.received_qty||0)}" step="0.01" value="${Number(it.po_qty||0).toFixed(2)}"></td><td><input class="po-edit-rate num" type="number" min="0" step="0.01" value="${Number(it.rate||0).toFixed(2)}"></td></tr>`;});ih+='</tbody></table></div>';$('#bsm-line-items').html(ih);$('#bsm-documents').empty();$('#bsm-modal').show();
 });
 $(document).on('submit','#bsm-form',async function(e){if($(this).data('module')!=='purchase_order_edit')return;e.preventDefault();const data={po_date:$('#bsm-form-fields [name="po_date"]').val(),vendor_id:$('#bsm-form-fields [name="vendor_id"]').val(),warehouse_id:$('#bsm-form-fields [name="warehouse_id"]').val(),required_date:$('#bsm-form-fields [name="required_date"]').val(),remarks:$('#bsm-form-fields [name="remarks"]').val()};const items=[];$('#bsm-line-items tbody tr').each(function(){items.push({id:$(this).data('id'),po_qty:$(this).find('.po-edit-qty').val(),rate:$(this).find('.po-edit-rate').val()});});const r=await ajax('bsm_purchase_order_update',{id:App.editId,data:JSON.stringify(data),items:JSON.stringify(items)});if(r.success){showToast(r.data.message||'PO updated');$('#bsm-modal').hide();loadPurchaseOrderMaster();}else showToast(r.data?.message||'Unable to update PO',true);});
 $(document).on('click','.po-cancel',async function(){if(!confirm('Cancel this PO?'))return;const r=await ajax('bsm_purchase_order_cancel',{id:$(this).data('id')});if(r.success){showToast('PO cancelled');loadPurchaseOrderMaster();}else showToast(r.data?.message||'Unable to cancel PO',true);});
@@ -4189,7 +4171,7 @@ $(document).on('input','#po_items_search',function(){clearTimeout(App.poims);App
 $(document).on('change','#po_items_vendor',()=>loadPurchaseOrderItemsMaster());
 $(document).on('click','#po_pending_export',async function(){const rows=await loadPendingPoItems(true);if(!rows)return;downloadExcelFile('Pending PO Items',['Sl','Site','Item','Unit','Approved Qty','Current Stock','Pending PO Qty'],rows.map((x,i)=>[i+1,x.site_name||'',x.item_name||'',x.unit_name||'',x.approved_qty||0,x.current_stock||0,x.pending_po_qty||0]));});
 $(document).on('click','#po_master_export',async function(){const rows=await loadPurchaseOrderMaster(true);if(!rows)return;downloadExcelFile('PO Master',['Sl','PO No.','PO Date','Supplier','Warehouse','Required Date','Items','PO Qty','Received','Pending','Total','Status','Created By'],rows.map((x,i)=>[i+1,x.po_no||'',dateFmt(x.po_date),x.vendor_name||'',x.warehouse_name||'',dateFmt(x.required_date),x.item_count||0,x.po_qty||0,x.received_qty||0,x.pending_qty||0,x.total_amount||0,x.status||'',x.created_by_name||'']));});
-$(document).on('click','#po_items_export',async function(){const rows=await loadPurchaseOrderItemsMaster(true);if(!rows)return;downloadExcelFile('PO Items Master',['Sl','PO No.','PO Date','Supplier','Item','Unit','Supplier 1','Rate 1','Supplier 2','Rate 2','Supplier 3','Rate 3','Chosen Supplier','Chosen Rate','Fixed Price','Rate','PO Qty','Received Qty','Pending Qty','Amount','Status'],rows.map((x,i)=>[i+1,x.po_no||'',dateFmt(x.po_date),x.vendor_name||'',x.item_name||'',x.unit_name||'',...poItemQuotes(x),x.fixed_price||0,x.rate||0,x.po_qty||0,x.received_qty||0,x.pending_qty||0,Number(x.po_qty||0)*Number(x.rate||0),x.status||'']));});
+$(document).on('click','#po_items_export',async function(){const rows=await loadPurchaseOrderItemsMaster(true);if(!rows)return;downloadExcelFile('PO Items Master',['Sl','PO No.','PO Date','Supplier','Item','Unit','Supplier 1','Rate 1','Supplier 2','Rate 2','Supplier 3','Rate 3','Chosen Supplier','Chosen Rate','Rate','PO Qty','Received Qty','Pending Qty','Amount','Status'],rows.map((x,i)=>[i+1,x.po_no||'',dateFmt(x.po_date),x.vendor_name||'',x.item_name||'',x.unit_name||'',...poItemQuotes(x),x.rate||0,x.po_qty||0,x.received_qty||0,x.pending_qty||0,Number(x.po_qty||0)*Number(x.rate||0),x.status||'']));});
 
 $(document).on('click keydown','.bsm-labour-attendance-row',function(e){
   if($(e.target).closest('button,a,input,select,textarea').length)return;
@@ -4319,7 +4301,7 @@ $(document).on('click',function(e){if(!$(e.target).closest('.bsm-site-section-mu
 $(document).on('submit','#bsm-form',function(e){e.preventDefault();if($(this).data('module')==='users')saveUser();else if($(this).data('module')==='requisition_approval')saveApproval();else if($(this).data('module')==='purchase_approval')savePurchaseApproval();else saveForm();});
 $(document).on('change','#bsm-form[data-module="site_receipts"] select[name="dispatch_id"]',function(){fillSiteReceiptFromDispatch($(this).val());});
 $(document).on('change','#bsm-form[data-module="site_consumptions"] select[name="site_id"]',function(){refreshConsumptionItemOptions();});
-$(document).on('change','#bsm-lines-body select[name="item_id"]',function(){const $tr=$(this).closest('tr');autoSelectUnitFromItem($tr);syncPurchaseItemPrice($tr,true);syncPurchaseItemGst($tr);});
+$(document).on('change','#bsm-lines-body select[name="item_id"]',function(){const $tr=$(this).closest('tr');autoSelectUnitFromItem($tr);syncPurchaseItemGst($tr);});
 $(document).on('change','#bsm-form[data-module="site_consumptions"] #bsm-lines-body select[name="item_id"]',function(){
   const $sel=$(this),val=String($sel.val()||'');
   if(val){let count=0;$('#bsm-lines-body select[name="item_id"]').each(function(){if(String($(this).val()||'')===val)count++;});if(count>1){$sel.val('');bsmRefreshSearchableSelect($sel[0]);showToast('Same Item cannot be repeated in Consumption Form',true);}}
