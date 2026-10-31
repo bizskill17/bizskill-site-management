@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.066
+ * Version: 0.0.067
  * Author: BizSkill
  */
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/notifications.php';
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
-    const VERSION = '0.0.066';
+    const VERSION = '0.0.067';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -1553,11 +1553,11 @@ final class BSM_Site_Management {
         global $post;
         if (!$post || get_post_meta($post->ID, '_bsm_app_page', true) !== '1') return;
         // Stable asset names prevent PHP and filesystem releases becoming mismatched.
-        // Use file modification timestamps for cache-busting after each update.
+        // Content hashes invalidate cached assets even when deployments preserve timestamps.
         $asset_path = plugin_dir_path(__FILE__) . 'assets/';
         $asset_url = plugin_dir_url(__FILE__) . 'assets/';
-        $css_version = self::VERSION . '-' . (file_exists($asset_path . 'app.css') ? (string) filemtime($asset_path . 'app.css') : '0');
-        $js_version = self::VERSION . '-' . (file_exists($asset_path . 'app.js') ? (string) filemtime($asset_path . 'app.js') : '0');
+        $css_version = self::VERSION . '-' . (file_exists($asset_path . 'app.css') ? substr(hash_file('sha256', $asset_path . 'app.css'), 0, 16) : '0');
+        $js_version = self::VERSION . '-' . (file_exists($asset_path . 'app.js') ? substr(hash_file('sha256', $asset_path . 'app.js'), 0, 16) : '0');
         wp_enqueue_style('bsm-app', $asset_url . 'app.css', [], $css_version);
         wp_enqueue_script('bsm-app', $asset_url . 'app.js', ['jquery'], $js_version, true);
         global $wpdb;
