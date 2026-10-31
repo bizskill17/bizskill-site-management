@@ -223,4 +223,10 @@ $moreHours=wp_json_encode(['employee_hours'=>[['employee_name'=>'Atul Roy','work
 $wpdb->query($wpdb->prepare('INSERT INTO bsm_labour_attendance VALUES(2,1,%s,2,1,%s,10,10)',$today,$moreHours));
 $attendance=$host->call('nt_summary','labour_attendance',1,$today);
 check(str_contains($attendance,"\n\n1.ABC Contractor\n* Worker A — 5 hours")&&str_contains($attendance,"\n\n2.Tutan Deb\n* Atul Roy — 3.3 hours"),'Attendance numbers contractors and preserves decimal employee hours');
+
+$wpdb->query("INSERT INTO bsm_users VALUES(2,20,'Priya')");
+$wpdb->query($wpdb->prepare("INSERT INTO bsm_time_entries VALUES(3,%s,2,0,0,0,'10:00:00','11:00:00',60,'Invoice checking')",$today));
+$office=$host->call('nt_summary','office_timesheet',0,$today);
+check(str_contains($office,"\n\n1.Rahul\n* ")&&str_contains($office,"\n\n2.Priya\n* 10:00 AM–11:00 AM | Office | Invoice checking | 1 hour"),'Office summary numbers multiple employees and uses asterisk activity lines');
+check(str_contains($office,"Total Employees Reported: 2\nTotal Recorded Hours: 3"),'Office summary totals all reported employees and hours');
 echo "\n$count notification checks passed. No network calls made.\n";
