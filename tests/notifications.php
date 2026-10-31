@@ -106,4 +106,19 @@ $po=$wpdb->get_row('SELECT * FROM bsm_purchase_orders WHERE id=1');$event=$host-
 $inward=$wpdb->get_row('SELECT * FROM bsm_material_inwards WHERE id=1');$event=$host->call('nt_event_message','po_received','material_inwards',$inward);check(str_contains($event['message'],'40 Kg | 10 Kg')&&str_contains($event['message'],'Partially Received'),'PO receipt handles partial quantities');
 check(str_contains($host->call('nt_summary','pending_po',0,'2026-10-31'),'10 Kg pending'),'Pending PO reminder excludes received quantity');
 $wpdb->query("UPDATE bsm_purchase_orders SET status='pending_approval' WHERE id=1");check(str_contains($host->call('nt_summary','pending_po_approval',0,'2026-10-31'),'ABC Traders'),'Pending PO approval includes supplier');check($host->call('nt_summary','pending_po',0,'2026-10-31')==='','Unapproved PO excluded from pending receipt reminder');
+
+$wpdb->query('CREATE TABLE bsm_holidays(id INTEGER PRIMARY KEY,holiday_date TEXT,employee_ids TEXT)');
+$today=(new DateTimeImmutable('now',new DateTimeZone('Asia/Kolkata')))->format('Y-m-d');
+$options['bsm_notification_settings']['days']=[(int)(new DateTimeImmutable('now',new DateTimeZone('Asia/Kolkata')))->format('N')];
+$options['bsm_notification_settings']['include_holidays']=false;
+$wpdb->query($wpdb->prepare("INSERT INTO bsm_holidays VALUES(1,%s,'[]')",$today));
+$wpdb->query('DELETE FROM bsm_notification_queue');$wpdb->query("DELETE FROM bsm_notification_state WHERE record_key LIKE 'schedule:%'");
+$host->call('nt_scheduled');check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===0,'Unchecked Holidays skips global holidays');
+$options['bsm_notification_settings']['include_holidays']=true;
+$host->call('nt_scheduled');check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===1,'Checked Holidays allows scheduled summaries');
+$wpdb->query('DELETE FROM bsm_notification_queue');$wpdb->query("DELETE FROM bsm_notification_state WHERE record_key LIKE 'schedule:%'");
+$options['bsm_notification_settings']['include_holidays']=false;
+$wpdb->query("UPDATE bsm_holidays SET employee_ids='[1]'");
+$host->call('nt_scheduled');check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===1,'Individual employee holidays do not stop all summaries');
+
 echo "\n$count notification checks passed. No network calls made.\n";
