@@ -2910,3 +2910,11 @@ html,body{
 .nt-add-time{border:1px solid #c6d8f4;background:#eff5ff;color:#2359a2;padding:5px 8px;border-radius:6px;font-size:11px;cursor:pointer;}
 .nt-rule>label:first-child{min-width:0;flex:1;}.nt-rule>label:first-child span{overflow-wrap:anywhere;}
 @media(max-width:600px){.nt-rule .nt-time-label{width:100%;max-width:none;}.nt-time-row{gap:6px;}}
+
+/* Dispatch source choices */
+.bsm-dispatch-source-field{min-width:0;display:flex;flex-direction:column;gap:6px}
+.bsm-dispatch-source-buttons{display:flex;width:100%;min-height:44px;border:1px solid #8cb5ff;border-radius:10px;overflow:hidden;background:#fff}
+.bsm-dispatch-source-button{flex:1;min-width:0;padding:10px 8px;border:0;background:#fff;color:#1760d9;font:inherit;font-weight:600;cursor:pointer}
+.bsm-dispatch-source-button+.bsm-dispatch-source-button{border-left:1px solid #8cb5ff}
+.bsm-dispatch-source-button.is-selected{background:#1769ff;color:#fff}
+.bsm-dispatch-source-button:focus-visible{outline:3px solid #093c90;outline-offset:-3px}
