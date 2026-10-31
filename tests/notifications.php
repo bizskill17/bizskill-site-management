@@ -265,4 +265,13 @@ $wpdb->query('DELETE FROM bsm_notification_queue');$wpdb->query("DELETE FROM bsm
 $wpdb->query('UPDATE bsm_material_inward_items SET qty=50 WHERE id=1');
 $host->call('nt_scheduled');
 check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===0,'Fully received POs send no receipt reminder');
+
+$wpdb->query("UPDATE bsm_purchase_orders SET status='pending_approval' WHERE id=1");
+$wpdb->query("INSERT INTO bsm_purchase_orders(id,status,po_no,po_date,vendor_id,warehouse_id,created_by) VALUES(2,'pending_approval','PO-2','2026-11-01',1,1,10)");
+$wpdb->query('INSERT INTO bsm_purchase_order_items VALUES(2,2,1,1,20,660)');
+$summary=$host->call('nt_summary','pending_po_approval',0,$today);
+check(str_contains($summary,"\n\n1.PO-1 | 31/10/2026")&&str_contains($summary,"\n\n2.PO-2 | 01/11/2026"),'Pending approval POs numbered consecutively');
+check(str_contains($summary,'Amount: ₹13,200.00')&&str_contains($summary,'Created By: Rahul'),'Numbered pending approval retains PO amount and creator');
+$wpdb->query("UPDATE bsm_purchase_orders SET status='approved'");
+check($host->call('nt_summary','pending_po_approval',0,$today)==='','No pending approvals produces no reminder');
 echo "\n$count notification checks passed. No network calls made.\n";
