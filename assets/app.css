@@ -2918,3 +2918,9 @@ html,body{
 .bsm-dispatch-source-button+.bsm-dispatch-source-button{border-left:1px solid #8cb5ff}
 .bsm-dispatch-source-button.is-selected{background:#1769ff;color:#fff}
 .bsm-dispatch-source-button:focus-visible{outline:3px solid #093c90;outline-offset:-3px}
+
+/* Keep PO actions inside a regular table cell, including approval controls. */
+#po_master_list td.bsm-po-action-cell{display:table-cell!important;min-width:190px;vertical-align:middle}
+#po_master_list .bsm-po-actions{display:flex!important;flex-wrap:wrap!important;gap:6px!important;white-space:normal!important;overflow:hidden!important}
+#po_master_list .bsm-po-actions>*{flex:0 0 auto}
+#po_master_list .nt-approve-po,#po_master_list .nt-reject-po{min-height:30px;font-weight:600}
