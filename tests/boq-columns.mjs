@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 const src=fs.readFileSync('assets/app.js','utf8');
 const context=vm.createContext({});
 vm.runInContext(src.match(/^const boqColumns=.*$/m)[0]+';globalThis.columns=boqColumns;',context);
-assert.deepEqual(Array.from(context.columns.slice(7),c=>c[1]),['Site Opening','Requisition Qty','Approved','Rejected','Received','Consumption','Return','Balance']);
+assert.deepEqual(Array.from(context.columns.slice(7),c=>c[1]),['Site Opening','Requisition Qty','Approved','Rejected','Received','Consumption','Return','Transfer Out','Balance']);
 const a=src.indexOf('function bsmBoqMonitoringSummary('),b=src.indexOf('async function renderBoqListing(',a);
 vm.runInContext(src.slice(a,b),context);
 const rows=[{site_id:1,item_id:2,boq_qty:10,section:'A',boq_no:'B1',balance:27,received_qty:26},{site_id:1,item_id:2,boq_qty:20,section:'B',boq_no:'B2',balance:27,received_qty:26}];

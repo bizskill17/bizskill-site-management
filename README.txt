@@ -105,3 +105,5 @@ Version 0.0.072: BOQ item and monitoring columns show Site Opening, Requisition 
 Version 0.0.073: Direct PO Form compares one to three quotations per item, highlights lowest rates, records higher-rate selection reasons, previews supplier totals and atomically creates separate POs by supplier. Existing approval, receipt, PDF and office notification flows apply to each PO.
 
 Version 0.0.074: Pending Dispatch shows current warehouse stock per pending item with its unit, including expanded details and Excel export. Stock is summed across warehouses without mixing item quantities.
+
+Version 0.0.075: BOQ Balance reconciles directly to displayed quantities: Site Opening + Received - Consumption - Return - Transfer Out. Outgoing site transfers are now visible in BOQ items, monitoring and Excel; incoming transfer receipts remain included in Received.

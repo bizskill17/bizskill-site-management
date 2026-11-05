@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.074
+ * Version: 0.0.075
  * Author: BizSkill
  */
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/notifications.php';
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
-    const VERSION = '0.0.074';
+    const VERSION = '0.0.075';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -2238,17 +2238,20 @@ final class BSM_Site_Management {
             FROM {$p}material_requisition_items ri JOIN {$p}material_requisitions h ON h.id=ri.requisition_id
             WHERE h.site_id=%d AND ri.item_id=%d AND LOWER(COALESCE(h.status,'')) NOT IN ('draft','cancelled')",$site,$item),ARRAY_A);
         $stock=$this->site_available_stock($site,$item);
-        $in=0;foreach($this->ops_transfer_movements($site,$item) as $movement) $in+=(float)$movement['in'];
+        $in=0;$out=0;foreach($this->ops_transfer_movements($site,$item) as $movement){$in+=(float)$movement['in'];$out+=(float)$movement['out'];}
+        $opening=round((float)$wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(opening_qty),0) FROM {$p}site_opening_stock WHERE site_id=%d AND item_id=%d",$site,$item)),2);
+        $received=round((float)$stock['received']+$in,2);$consumed=round((float)$stock['consumed'],2);$returned=round((float)$stock['returned'],2);$out=round($out,2);
         return [
-            'site_opening_qty'=>round((float)$wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(opening_qty),0) FROM {$p}site_opening_stock WHERE site_id=%d AND item_id=%d",$site,$item)),2),
+            'site_opening_qty'=>$opening,
             'requisition_qty'=>round((float)$d['requisition_qty'],2),
             'approved_qty'=>round((float)$d['approved_qty'],2),
             'rejected_qty'=>round((float)$d['rejected_qty'],2),
-            'received_qty'=>round((float)$stock['received']+$in,2),
-            'consumption_qty'=>(float)$stock['consumed'],
-            'return_qty'=>(float)$stock['returned'],
-            // Actual stock already deducts site transfer dispatches and adds transfer receipts.
-            'balance'=>(float)$stock['available_qty'],
+            'received_qty'=>$received,
+            'consumption_qty'=>$consumed,
+            'return_qty'=>$returned,
+            'transfer_out_qty'=>$out,
+            // Reconcile directly to the displayed movements; requisitions do not change stock.
+            'balance'=>round($opening+$received-$consumed-$returned-$out,2),
         ];
     }
     public function ajax_boq_list() {
