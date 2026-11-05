@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.073
+ * Version: 0.0.074
  * Author: BizSkill
  */
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/notifications.php';
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
-    const VERSION = '0.0.073';
+    const VERSION = '0.0.074';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -4160,6 +4160,15 @@ final class BSM_Site_Management {
         $this->verify_ajax(); global $wpdb; $p=$this->prefix;
         $rows=$wpdb->get_results("SELECT r.id,r.requisition_no,r.required_date,r.site_id,s.site_name,ROUND(SUM(ri.approved_qty),2) approved_qty,ROUND(COALESCE(SUM(ds.dispatched_qty),0),2) dispatched_qty,ROUND(SUM(ri.approved_qty)-COALESCE(SUM(ds.dispatched_qty),0),2) pending_qty FROM {$p}material_requisitions r JOIN {$p}material_requisition_items ri ON ri.requisition_id=r.id LEFT JOIN {$p}sites s ON s.id=r.site_id LEFT JOIN (SELECT di.requisition_item_id,SUM(di.qty) dispatched_qty FROM {$p}material_dispatch_items di JOIN {$p}material_dispatches d ON d.id=di.dispatch_id WHERE d.status<>'cancelled' GROUP BY di.requisition_item_id) ds ON ds.requisition_item_id=ri.id WHERE r.status IN ('approved','partially_dispatched') GROUP BY r.id HAVING pending_qty>0.0001 ORDER BY r.required_date,r.id",ARRAY_A);
         $scope=$this->employee_site_scope(); if($scope!==null && $scope) $rows=array_values(array_filter($rows,fn($x)=>in_array((int)$x['site_id'],$scope,true)));
+        $warehouse_ids=array_map('intval',$wpdb->get_col("SELECT id FROM {$p}warehouses"));$stocks=[];
+        foreach($rows as &$row){
+            $items=$wpdb->get_results($wpdb->prepare("SELECT ri.item_id,i.item_name,u.unit_name,SUM(ri.approved_qty-COALESCE(ds.qty,0)) pending_qty
+                FROM {$p}material_requisition_items ri LEFT JOIN {$p}items i ON i.id=ri.item_id LEFT JOIN {$p}units u ON u.id=ri.unit_id
+                LEFT JOIN (SELECT di.requisition_item_id,SUM(di.qty) qty FROM {$p}material_dispatch_items di JOIN {$p}material_dispatches d ON d.id=di.dispatch_id WHERE d.status<>'cancelled' GROUP BY di.requisition_item_id) ds ON ds.requisition_item_id=ri.id
+                WHERE ri.requisition_id=%d GROUP BY ri.item_id,i.item_name,u.unit_name HAVING pending_qty>0.0001",(int)$row['id']),ARRAY_A);
+            foreach($items as &$item){$iid=(int)$item['item_id'];if(!array_key_exists($iid,$stocks)){$stocks[$iid]=0;foreach($warehouse_ids as $wid)$stocks[$iid]+=$this->warehouse_item_stock($wid,$iid);}$item['current_stock']=round($stocks[$iid],2);}unset($item);
+            $row['stock_items']=$items;
+        }unset($row);
         wp_send_json_success(['rows'=>$rows]);
     }
 
