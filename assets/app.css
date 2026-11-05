@@ -2924,3 +2924,13 @@ html,body{
 #po_master_list .bsm-po-actions{display:flex!important;flex-wrap:wrap!important;gap:6px!important;white-space:normal!important;overflow:hidden!important}
 #po_master_list .bsm-po-actions>*{flex:0 0 auto}
 #po_master_list .nt-approve-po,#po_master_list .nt-reject-po{min-height:30px;font-weight:600}
+
+/* Explicit AM/PM timesheet entry; the saved value remains HH:mm. */
+.bsm-app .ops-time-control{display:flex;align-items:center;gap:4px;min-width:164px;white-space:nowrap;}
+.bsm-app .ops-time-control input[type=number]{width:44px!important;min-width:0!important;padding:7px 3px!important;text-align:center;box-sizing:border-box;-moz-appearance:textfield;}
+.bsm-app .ops-time-control input::-webkit-inner-spin-button,.bsm-app .ops-time-control input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+.bsm-app .ops-time-control select.ops-clock-period{width:62px!important;min-width:62px!important;padding:7px 4px!important;}
+#ops-time-form td:first-child,#ops-time-form td:nth-child(2){width:190px;}
+#ops-time-form td.ops-time-duration{min-width:85px;font-weight:600;}
+#ops-time-list td:nth-child(5),#ops-time-list td:nth-child(6),#ops-time-list td:nth-child(7){white-space:nowrap;}
+#ops-time-edit-total{font-weight:600;color:#123d67;}

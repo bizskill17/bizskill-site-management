@@ -93,3 +93,5 @@ Version 0.0.043: Cache-busted frontend assets to display Project Tracker actions
 Version 0.0.064: Pending Dispatch supports Warehouse or Site sources. Site dispatches validate source stock and approved pending quantities, post source-site stock outward, and retain the existing Site Receipt workflow. Source details are included in dispatch records, item exports, PDFs and Site Transfer Master. Adds atomic dispatch saves and regression coverage.
 
 Version 0.0.065: Site Inventory separates outgoing Site Transfer from warehouse Returned quantities, with the same separation in Material Stock and Excel exports. Incoming transfers remain in Received on receipt confirmation; balances deduct outgoing transfers exactly once.
+
+Version 0.0.069: Time Sheet add/edit forms explicitly select AM/PM. Master, group totals, PDF and Excel show elapsed hours and minutes (3h 10m), with live row durations and overnight handling; minute-based billing is preserved.

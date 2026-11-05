@@ -86,8 +86,9 @@ $wpdb->update('bsm_labour_contractors',['payment_basis'=>'employee'],['id'=>1]);
 $unbilled=callop('time_list',['worker_id'=>$worker,'from'=>'2026-10-27','to'=>'2026-10-27'])['rows'];foreach($unbilled as $r)callop('time_status',['id'=>$r['id'],'status'=>'approved']);
 $preview=callop('bill_preview',$bill);check($preview['total']===600.0&&count($preview['rows'])===1,'Contractor + Employee bills one daily rate for multiple activities');
 // Office ownership and permissions.
-$admin=false;fails('holiday_delete',['id'=>1],'Only HO/Admin');fails('time_save',['work_date'=>'2026-10-28','employee_id'=>2,'rows'=>[]],'own Time Sheet');
-callop('time_save',['work_date'=>'2026-10-28','employee_id'=>1,'rows'=>[['from_time'=>'09:00','to_time'=>'10:00','activity'=>'Office work']]]);
+$officeDate=(new DateTimeImmutable('now',new DateTimeZone('Asia/Kolkata')))->format('Y-m-d');
+$admin=false;fails('holiday_delete',['id'=>1],'Only HO/Admin');fails('time_save',['work_date'=>$officeDate,'employee_id'=>2,'rows'=>[]],'own Time Sheet');
+callop('time_save',['work_date'=>$officeDate,'employee_id'=>1,'rows'=>[['from_time'=>'09:00','to_time'=>'10:00','activity'=>'Office work']]]);
 check(count(callop('time_list')['rows'])===1,'Employee sees only own office time entries');
 $admin=true;
 // Transfer dispatch, partial receipt, damage and duplicate protection.
@@ -148,17 +149,18 @@ check(!$wpdb->get_var('SELECT id FROM bsm_contractor_employees WHERE id='.(int)$
 $admin=true;
 fails('time_update',['id'=>$rows[0]['id'],'from_time'=>'09:00','to_time'=>'10:00','activity'=>'Changed'],'Billed');
 fails('time_delete',['id'=>$rows[0]['id']],'Billed');
-$office_id=(int)$wpdb->get_var("SELECT id FROM bsm_time_entries WHERE employee_id=1 AND work_date='2026-10-28'");
+$office_id=(int)$wpdb->get_var($wpdb->prepare("SELECT id FROM bsm_time_entries WHERE employee_id=1 AND work_date=%s",$officeDate));
 callop('time_update',['id'=>$office_id,'from_time'=>'09:30','to_time'=>'11:00','activity'=>'Edited activity']);
 check((int)$wpdb->get_var('SELECT minutes FROM bsm_time_entries WHERE id='.$office_id)===90,'Master edit recalculates duration');
 $first=(int)$wpdb->get_var("SELECT id FROM bsm_time_entries WHERE worker_id=$worker AND work_date='2026-10-27' ORDER BY from_time LIMIT 1");
 fails('time_update',['id'=>$first,'site_id'=>0,'from_time'=>'09:00','to_time'=>'10:00','activity'=>'No Site'],'Site is required');
 fails('time_update',['id'=>$first,'from_time'=>'09:00','to_time'=>'11:30','activity'=>'Overlap'],'overlap');
 $admin=false;
-callop('time_update',['id'=>$office_id,'from_time'=>'09:30','to_time'=>'10:30','activity'=>'Employee edit']);
-check($wpdb->get_var('SELECT activity FROM bsm_time_entries WHERE id='.$office_id)==='Employee edit','Employee may edit own unapproved entry');
-$other=(int)$wpdb->get_var('SELECT id FROM bsm_time_entries WHERE employee_id=2 LIMIT 1');fails('time_delete',['id'=>$other],'own unapproved');
-callop('time_delete',['id'=>$office_id]);check(!$wpdb->get_var('SELECT id FROM bsm_time_entries WHERE id='.$office_id),'Employee may delete own unapproved entry');
+fails('time_update',['id'=>$office_id,'from_time'=>'09:30','to_time'=>'10:30','activity'=>'Employee edit'],'Only Admin');
+check($wpdb->get_var('SELECT activity FROM bsm_time_entries WHERE id='.$office_id)==='Edited activity','Non-admin edit cannot change saved activity');
+$other=(int)$wpdb->get_var('SELECT id FROM bsm_time_entries WHERE employee_id=2 LIMIT 1');fails('time_delete',['id'=>$other],'Only Admin');
+fails('time_delete',['id'=>$office_id],'Only Admin');
+$admin=true;callop('time_delete',['id'=>$office_id]);check(!$wpdb->get_var('SELECT id FROM bsm_time_entries WHERE id='.$office_id),'Admin may delete own unapproved entry');
 // Requisition dispatches share stock availability with standalone transfers.
 $admin=true;$scope=null;$before=$host->stock(1,1);$destBefore=$host->stock(2,1);
 $wpdb->insert('bsm_material_dispatches',['id'=>100,'dispatch_no'=>'DIS-100','dispatch_date'=>'2026-10-28','from_site_id'=>1,'site_id'=>2,'status'=>'dispatched']);
@@ -235,4 +237,10 @@ $end=strpos($main,'            unset($x);',$start);
 eval(substr($main,$start,$end-$start));unset($x);
 check($map[$key]['balance']===round($expected,2),'Site Inventory balance deducts Site Transfer exactly once');
 check($map['Warehouse|1|1|1']['balance']===90.0,'HO Inventory balance remains unchanged');
+// Screenshot durations are stored as exact minutes, independent of display formatting.
+$interval=new ReflectionMethod(Host::class,'ops_time_interval');
+foreach([['09:00','12:10',190],['10:00','23:35',815],['23:55','00:05',10],['11:55','12:05',10]] as [$from,$to,$expected]){
+    [$start,$end]=$interval->invoke($host,'2026-11-05',$from,$to);
+    check((int)(($end-$start)/60)===$expected,'Server duration '.$from.' to '.$to.' is '.$expected.' minutes');
+}
 echo "\n{$GLOBALS['passes']} regression checks passed.\n";
