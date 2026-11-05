@@ -2942,3 +2942,5 @@ html,body{
 .bsm-app button.bsm-dashboard-activity-link{display:inline-block;width:auto;padding:10px 6px;background:transparent;border:0;box-shadow:none;color:#1760d9;font-size:18px;font-weight:600;cursor:pointer;white-space:nowrap;}
 .bsm-app button.bsm-dashboard-activity-link:hover{text-decoration:underline;background:#edf4ff;}
 .bsm-app button.bsm-dashboard-activity-link:focus-visible{outline:2px solid #1760d9;outline-offset:2px;border-radius:4px;}
+
+.bsm-labour-report-totals{display:flex;flex-wrap:wrap;gap:12px 24px;padding:14px 16px;background:#f5f8ff;border-top:1px solid #bfd3f4;font-size:13px;}

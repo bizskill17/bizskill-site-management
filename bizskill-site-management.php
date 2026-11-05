@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.070
+ * Version: 0.0.071
  * Author: BizSkill
  */
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/notifications.php';
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
-    const VERSION = '0.0.070';
+    const VERSION = '0.0.071';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -5173,6 +5173,38 @@ final class BSM_Site_Management {
         ]);
     }
 
+    private function labour_report_rows($site=0,$contractor=0,$from='',$to=''){
+        global $wpdb;$p=$this->prefix;$where='1=1';$args=[];
+        if($site){$where.=' AND a.site_id=%d';$args[]=(int)$site;}
+        if($contractor){$where.=' AND a.contractor_id=%d';$args[]=(int)$contractor;}
+        if($from){$where.=' AND a.attendance_date>=%s';$args[]=$from;}
+        if($to){$where.=' AND a.attendance_date<=%s';$args[]=$to;}
+        $scope=$this->employee_site_scope();
+        if(is_array($scope)&&$scope){$where.=' AND a.site_id IN ('.implode(',',array_fill(0,count($scope),'%d')).')';foreach($scope as $sid)$args[]=(int)$sid;}
+        $sql="SELECT a.id attendance_id,a.attendance_date,a.site_id,s.site_name,a.contractor_id,c.contractor_name,a.no_of_labour,a.remarks FROM {$p}labour_attendance a LEFT JOIN {$p}sites s ON s.id=a.site_id LEFT JOIN {$p}labour_contractors c ON c.id=a.contractor_id WHERE $where ORDER BY a.attendance_date DESC,s.site_name,c.contractor_name,a.id";
+        $rows=[];
+        foreach($wpdb->get_results($args?$wpdb->prepare($sql,$args):$sql,ARRAY_A)?:[] as $a){
+            $base=['attendance_id'=>(int)$a['attendance_id'],'attendance_date'=>$a['attendance_date'],'site_id'=>(int)$a['site_id'],'site_name'=>$a['site_name']??'','contractor_id'=>(int)$a['contractor_id'],'contractor_name'=>$a['contractor_name']??''];
+            $details=json_decode((string)($a['remarks']??''),true);$employees=is_array($details)?($details['employee_hours']??null):null;
+            if(!is_array($employees)||!$employees){
+                $count=max(0,(int)$a['no_of_labour']);
+                if($count)$rows[]=array_merge($base,['worker_id'=>0,'employee_key'=>'','employee_name'=>'Employee details unavailable (recorded labour: '.$count.')','working_minutes'=>null,'working_time'=>'—','legacy_count'=>$count]);
+                continue;
+            }
+            foreach($employees as $e){
+                if(!is_array($e)||!is_numeric($e['working_hours']??null))continue;
+                $hours=(float)$e['working_hours'];if(!is_finite($hours)||$hours<=0||$hours>24)continue;
+                $id=(int)($e['worker_id']??0);$name=trim((string)($e['employee_name']??''));
+                // Preserve the saved historical name, including inactive/deleted workers.
+                if($name===''&&$id)$name=(string)$wpdb->get_var($wpdb->prepare("SELECT employee_name FROM {$p}contractor_employees WHERE id=%d AND contractor_id=%d",$id,(int)$a['contractor_id']));
+                if($name==='')$name=$id?'Employee #'.$id:'Employee name unavailable';
+                $minutes=(int)round($hours*60);$key=$id?'worker:'.$id:'name:'.$a['contractor_id'].':'.hash('sha256',$name);
+                $rows[]=array_merge($base,['worker_id'=>$id,'employee_key'=>$key,'employee_name'=>$name,'working_minutes'=>$minutes,'working_time'=>intdiv($minutes,60).'h '.($minutes%60).'m','legacy_count'=>0]);
+            }
+        }
+        return $rows;
+    }
+
     public function ajax_report(){
         $this->verify_ajax(); global $wpdb; $p=$this->prefix; $report=sanitize_key($_POST['report']??'');
         $site=intval($_POST['site_id']??0);$warehouse=intval($_POST['warehouse_id']??0);$item=intval($_POST['item_id']??0);$category=intval($_POST['category_id']??0);$from=sanitize_text_field($_POST['date_from']??'');$to=sanitize_text_field($_POST['date_to']??'');$contractor=intval($_POST['contractor_id']??0);$stock_scope=sanitize_key($_POST['stock_scope']??'');
@@ -5337,8 +5369,7 @@ final class BSM_Site_Management {
             $where='1=1';$args=[];if($site){$where.=' AND s.id=%d';$args[]=$site;}
             $sql="SELECT s.site_name,COALESCE((SELECT SUM(e.amount) FROM {$p}site_expenses e WHERE e.site_id=s.id AND e.status<>'cancelled'),0) direct_expenses,COALESCE((SELECT SUM(b.total_amount) FROM {$p}contractor_bills b WHERE b.site_id=s.id AND b.status<>'cancelled'),0) contractor_cost,COALESCE((SELECT SUM(e.amount) FROM {$p}site_expenses e WHERE e.site_id=s.id AND e.paid_by='HEAD_OFFICE' AND e.status<>'cancelled'),0) ho_paid_expenses FROM {$p}sites s WHERE $where ORDER BY s.site_name";if($args)$sql=$wpdb->prepare($sql,$args);$rows=$wpdb->get_results($sql,ARRAY_A);foreach($rows as &$x)$x['total_site_cost']=(float)$x['direct_expenses']+(float)$x['contractor_cost'];
         } elseif($report==='labour'){
-            $where='1=1';$args=[];if($site){$where.=' AND a.site_id=%d';$args[]=$site;}if($contractor){$where.=' AND a.contractor_id=%d';$args[]=$contractor;}if($from){$where.=' AND a.attendance_date>=%s';$args[]=$from;}if($to){$where.=' AND a.attendance_date<=%s';$args[]=$to;}
-            $sql="SELECT a.attendance_date,s.site_name,c.contractor_name,a.no_of_labour,a.remarks FROM {$p}labour_attendance a JOIN {$p}sites s ON a.site_id=s.id JOIN {$p}labour_contractors c ON a.contractor_id=c.id WHERE $where ORDER BY a.attendance_date DESC,s.site_name,c.contractor_name";if($args)$sql=$wpdb->prepare($sql,$args);$rows=$wpdb->get_results($sql,ARRAY_A);
+            $rows=$this->labour_report_rows($site,$contractor,$from,$to);
         } elseif($report==='labour_summary'){
             $where='1=1';$args=[];if($site){$where.=' AND a.site_id=%d';$args[]=$site;}if($contractor){$where.=' AND a.contractor_id=%d';$args[]=$contractor;}if($from){$where.=' AND a.attendance_date>=%s';$args[]=$from;}if($to){$where.=' AND a.attendance_date<=%s';$args[]=$to;}
             $sql="SELECT s.site_name,c.contractor_name,SUM(a.no_of_labour) labour_days,ROUND(AVG(a.no_of_labour),2) avg_labour,MAX(a.no_of_labour) max_labour,COUNT(DISTINCT a.attendance_date) days_reported FROM {$p}labour_attendance a JOIN {$p}sites s ON a.site_id=s.id JOIN {$p}labour_contractors c ON a.contractor_id=c.id WHERE $where GROUP BY a.site_id,a.contractor_id ORDER BY s.site_name,c.contractor_name";if($args)$sql=$wpdb->prepare($sql,$args);$rows=$wpdb->get_results($sql,ARRAY_A);

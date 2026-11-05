@@ -243,4 +243,32 @@ foreach([['09:00','12:10',190],['10:00','23:35',815],['23:55','00:05',10],['11:5
     [$start,$end]=$interval->invoke($host,'2026-11-05',$from,$to);
     check((int)(($end-$start)/60)===$expected,'Server duration '.$from.' to '.$to.' is '.$expected.' minutes');
 }
+// Daily Labour Report expands the saved attendance snapshot, not the current worker count.
+$main=file_get_contents(__DIR__.'/../bizskill-site-management.php');$start=strpos($main,'    private function labour_report_rows(');$end=strpos($main,'    public function ajax_report()',$start);
+eval('class LabourReportHost {private $prefix="bsm_";private function employee_site_scope(){return $GLOBALS["scope"];} '.substr($main,$start,$end-$start).' public function rows(...$args){return $this->labour_report_rows(...$args);}}');
+$wpdb->query('CREATE TABLE bsm_labour_attendance (id INTEGER PRIMARY KEY,attendance_date TEXT,site_id INTEGER,contractor_id INTEGER,no_of_labour INTEGER,remarks TEXT)');
+$fixtures=[
+ [1001,'2026-11-05',1,2,wp_json_encode(['employee_hours'=>[['worker_id'=>9001,'employee_name'=>'Asha','working_hours'=>8],['worker_id'=>9002,'employee_name'=>'Ben','working_hours'=>7.5],['worker_id'=>9003,'employee_name'=>'Absent','working_hours'=>0]]])],
+ [1002,'2026-11-06',1,1,wp_json_encode(['employee_hours'=>[['worker_id'=>9001,'employee_name'=>'Asha','working_hours'=>6.25]]])],
+ [1003,'2026-11-05',2,3,'Legacy count only'],
+ [1004,'2026-11-05',1,2,'{invalid JSON'],
+ [1005,'2026-11-05',1,1,wp_json_encode(['employee_hours'=>[]])],
+ [1006,'2026-11-05',1,0,wp_json_encode(['employee_hours'=>[['worker_id'=>9003,'employee_name'=>'Absent','working_hours'=>0]]])],
+ [1007,'2026-11-05',1,1,wp_json_encode(['employee_hours'=>[['worker_id'=>$worker,'working_hours'=>2]]])]
+];
+foreach($fixtures as [$id,$date,$site,$count,$remarks])$wpdb->insert('bsm_labour_attendance',['id'=>$id,'attendance_date'=>$date,'site_id'=>$site,'contractor_id'=>1,'no_of_labour'=>$count,'remarks'=>$remarks]);
+$labourHost=new LabourReportHost();$scope=null;$labourRows=$labourHost->rows(1,1,'2026-11-05','2026-11-05');
+check(count($labourRows)===5,'Labour report expands each present employee and retains legacy records');
+$known=array_values(array_filter($labourRows,fn($r)=>$r['employee_key']!==''));
+check(count($known)===3&&array_sum(array_column($known,'working_minutes'))===1050,'Labour report returns exact individual working minutes');
+$asha=array_values(array_filter($known,fn($r)=>$r['worker_id']===9001))[0];check($asha['employee_name']==='Asha'&&$asha['working_time']==='8h 0m','Saved employee names survive missing master records');
+$ben=array_values(array_filter($known,fn($r)=>$r['worker_id']===9002))[0];check($ben['working_time']==='7h 30m','Decimal attendance hours convert to actual minutes');
+check(!array_filter($labourRows,fn($r)=>$r['employee_name']==='Absent'),'Zero-hour employees excluded from detailed attendance');
+$legacy=array_values(array_filter($labourRows,fn($r)=>$r['legacy_count']>0));check(count($legacy)===2&&array_sum(array_column($legacy,'legacy_count'))===3,'Legacy count-only attendance is identified without inventing employees');
+check($legacy[0]['working_minutes']===null&&$legacy[0]['working_time']==='—','Legacy hours remain unavailable rather than zero');
+$fallback=array_values(array_filter($known,fn($r)=>$r['worker_id']===$worker))[0];check($fallback['employee_name']===$wpdb->get_var('SELECT employee_name FROM bsm_contractor_employees WHERE id='.$worker),'Missing historical name falls back to the matching contractor employee');
+check(count($labourHost->rows(1,1,'2026-11-06','2026-11-06'))===1,'Date range filters detailed attendance');
+check(!$labourHost->rows(1,999,'2026-11-05','2026-11-05'),'Contractor filter excludes unrelated attendance');
+$siteTwo=$labourHost->rows(2,1,'2026-11-05','2026-11-05');check(count($siteTwo)===1&&$siteTwo[0]['legacy_count']===3,'Site filter preserves that site’s recorded legacy count');
+$scope=[2];check(!$labourHost->rows(1,1),'Site scope prevents access through another site filter');check(count($labourHost->rows())===1,'Unfiltered labour report respects assigned site scope');$scope=null;
 echo "\n{$GLOBALS['passes']} regression checks passed.\n";

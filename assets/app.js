@@ -100,7 +100,7 @@ const reportConfigs = {
   report_stock:{title:'Stock Report', report:'stock', columns:[C('location_type','Type'),C('location','Location'),C('item_name','Item'),C('unit','Unit'),C('stock','Stock','number')], filters:['site']},
   report_site_fund:{title:'Site Balance', report:'site_fund', columns:[C('site_name','Site'),C('opening_amount','Opening','money'),C('funds_received','Funds Received','money'),C('site_expenses','Expenses','money'),C('balance','Balance','money')], filters:['site']},
   report_site_cost:{title:'Site Cost Report', report:'site_cost', columns:[C('site_name','Site'),C('direct_expenses','Direct Expenses','money'),C('contractor_cost','Contractor Cost','money'),C('ho_paid_expenses','HO Paid Expenses','money'),C('total_site_cost','Total Site Cost','money')], filters:['site']},
-  report_labour:{title:'Daily Labour Report', report:'labour', columns:[C('attendance_date','Date','date'),C('site_name','Site'),C('contractor_name','Labour Contractor'),C('no_of_labour','No. of Labour','number')], filters:['date','site','contractor']},
+  report_labour:{title:'Daily Labour Report', report:'labour', columns:[C('attendance_date','Date','date'),C('site_name','Site'),C('contractor_name','Labour Contractor'),C('employee_name','Employee Name'),C('working_time','Working Hours')], filters:['date','site','contractor','worker']},
   report_labour_summary:{title:'Labour Summary', report:'labour_summary', columns:[C('site_name','Site'),C('contractor_name','Labour Contractor'),C('labour_days','Labour-Days','number'),C('avg_labour','Avg. Labour/Day','number'),C('max_labour','Maximum Labour','number'),C('days_reported','Days Reported','number')], filters:['date','site','contractor']},
   report_customer_outstanding:{title:'Site Balance', report:'customer_outstanding', columns:[C('site_name','Site'),C('work_order_value','Work Order Value','money'),C('received','Received','money'),C('outstanding','Outstanding','money'),C('received_percentage','Received %','percent'),C('outstanding_percentage','Outstanding %','percent')], filters:['site']},
   report_vendor_outstanding:{title:'Supplier Outstanding', report:'vendor_outstanding', columns:[C('vendor_name','Supplier'),C('bills','Bills','money'),C('payments','Payments','money'),C('outstanding','Outstanding','money')], filters:[]},
@@ -3665,7 +3665,7 @@ async function renderReport(key){
   const cfg=reportConfigs[key];
   if(key==='contractor_advance_register') await ensureOptions(['sites','contractors','banks']);
   if(key==='report_contractor_outstanding') await ensureOptions(['sites','contractors']);
-  setTitle(cfg.title);let f=`<div class="bsm-filters report${key==='report_contractor_outstanding'?' bsm-contractor-filters':''}"><label>Search<input type="text" id="r_search" aria-label="Search" placeholder=""></label>`;if(cfg.filters.includes('date'))f+=`<label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="r_date_from"></label><label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="r_date_to"></label>`;if(cfg.filters.includes('site'))f+=selectHtml('r_site','Site','sites','');if(cfg.filters.includes('contractor'))f+=selectHtml('r_contractor','Contractor','contractors','');
+  setTitle(cfg.title);let f=`<div class="bsm-filters report${key==='report_contractor_outstanding'?' bsm-contractor-filters':''}"><label>Search<input type="text" id="r_search" aria-label="Search" placeholder=""></label>`;if(cfg.filters.includes('date'))f+=`<label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="r_date_from"></label><label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="r_date_to"></label>`;if(cfg.filters.includes('site'))f+=selectHtml('r_site','Site','sites','');if(cfg.filters.includes('contractor'))f+=selectHtml('r_contractor','Contractor','contractors','');if(cfg.filters.includes('worker'))f+='<label>Employee<select id="r_worker"><option value="">All Employees</option></select></label>';
   if(key==='report_labour'||key==='report_contractor_outstanding') f+=`<button id="bsm-clear-report" class="bsm-icon-btn bsm-clear-report-btn" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button>${excelButton('bsm-report-export-excel')}`;
   else f+=excelButton('bsm-report-export-excel');
   if(key==='report_contractor_outstanding')f+='<div id="bsm-contractor-filter-totals" class="bsm-contractor-outstanding-totals" aria-live="polite" aria-label="Filtered Contractor Outstanding Totals"></div>';
@@ -3673,9 +3673,22 @@ async function renderReport(key){
   if(key==='report_labour'){const today=String(BSM.today||'');$('#r_date_from,#r_date_to').val(today);}
   await loadReport(key);
 }
+function labourReportTotals(rows){
+  const days=new Set();let minutes=0,legacy=0;
+  rows.forEach(r=>{if(r.employee_key){days.add(r.attendance_date+'|'+r.employee_key);minutes+=Number(r.working_minutes)||0;}else legacy+=Number(r.legacy_count)||0;});
+  return {days:days.size,minutes,legacy};
+}
+function refreshLabourEmployeeFilter(){
+  const $select=$('#r_worker');if(!$select.length)return;
+  const selected=$select.val(),employees=new Map();
+  (App.reportRows||[]).forEach(r=>{if(r.employee_key)employees.set(r.employee_key,r.employee_name+(r.contractor_name?' — '+r.contractor_name:''));});
+  $select.html('<option value="">All Employees</option>'+[...employees].sort((a,b)=>a[1].localeCompare(b[1])).map(([key,label])=>`<option value="${esc(key)}">${esc(label)}</option>`).join('')).val(employees.has(selected)?selected:'');
+  bsmRefreshSearchableSelect($select[0]);
+}
 function drawReportRows(key){
   const cfg=reportConfigs[key],q=$('#r_search').val()||'';
-  const rows=filterVisibleRows(App.reportRows||[],cfg.columns.map(c=>x=>plainCell(x,c)),q);
+  let rows=filterVisibleRows(App.reportRows||[],cfg.columns.map(c=>x=>plainCell(x,c)),q);
+  if(key==='report_labour'){const employee=$('#r_worker').val();if(employee)rows=rows.filter(r=>r.employee_key===employee);App.labourReportRows=rows;}
   if(key==='report_contractor_outstanding'){
     let h='<div class="bsm-table-wrap"><table id="bsm-report-table"><thead><tr>'+cfg.columns.map(c=>`<th class="${c.type==='money'||c.type==='number'||c.type==='percent'?'num':''}">${esc(c.label)}</th>`).join('')+'<th>Action</th></tr></thead><tbody>';
     rows.forEach(x=>{h+='<tr>'+cfg.columns.map(c=>`<td class="${c.type==='money'||c.type==='number'||c.type==='percent'?'num':''}">${renderCell(x,c)}</td>`).join('')+`${Number(x.outstanding||0)>0?`<td><button type="button" class="bsm-btn bsm-btn-primary bsm-btn-small bsm-contractor-outstanding-payment" data-contractor-id="${esc(x.contractor_id||'')}" data-site-id="${esc(x.site_id||'')}" data-outstanding="${Number(x.outstanding||0).toFixed(2)}">Pay</button></td>`:`<td>-</td>`}</tr>`;});
@@ -3720,10 +3733,14 @@ function drawReportRows(key){
   rows.forEach(x=>h+='<tr>'+cfg.columns.map(c=>`<td class="${c.type==='money'||c.type==='number'||c.type==='percent'?'num':''}">${renderCell(x,c)}</td>`).join('')+'</tr>');
   if(!rows.length)h+=`<tr><td colspan="${cfg.columns.length}" class="bsm-empty">No data.</td></tr>`;
   h+='</tbody></table></div>';
+  if(key==='report_labour'){
+    const total=labourReportTotals(rows);
+    h+=`<div class="bsm-labour-report-totals" aria-live="polite"><span>Total Employee-Days: <strong>${total.days}</strong></span><span>Total Working Hours: <strong>${opsDurationText(total.minutes)}</strong></span>${total.legacy?`<span>Legacy Labour Count: <strong>${total.legacy}</strong> (hours unavailable)</span>`:''}</div>`;
+  }
   $('#bsm-report').html(h);
 }
-async function loadReport(key){const cfg=reportConfigs[key];const r=await ajax('bsm_report',{report:cfg.report,site_id:$('#r_site').val()||'',contractor_id:$('#r_contractor').val()||'',date_from:dateSql($('#r_date_from').val()||''),date_to:dateSql($('#r_date_to').val()||'')});if(!r.success)return;App.reportRows=r.data.rows||[];drawReportRows(key);}
-function exportReportExcel(){const headers=$('#bsm-report-table thead th').map(function(){return $(this).text();}).get();const rows=[];$('#bsm-report-table tbody tr').each(function(){if($(this).find('.bsm-empty').length)return;rows.push($(this).find('td').map(function(){return $(this).text();}).get());});downloadExcelFile(reportConfigs[App.current]?.title||'Report',headers,rows);}
+async function loadReport(key){const cfg=reportConfigs[key];const r=await ajax('bsm_report',{report:cfg.report,site_id:$('#r_site').val()||'',contractor_id:$('#r_contractor').val()||'',date_from:dateSql($('#r_date_from').val()||''),date_to:dateSql($('#r_date_to').val()||'')});if(!r.success)return;App.reportRows=r.data.rows||[];if(key==='report_labour')refreshLabourEmployeeFilter();drawReportRows(key);}
+function exportReportExcel(){const headers=$('#bsm-report-table thead th').map(function(){return $(this).text();}).get();const rows=[];$('#bsm-report-table tbody tr').each(function(){if($(this).find('.bsm-empty').length)return;rows.push($(this).find('td').map(function(){return $(this).text();}).get());});if(App.current==='report_labour'){const total=labourReportTotals(App.labourReportRows||[]);rows.push(['','','','',''],['Total Employee-Days',total.days,'','',''],['Total Working Hours','','','',opsDurationText(total.minutes)]);if(total.legacy)rows.push(['Legacy Labour Count (hours unavailable)',total.legacy,'','','']);}downloadExcelFile(reportConfigs[App.current]?.title||'Report',headers,rows);}
 
 
 window.openContractorOutstandingPayment = async function(contractorId,siteId,outstanding){
@@ -4448,6 +4465,7 @@ $(document).on('change','#ms_site,#ms_warehouse,#ms_item,#ms_date_from,#ms_date_
 $(document).on('click','#ms_clear',function(){$('#ms_site,#ms_warehouse,#ms_item,#ms_date_from,#ms_date_to,#ms_search').val('');bsmSyncAllSearchables($('.bsm-stock-filters'));loadMaterialStock();});
 $(document).on('click','#ms_export',exportMaterialStock);
 // Reports refresh automatically when any report filter changes; no Run button is required.
+$(document).on('change','#r_worker',function(){if(App.current==='report_labour')drawReportRows(App.current);});
 $(document).on('change','#r_site,#r_contractor,#r_date_from,#r_date_to',function(){
   if(App.current && reportConfigs[App.current]) loadReport(App.current);
 });
@@ -4464,9 +4482,8 @@ $(document).on('click','.bsm-update-paid-amount',async function(){
 $(document).on('click','#bsm-clear-report',async function(){
   $('#r_search').val('');
   if(App.current==='report_labour'){const today=String(BSM.today||'');$('#r_date_from,#r_date_to').val(today);}else{$('#r_date_from,#r_date_to').val('');}
-  $('#r_site,#r_contractor').val('').each(function(){bsmRefreshSearchableSelect(this);});
-  if(App.current==='report_labour') await loadReport(App.current);
-  drawReportRows(App.current);
+  $('#r_site,#r_contractor,#r_worker').val('').each(function(){bsmRefreshSearchableSelect(this);});
+  await loadReport(App.current);
 });
 $(document).on('input','#bsm-pending-contractor-bill-search',function(){const el=this;clearTimeout(App.pcbt);App.pcbt=setTimeout(()=>{App.page=1;loadPendingContractorBillCopy();},600);});
 $(document).on('click','.bsm-upload-pending-contractor-bill',async function(){
@@ -4512,7 +4529,6 @@ $(document).on('click','.bsm-upload-pending-invoice',async function(){
   showToast('Supplier Invoice uploaded successfully.');
   await loadPendingInvoiceCopy();
 });
-$(document).on('click','#bsm-clear-report',function(){$('#r_search,#r_date_from,#r_date_to,#r_site,#r_contractor').val('');loadReport(App.current);});
 $(document).on('click','#bsm-report-export-excel',exportReportExcel);$(document).on('click','#bsm-export-excel',exportCurrentList);
 $(document).on('click','#bsm-upload-doc',async function(){const file=$('#bsm-doc-file')[0]?.files?.[0];if(!file)return showToast('Select a file',true);const fd=new FormData();fd.append('action','bsm_upload');fd.append('nonce',BSM.nonce);fd.append('module',App.current);fd.append('reference_id',App.editId);fd.append('document_type',$('#bsm-doc-type').val()||'Document');fd.append('file',file);const r=await $.ajax({url:BSM.ajax,method:'POST',data:fd,processData:false,contentType:false});if(r.success){showToast('Document uploaded');openForm(App.current,App.editId);}else showToast(r.data?.message||'Upload failed',true);});
 $(document).on('click','#bsm-menu-open',()=>$('.bsm-sidebar').addClass('open'));$(document).on('click','#bsm-menu-close',()=>$('.bsm-sidebar').removeClass('open'));
