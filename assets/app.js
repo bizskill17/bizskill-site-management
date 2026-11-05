@@ -1436,20 +1436,15 @@ async function renderDashboard(siteId=''){
   if(!sites.length)h+='<tr><td colspan="9" class="bsm-empty">No active Sites found.</td></tr>';
   h+='</tbody></table></div></div>';
 
-  h+=`<div class="bsm-dashboard-two-col">
-    <div class="bsm-panel"><div class="bsm-panel-head"><h3>Site Balance</h3></div><div class="bsm-table-wrap"><table><thead><tr><th>Site</th><th class="num">Work Order</th><th class="num">Received</th><th class="num">Outstanding</th><th class="num">Received %</th><th class="num">Petty Cash</th><th class="num">Today Expense</th></tr></thead><tbody>`;
-  sites.forEach(x=>h+=`<tr><td>${esc(x.site_name||'')}</td><td class="num">${moneyFmt(x.work_order_value)}</td><td class="num">${moneyFmt(x.received)}</td><td class="num">${moneyFmt(x.outstanding)}</td><td class="num">${pct(x.received_pct)}</td><td class="num">${moneyFmt(x.petty_cash_balance)}</td><td class="num">${moneyFmt(x.today_expense)}</td></tr>`);
-  if(!sites.length)h+='<tr><td colspan="7" class="bsm-empty">No Site data found.</td></tr>';
-  h+=`</tbody></table></div></div>
-    <div class="bsm-panel"><div class="bsm-panel-head"><h3>Today's Activity</h3></div><div class="bsm-dashboard-activity">
-      <button class="bsm-activity-purchases" data-dashboard-go="purchase_register"><span class="bsm-activity-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h2l2 11h11l3-8H6"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg></span><span class="bsm-activity-label">Purchases</span><strong>${Number(act.purchases||0)}</strong></button>
-      <button class="bsm-activity-dispatches" data-dashboard-go="material_dispatches"><span class="bsm-activity-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h11v12H3zM14 10h4l3 4v4h-7z"/><circle cx="7" cy="19" r="2"/><circle cx="18" cy="19" r="2"/></svg></span><span class="bsm-activity-label">Dispatches</span><strong>${Number(act.dispatches||0)}</strong></button>
-      <button class="bsm-activity-receipts" data-dashboard-go="site_receipts"><span class="bsm-activity-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10l4 4v14H5zM15 3v5h4M8 12h8M8 16h6"/></svg></span><span class="bsm-activity-label">Site Receipts</span><strong>${Number(act.receipts||0)}</strong></button>
-      <button class="bsm-activity-consumptions" data-dashboard-go="site_consumptions"><span class="bsm-activity-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 7l8 4 8-4-8-4zM4 12l8 4 8-4M4 17l8 4 8-4"/></svg></span><span class="bsm-activity-label">Consumptions</span><strong>${Number(act.consumptions||0)}</strong></button>
-      <button class="bsm-activity-expense" data-dashboard-go="daily_expense_summary"><span class="bsm-activity-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v13H3zM3 7V4h15M16 13h5v4h-5a2 2 0 0 1 0-4z"/></svg></span><span class="bsm-activity-label">Site Expense</span><strong>${moneyFmt(act.site_expenses)}</strong></button>
-      <button class="bsm-activity-office" data-dashboard-go="office_attendance_master"><span class="bsm-activity-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4h10v17M14 9h6v12M7 8h2M7 12h2M7 16h2M16 13h2M16 17h2M2 21h20"/></svg></span><span class="bsm-activity-label">Office P / A</span><strong>${Number(oa.present||0)} / ${Number(oa.absent||0)}</strong></button>
-    </div></div>
-  </div>`;
+  const activityColumns=[
+    {label:'Purchases',value:Number(act.purchases||0),view:'purchase_register'},
+    {label:'Dispatches',value:Number(act.dispatches||0),view:'material_dispatches'},
+    {label:'Site Receipts',value:Number(act.receipts||0),view:'site_receipts'},
+    {label:'Consumptions',value:Number(act.consumptions||0),view:'site_consumptions'},
+    {label:'Site Expense',value:moneyFmt(act.site_expenses),view:'daily_expense_summary'},
+    {label:'Office Present / Absent',value:`${Number(oa.present||0)} / ${Number(oa.absent||0)}`,view:'office_attendance_master'}
+  ];
+  h+=`<div class="bsm-panel bsm-dashboard-today"><div class="bsm-panel-head"><h3>Today's Activity</h3></div><div class="bsm-table-wrap"><table class="bsm-dashboard-activity-table"><thead><tr>${activityColumns.map(x=>`<th scope="col">${esc(x.label)}</th>`).join('')}</tr></thead><tbody><tr>${activityColumns.map(x=>`<td><button type="button" class="bsm-dashboard-activity-link" data-dashboard-go="${x.view}" aria-label="Open ${esc(x.label)}">${esc(x.value)}</button></td>`).join('')}</tr></tbody></table></div></div>`;
 
   h+=`<div class="bsm-panel"><div class="bsm-panel-head"><h3>Quick Actions</h3></div><div class="bsm-dashboard-quick-actions">
     <button class="bsm-btn bsm-btn-primary" data-dashboard-go="purchase_form">+ Purchase</button>

@@ -95,3 +95,5 @@ Version 0.0.064: Pending Dispatch supports Warehouse or Site sources. Site dispa
 Version 0.0.065: Site Inventory separates outgoing Site Transfer from warehouse Returned quantities, with the same separation in Material Stock and Excel exports. Incoming transfers remain in Received on receipt confirmation; balances deduct outgoing transfers exactly once.
 
 Version 0.0.069: Time Sheet add/edit forms explicitly select AM/PM. Master, group totals, PDF and Excel show elapsed hours and minutes (3h 10m), with live row durations and overnight handling; minute-based billing is preserved.
+
+Version 0.0.070: Site Dashboard removes the Site Balance panel and displays Today's Activity in a full-width table with links to each activity view.

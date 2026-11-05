@@ -2934,3 +2934,11 @@ html,body{
 #ops-time-form td.ops-time-duration{min-width:85px;font-weight:600;}
 #ops-time-list td:nth-child(5),#ops-time-list td:nth-child(6),#ops-time-list td:nth-child(7){white-space:nowrap;}
 #ops-time-edit-total{font-weight:600;color:#123d67;}
+
+/* Compact full-width activity table on Site Dashboard. */
+.bsm-dashboard-today{margin-bottom:16px;}
+.bsm-dashboard-activity-table{width:100%;table-layout:fixed;min-width:680px;}
+.bsm-dashboard-activity-table th,.bsm-dashboard-activity-table td{text-align:center!important;vertical-align:middle;}
+.bsm-app button.bsm-dashboard-activity-link{display:inline-block;width:auto;padding:10px 6px;background:transparent;border:0;box-shadow:none;color:#1760d9;font-size:18px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.bsm-app button.bsm-dashboard-activity-link:hover{text-decoration:underline;background:#edf4ff;}
+.bsm-app button.bsm-dashboard-activity-link:focus-visible{outline:2px solid #1760d9;outline-offset:2px;border-radius:4px;}
