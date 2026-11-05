@@ -101,3 +101,5 @@ Version 0.0.070: Site Dashboard removes the Site Balance panel and displays Toda
 Version 0.0.071: Daily Labour Report shows each contractor employee with saved working hours, Employee filtering, filtered employee-day/hour totals and matching Excel exports. Legacy count-only attendance is explicitly identified with hours unavailable.
 
 Version 0.0.072: BOQ item and monitoring columns show Site Opening, Requisition Qty, Approved, Rejected, Received, Consumption, Return and actual site Balance after BOQ Qty, with matching Excel exports. Requested and approval quantities are separate; stock includes site transfers.
+
+Version 0.0.073: Direct PO Form compares one to three quotations per item, highlights lowest rates, records higher-rate selection reasons, previews supplier totals and atomically creates separate POs by supplier. Existing approval, receipt, PDF and office notification flows apply to each PO.

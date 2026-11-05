@@ -685,21 +685,20 @@ function poItemOptions(selected=''){
 }
 
 function directPoItemRow(){
-  return `<tr class="po-direct-row">
-    <td><select class="po-direct-item">${poItemOptions()}</select></td>
-    <td class="po-direct-unit">-</td>
-    <td><input type="number" class="po-direct-qty num" min="0.01" step="0.01" value=""></td>
-    <td><input type="number" class="po-direct-rate num" readonly></td>
-    <td class="num po-direct-amount">0.00</td>
-    <td class="po-direct-actions">
-      <button type="button" class="bsm-icon-btn bsm-icon-primary po-direct-add" title="Add Item">+</button>
-      <button type="button" class="bsm-icon-btn bsm-icon-danger po-direct-remove" title="Remove">×</button>
-    </td>
-  </tr>`;
+  return `<div class="po-direct-row">
+    <div class="bsm-table-wrap"><table><thead><tr><th>Item</th><th>Unit</th><th>PO Qty</th><th>Chosen Supplier</th><th>Chosen Rate</th><th>Amount</th><th></th></tr></thead><tbody><tr>
+      <td><select class="po-direct-item" aria-label="Item">${poItemOptions()}</select></td><td class="po-direct-unit">-</td>
+      <td><input type="number" class="po-direct-qty num" aria-label="PO Qty" min="0.01" step="0.01"></td>
+      <td><select class="po-direct-vendor" aria-label="Chosen Supplier"><option value="">Select quoted supplier</option></select></td>
+      <td><input type="number" class="po-direct-rate num" aria-label="Chosen Rate" readonly></td><td class="num po-direct-amount">0.00</td>
+      <td><button type="button" class="bsm-icon-btn bsm-icon-danger po-direct-remove" title="Remove Item">×</button></td>
+    </tr></tbody></table></div>
+    <div class="po-item-quotes">${[1,2,3].map(n=>`<div class="po-item-quote" data-slot="${n}"><strong>Supplier ${n} <span class="po-lowest-badge" hidden>Lowest rate</span></strong><label>Supplier<select class="po-direct-quote-supplier" data-slot="${n}">${poVendorOptions()}</select></label><label>Rate (₹)<input type="number" class="po-direct-quote-rate" data-slot="${n}" min="0" step="0.01"></label></div>`).join('')}</div>
+    <label class="po-selection-reason" hidden>Reason for choosing a higher rate <span class="bsm-required">*</span><input class="po-direct-reason" maxlength="500"></label>
+  </div>`;
 }
 async function renderPurchaseOrderForm(){
   setTitle('PO Form');
-  const vendorOpts=poVendorOptions();
   const whOpts=`<option value="">Select Warehouse</option>`+(App.options.warehouses||[]).map(x=>`<option value="${esc(x.id)}">${esc(x.label)}</option>`).join('');
   $('#bsm-content').html(`
     <div class="bsm-panel bsm-direct-po-panel">
@@ -709,25 +708,18 @@ async function renderPurchaseOrderForm(){
         <label><span class="bsm-field-label">Required Date</span><input type="date" lang="en-GB" id="po_direct_required"></label>
         <label><span class="bsm-field-label">Created By</span><input type="text" id="po_direct_created_by" value="${esc((BSM.currentUser&&BSM.currentUser.name)||'')}" readonly></label>
       </div>
-      <div class="bsm-form-grid po-header-quotes">
-        ${[1,2,3].map(n=>`<label>Supplier ${n} <select class="po-direct-quote-supplier" data-slot="${n}">${vendorOpts}</select></label><label>Rate ${n} <input type="number" class="po-direct-quote-rate" data-slot="${n}" min="0" step="0.01"></label>`).join('')}
-        <label>Chosen Supplier <span class="bsm-required">*</span><select id="po_direct_vendor"><option value="">Select quoted supplier</option></select></label><label>Chosen Rate <input type="number" class="po-direct-chosen-rate" readonly></label>
+      <div class="bsm-lines"><div class="bsm-lines-head"><h3>Items &amp; Supplier Comparison</h3></div>
+        <div id="po_direct_items">${directPoItemRow()}</div>
+        <button type="button" class="bsm-btn bsm-btn-primary po-direct-add">+ Add Item</button>
       </div>
-      <div class="bsm-lines">
-        <div class="bsm-lines-head"><h3>Items</h3></div>
-        <div class="bsm-table-wrap">
-          <table>
-            <thead><tr><th>Item</th><th>Unit</th><th class="num">PO Qty</th><th class="num">Rate</th><th class="num">Amount</th><th></th></tr></thead>
-            <tbody id="po_direct_items">${directPoItemRow()}</tbody>
-          </table>
-        </div>
-      </div>
+      <div class="bsm-lines"><h3>Supplier-wise PO Preview</h3><div id="po_direct_preview"></div><small>Amounts before GST</small></div>
       <div class="bsm-form-actions">
         <button type="button" class="bsm-btn bsm-btn-secondary" id="po_direct_clear">Clear</button>
         <button type="button" class="bsm-btn bsm-btn-primary" id="po_direct_save">Create PO</button>
       </div>
     </div>`);
   bsmEnhanceSearchableSelects($('#bsm-content'));
+  updateDirectPoPreview();
 }
 async function refreshDirectPoItemRow($row){
   const iid=$row.find('.po-direct-item').val();
@@ -742,6 +734,7 @@ function updateDirectPoAmount($row){
   const qty=Number($row.find('.po-direct-qty').val()||0);
   const rate=Number($row.find('.po-direct-rate').val()||0);
   $row.find('.po-direct-amount').text((qty*rate).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}));
+  updateDirectPoPreview();
 }
 
 async function renderPendingPoItems(){
@@ -812,12 +805,13 @@ function poApprovalIcon(action){
 }
 async function loadPurchaseOrderMaster(exportAll=false){
   const pendingApproval=App.current==='pending_po_approval';
-  const r=await ajax('bsm_purchase_order_master',{search:$('#po_master_search').val()||'',vendor_id:$('#po_master_vendor').val()||'',status:$('#po_master_status').val()||''});if(!r.success){if(!exportAll)$('#po_master_list').html('<div class="bsm-empty">Unable to load PO Master.</div>');return null;}const rows=r.data.rows||[];if(exportAll)return rows;const amt=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>PO No.</th><th>PO Date</th><th>Supplier</th><th>Warehouse</th><th>Required Date</th><th>Items</th><th class="num">PO Qty</th><th class="num">Received</th><th class="num">Pending</th><th class="num">Total</th>'+(pendingApproval?'':'<th>Status</th>')+'<th>Created By</th><th>PDF</th><th>Action</th></tr></thead><tbody>';rows.forEach((x,i)=>{const pdf=`<button type="button" class="bsm-pdf-link po-pdf" data-id="${x.id}" title="Download PO PDF" aria-label="Download PO PDF"><svg class="bsm-pdf-icon" viewBox="0 0 32 36" aria-hidden="true"><path d="M6.5 1.5h12l7 7v25H6.5z" fill="#fff" stroke="#ef2020" stroke-width="2" stroke-linejoin="round"/><path d="M18.5 1.5v7h7" fill="none" stroke="#ef2020" stroke-width="2" stroke-linejoin="round"/><rect x="3" y="19" width="26" height="11" rx="2" fill="#ef2020"/><text x="16" y="27.1" text-anchor="middle" font-size="8.3" font-weight="700" font-family="Arial,Helvetica,sans-serif" fill="#fff">PDF</text></svg></button>`;const edit=String(x.status||'')!=='cancelled'?`<button type="button" class="bsm-action-edit po-edit" data-id="${x.id}" title="Edit PO">✎</button>`:'';const cancel=(Number(x.received_qty||0)<=0.009&&!['cancelled','fully_received'].includes(String(x.status||'')))?`<button class="bsm-btn bsm-btn-small bsm-btn-danger po-cancel" data-id="${x.id}" title="Cancel PO" aria-label="Cancel PO" style="min-width:30px!important;width:30px;height:30px;padding:4px!important">${poApprovalIcon('cancel')}</button>`:'';h+=`<tr><td>${i+1}</td><td>${esc(x.po_no||'')}</td><td>${dateFmt(x.po_date)}</td><td>${esc(x.vendor_name||'')}</td><td>${esc(x.warehouse_name||'')}</td><td>${dateFmt(x.required_date)}</td><td class="num">${Number(x.item_count||0)}</td><td class="num">${Number(x.po_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.received_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.pending_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${amt(x.total_amount)}</td>${pendingApproval?'':`<td><span class="bsm-pill">${esc(String(x.status||'').replaceAll('_',' '))}</span></td>`}<td>${esc(x.created_by_name||'-')}</td><td style="text-align:center">${pdf}</td><td class="bsm-po-action-cell" style="min-width:144px;vertical-align:middle"><div class="bsm-actions bsm-po-actions" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;white-space:normal">${edit}${cancel}${BSM.notificationAdmin&&['created','pending_approval'].includes(x.status)?`<button type="button" class="bsm-btn nt-approve-po" style="background:#168444;color:#fff;border:1px solid #168444;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:4px;font-size:12px;cursor:pointer" data-id="${x.id}" title="Approve PO" aria-label="Approve PO">${poApprovalIcon('approve')}</button><button type="button" class="bsm-btn nt-reject-po" style="background:#fff1f2;color:#be123c;border:1px solid #fda4af;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:4px;font-size:12px;cursor:pointer" data-id="${x.id}" title="Reject PO" aria-label="Reject PO">${poApprovalIcon('reject')}</button>`:''}</div></td></tr>`;});if(!rows.length)h+='<tr><td colspan="'+(pendingApproval?14:15)+'" class="bsm-empty">No Purchase Orders found.</td></tr>';h+='</tbody></table></div>';$('#po_master_list').html(h);return rows;
+  const r=await ajax('bsm_purchase_order_master',{search:$('#po_master_search').val()||'',vendor_id:$('#po_master_vendor').val()||'',status:$('#po_master_status').val()||''});if(!r.success){if(!exportAll)$('#po_master_list').html('<div class="bsm-empty">Unable to load PO Master.</div>');return null;}const rows=r.data.rows||[];if(exportAll)return rows;const amt=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>PO No.</th><th>PO Date</th><th>Supplier</th><th>Warehouse</th><th>Required Date</th><th>Items</th><th class="num">PO Qty</th><th class="num">Received</th><th class="num">Pending</th><th class="num">Total</th>'+(pendingApproval?'':'<th>Status</th>')+'<th>Created By</th><th>PDF</th><th>Action</th></tr></thead><tbody>';rows.forEach((x,i)=>{const pdf=`<button type="button" class="bsm-pdf-link po-pdf" data-id="${x.id}" title="Download PO PDF" aria-label="Download PO PDF"><svg class="bsm-pdf-icon" viewBox="0 0 32 36" aria-hidden="true"><path d="M6.5 1.5h12l7 7v25H6.5z" fill="#fff" stroke="#ef2020" stroke-width="2" stroke-linejoin="round"/><path d="M18.5 1.5v7h7" fill="none" stroke="#ef2020" stroke-width="2" stroke-linejoin="round"/><rect x="3" y="19" width="26" height="11" rx="2" fill="#ef2020"/><text x="16" y="27.1" text-anchor="middle" font-size="8.3" font-weight="700" font-family="Arial,Helvetica,sans-serif" fill="#fff">PDF</text></svg></button>`;const edit=String(x.status||'')!=='cancelled'?`<button type="button" class="bsm-action-edit po-edit" data-id="${x.id}" title="Edit PO">✎</button>`:'';const cancel=(Number(x.received_qty||0)<=0.009&&!['cancelled','fully_received'].includes(String(x.status||'')))?`<button class="bsm-btn bsm-btn-small bsm-btn-danger po-cancel" data-id="${x.id}" title="Cancel PO" aria-label="Cancel PO" style="min-width:30px!important;width:30px;height:30px;padding:4px!important">${poApprovalIcon('cancel')}</button>`:'';h+=`<tr><td>${i+1}</td><td>${esc(x.po_no||'')}</td><td>${dateFmt(x.po_date)}</td><td>${esc(x.vendor_name||'')}</td><td>${esc(x.warehouse_name||'')}</td><td>${dateFmt(x.required_date)}</td><td class="num">${Number(x.item_count||0)}</td><td class="num">${Number(x.po_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.received_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.pending_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${amt(x.total_amount)}</td>${pendingApproval?'':`<td><span class="bsm-pill">${esc(String(x.status||'').replaceAll('_',' '))}</span></td>`}<td>${esc(x.created_by_name||'-')}</td><td style="text-align:center">${pdf} <button type="button" class="bsm-btn po-quotes" data-id="${x.id}" title="View item supplier comparison">Quotes</button></td><td class="bsm-po-action-cell" style="min-width:144px;vertical-align:middle"><div class="bsm-actions bsm-po-actions" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;white-space:normal">${edit}${cancel}${BSM.notificationAdmin&&['created','pending_approval'].includes(x.status)?`<button type="button" class="bsm-btn nt-approve-po" style="background:#168444;color:#fff;border:1px solid #168444;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:4px;font-size:12px;cursor:pointer" data-id="${x.id}" title="Approve PO" aria-label="Approve PO">${poApprovalIcon('approve')}</button><button type="button" class="bsm-btn nt-reject-po" style="background:#fff1f2;color:#be123c;border:1px solid #fda4af;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:4px;font-size:12px;cursor:pointer" data-id="${x.id}" title="Reject PO" aria-label="Reject PO">${poApprovalIcon('reject')}</button>`:''}</div></td></tr>`;});if(!rows.length)h+='<tr><td colspan="'+(pendingApproval?14:15)+'" class="bsm-empty">No Purchase Orders found.</td></tr>';h+='</tbody></table></div>';$('#po_master_list').html(h);return rows;
 }
 async function renderPurchaseOrderItemsMaster(){
   setTitle('PO Items Master');
   $('#bsm-content').html(`<div class="bsm-toolbar"><input id="po_items_search" class="bsm-search" aria-label="Search PO Items Master" placeholder="">${selectHtml('po_items_vendor','Supplier','vendors','')}<div class="bsm-spacer"></div>${excelButton('po_items_export')}</div><div id="po_items_list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);await loadPurchaseOrderItemsMaster();
 }
+function poQuotationReason(row){try{return JSON.parse(row.remarks||'{}').supplier_quotations?.find(x=>String(x.item_id)===String(row.item_id))?.selection_reason||'';}catch(e){return '';}}
 function poItemQuotes(row){
   let parsed={};try{parsed=JSON.parse(row.remarks||'{}');}catch(e){}
   const all=Array.isArray(parsed.supplier_quotations)?parsed.supplier_quotations:[];
@@ -825,7 +819,7 @@ function poItemQuotes(row){
   return poMasterQuotes({...row,remarks:JSON.stringify({supplier_quotations:lines})});
 }
 async function loadPurchaseOrderItemsMaster(exportAll=false){
-  const r=await ajax('bsm_purchase_order_items_master',{search:$('#po_items_search').val()||'',vendor_id:$('#po_items_vendor').val()||''});if(!r.success){if(!exportAll)$('#po_items_list').html('<div class="bsm-empty">Unable to load PO Items Master.</div>');return null;}const rows=r.data.rows||[];if(exportAll)return rows;const amt=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>PO No.</th><th>PO Date</th><th>Supplier</th><th>Item</th><th>Unit</th><th>Supplier 1</th><th>Rate 1</th><th>Supplier 2</th><th>Rate 2</th><th>Supplier 3</th><th>Rate 3</th><th>Chosen Supplier</th><th>Chosen Rate</th><th class="num">Rate</th><th class="num">PO Qty</th><th class="num">Received Qty</th><th class="num">Pending Qty</th><th class="num">Amount</th><th>Status</th></tr></thead><tbody>';rows.forEach((x,i)=>h+=`<tr><td>${i+1}</td><td>${esc(x.po_no||'')}</td><td>${dateFmt(x.po_date)}</td><td>${esc(x.vendor_name||'')}</td><td>${esc(x.item_name||'')}</td><td>${esc(x.unit_name||'')}</td>${poItemQuotes(x).map(v=>`<td>${esc(v)}</td>`).join('')}<td class="num">${amt(x.rate)}</td><td class="num">${Number(x.po_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.received_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.pending_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${amt(Number(x.po_qty||0)*Number(x.rate||0))}</td><td>${esc(String(x.status||'').replaceAll('_',' '))}</td></tr>`);if(!rows.length)h+='<tr><td colspan="20" class="bsm-empty">No PO Item records found.</td></tr>';h+='</tbody></table></div>';$('#po_items_list').html(h);return rows;
+  const r=await ajax('bsm_purchase_order_items_master',{search:$('#po_items_search').val()||'',vendor_id:$('#po_items_vendor').val()||''});if(!r.success){if(!exportAll)$('#po_items_list').html('<div class="bsm-empty">Unable to load PO Items Master.</div>');return null;}const rows=r.data.rows||[];if(exportAll)return rows;const amt=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>PO No.</th><th>PO Date</th><th>Supplier</th><th>Item</th><th>Unit</th><th>Supplier 1</th><th>Rate 1</th><th>Supplier 2</th><th>Rate 2</th><th>Supplier 3</th><th>Rate 3</th><th>Chosen Supplier</th><th>Chosen Rate</th><th>Selection Reason</th><th class="num">Rate</th><th class="num">PO Qty</th><th class="num">Received Qty</th><th class="num">Pending Qty</th><th class="num">Amount</th><th>Status</th></tr></thead><tbody>';rows.forEach((x,i)=>h+=`<tr><td>${i+1}</td><td>${esc(x.po_no||'')}</td><td>${dateFmt(x.po_date)}</td><td>${esc(x.vendor_name||'')}</td><td>${esc(x.item_name||'')}</td><td>${esc(x.unit_name||'')}</td>${poItemQuotes(x).map(v=>`<td>${esc(v)}</td>`).join('')}<td>${esc(poQuotationReason(x))}</td><td class="num">${amt(x.rate)}</td><td class="num">${Number(x.po_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.received_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.pending_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${amt(Number(x.po_qty||0)*Number(x.rate||0))}</td><td>${esc(String(x.status||'').replaceAll('_',' '))}</td></tr>`);if(!rows.length)h+='<tr><td colspan="21" class="bsm-empty">No PO Item records found.</td></tr>';h+='</tbody></table></div>';$('#po_items_list').html(h);return rows;
 }
 
 function vendorOptionHtml(selected=''){
@@ -3822,7 +3816,7 @@ function bsmOpenSearchable($wrap){
     ($select.is('select') && /(?:^|[_-])item(?:[_-]id)?$/.test(String($select.attr('id')||'')));
   // v456: PO Supplier menus must escape the horizontally scrolling PO table.
   // Keep the original select in place so PO creation still receives its Supplier ID.
-  const poVendorSelect=$select.is('select.po-row-vendor,select.po-quote-supplier,select#po_direct_vendor');
+  const poVendorSelect=$select.is('select.po-row-vendor,select.po-quote-supplier,select.po-direct-vendor,select.po-direct-quote-supplier');
   // BOQ selectors have class-based names and must escape the form/table scroll area.
   if($select.closest('#bsm-boq-form').length && rect && $menu.length){
     const vw=document.documentElement.clientWidth||window.innerWidth;
@@ -4098,62 +4092,51 @@ $(document).on('click','#po_create_selected',async function(){
   try{const r=await ajax('bsm_purchase_order_create',{warehouse_id:App.pendingPoWarehouse||'',items:JSON.stringify(items)});if(r.success){showToast(r.data.message||'PO created');await loadPendingPoItems();}else showToast(r.data?.message||'Unable to create PO',true);}finally{$button.prop('disabled',false);}
 });
 
-function syncDirectPoChosen($row){const vendor=String($('#po_direct_vendor').val()||'');const quotes=[1,2,3].map(n=>({vendor_id:String($('.po-direct-quote-supplier[data-slot="'+n+'"]').val()||''),rate:$('.po-direct-quote-rate[data-slot="'+n+'"]').val()}));const match=poLowestQuotation(quotes,vendor);$('.po-direct-chosen-rate').val(match?match.rate:'');$row.find('.po-direct-rate').val(match?match.rate:'');updateDirectPoAmount($row);}
-function refreshDirectPoChosenOptions(){const $chosen=$('#po_direct_vendor'),value=String($chosen.val()||''),seen=new Set();const opts=[1,2,3].map(n=>String($('.po-direct-quote-supplier[data-slot="'+n+'"]').val()||'')).filter(id=>{if(!id||seen.has(id))return false;seen.add(id);return true;});$chosen.html('<option value="">Select quoted supplier</option>'+opts.map(id=>`<option value="${esc(id)}">${esc(labelFor('vendors',id)||'')}</option>`).join('')).val(opts.includes(value)?value:'');bsmRefreshSearchableSelect($chosen[0]);}
-$(document).on('change','.po-direct-quote-supplier',function(){refreshDirectPoChosenOptions();$('#po_direct_items .po-direct-row').each(function(){syncDirectPoChosen($(this));});});
-$(document).on('input change','.po-direct-quote-rate',function(){$('#po_direct_items .po-direct-row').each(function(){syncDirectPoChosen($(this));});});
-$(document).on('change','#po_direct_vendor',function(){$('#po_direct_items .po-direct-row').each(function(){syncDirectPoChosen($(this));});});
-$(document).on('click','.po-direct-add',function(){
-  const $row=$(this).closest('tr');
-  $row.after(directPoItemRow());
-  bsmEnhanceSearchableSelects($('#po_direct_items'));
-});
-$(document).on('click','.po-direct-remove',function(){
-  const $rows=$('#po_direct_items .po-direct-row');
-  if($rows.length<=1){
-    const $r=$(this).closest('tr');
-    $r.find('.po-direct-item').val('');
-    $r.find('.po-direct-qty,.po-direct-rate').val('');
-    $r.find('.po-direct-unit').text('-');
-    $r.find('.po-direct-amount').text('0.00');
-    return;
-  }
-  $(this).closest('tr').remove();
-});
-$(document).on('change','.po-direct-item',function(){refreshDirectPoItemRow($(this).closest('tr'));});
-$(document).on('input','.po-direct-qty,.po-direct-rate',function(){updateDirectPoAmount($(this).closest('tr'));});
+function directPoQuotations($row){return [1,2,3].map(n=>({vendor_id:String($row.find(`.po-direct-quote-supplier[data-slot="${n}"]`).val()||''),rate:$row.find(`.po-direct-quote-rate[data-slot="${n}"]`).val()}));}
+function syncDirectPoChosen($row){
+  const quotes=directPoQuotations($row),valid=quotes.filter(q=>q.vendor_id&&q.rate!==''&&Number.isFinite(Number(q.rate))&&Number(q.rate)>=0);
+  const match=poLowestQuotation(quotes,$row.find('.po-direct-vendor').val()),lowest=valid.length?Math.min(...valid.map(q=>Number(q.rate))):null;
+  $row.find('.po-direct-rate').val(match?.rate??'');
+  $row.find('.po-item-quote').each(function(n){const q=quotes[n],isLowest=valid.includes(q)&&Number(q.rate)===lowest;$(this).toggleClass('is-lowest',isLowest).find('.po-lowest-badge').prop('hidden',!isLowest);});
+  const higher=!!match&&Number(match.rate)>lowest;
+  $row.find('.po-selection-reason').prop('hidden',!higher);$row.find('.po-direct-reason').prop('required',higher);
+  updateDirectPoAmount($row);
+}
+function refreshDirectPoChosenOptions($row){
+  const $chosen=$row.find('.po-direct-vendor'),value=String($chosen.val()||''),ids=[...new Set(directPoQuotations($row).map(q=>q.vendor_id).filter(Boolean))];
+  $chosen.html('<option value="">Select quoted supplier</option>'+ids.map(id=>`<option value="${esc(id)}">${esc(labelFor('vendors',id))}</option>`).join('')).val(ids.includes(value)?value:'');
+  bsmRefreshSearchableSelect($chosen[0]);syncDirectPoChosen($row);
+}
+function updateDirectPoPreview(){
+  const groups=new Map();$('#po_direct_items .po-direct-row').each(function(){const $row=$(this),vendor=$row.find('.po-direct-vendor').val(),item=$row.find('.po-direct-item').val(),qty=Number($row.find('.po-direct-qty').val()),rate=$row.find('.po-direct-rate').val();if(!vendor||!item||qty<=0||rate==='')return;if(!groups.has(vendor))groups.set(vendor,{items:[],amount:0});const g=groups.get(vendor);g.items.push(labelFor('items',item));g.amount+=qty*Number(rate);});
+  $('#po_direct_preview').html(groups.size?`<div class="bsm-table-wrap"><table><thead><tr><th>Supplier</th><th>Items</th><th class="num">Amount</th></tr></thead><tbody>${[...groups].map(([id,g])=>`<tr><td>${esc(labelFor('vendors',id))}</td><td>${esc(g.items.join(', '))}</td><td class="num">₹${g.amount.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>`).join('')}</tbody></table></div><p>${groups.size} purchase order${groups.size===1?'':'s'} will be created</p>`:'Select items, quantities and quoted suppliers to preview purchase orders.');
+  $('#po_direct_save').text(groups.size?`Create ${groups.size} PO${groups.size===1?'':'s'}`:'Create PO');
+}
+$(document).on('change','.po-direct-quote-supplier',function(){refreshDirectPoChosenOptions($(this).closest('.po-direct-row'));});
+$(document).on('input change','.po-direct-quote-rate,.po-direct-vendor',function(){syncDirectPoChosen($(this).closest('.po-direct-row'));});
+$(document).on('click','.po-direct-add',function(){$('#po_direct_items').append(directPoItemRow());bsmEnhanceSearchableSelects($('#po_direct_items'));});
+$(document).on('click','.po-direct-remove',function(){const $row=$(this).closest('.po-direct-row');if($('#po_direct_items .po-direct-row').length===1){$row.replaceWith(directPoItemRow());bsmEnhanceSearchableSelects($('#po_direct_items'));}else $row.remove();updateDirectPoPreview();});
+$(document).on('change','.po-direct-item',function(){refreshDirectPoItemRow($(this).closest('.po-direct-row'));updateDirectPoPreview();});
+$(document).on('input','.po-direct-qty',function(){updateDirectPoAmount($(this).closest('.po-direct-row'));});
 $(document).on('click','#po_direct_clear',async function(){await renderPurchaseOrderForm();});
 $(document).on('click','#po_direct_save',async function(){
-  const vendor_id=$('#po_direct_vendor').val();
-  const warehouse_id=$('#po_direct_warehouse').val();
-  const po_date=$('#po_direct_date').val();
-  const required_date=$('#po_direct_required').val();
-  const remarks='';
-  const created_by=$('#po_direct_created_by').val()||'';
-  if(!po_date)return showToast('PO Date is required',true);
-  if(!vendor_id)return showToast('Select a Chosen Supplier from the quotations',true);
-  if(!warehouse_id)return showToast('Warehouse is required',true);
-  const items=[];
-  let invalid=false;
+  const warehouse_id=$('#po_direct_warehouse').val(),po_date=$('#po_direct_date').val(),required_date=$('#po_direct_required').val();
+  if(!po_date)return showToast('PO Date is required',true);if(!warehouse_id)return showToast('Warehouse is required',true);
+  const items=[],seen=new Set();let error='';
   $('#po_direct_items .po-direct-row').each(function(){
-    const item_id=$(this).find('.po-direct-item').val();
-    const po_qty=Number($(this).find('.po-direct-qty').val()||0);
-    const rate=Number($(this).find('.po-direct-rate').val()||0);
-    if(!item_id && po_qty<=0)return;
-    if(!item_id || po_qty<=0){invalid=true;return;}
-    const quotations=[1,2,3].map(n=>({vendor_id:String($('.po-direct-quote-supplier[data-slot="'+n+'"]').val()||''),rate:$('.po-direct-quote-rate[data-slot="'+n+'"]').val()}));
-    if(quotations.some(q=>!q.vendor_id||q.rate===''||!Number.isFinite(Number(q.rate))||Number(q.rate)<0)||!quotations.some(q=>q.vendor_id===String(vendor_id))){invalid=true;return;}
-    items.push({item_id,po_qty,rate,quotations});
+    const $row=$(this),item_id=$row.find('.po-direct-item').val(),po_qty=Number($row.find('.po-direct-qty').val()),vendor_id=String($row.find('.po-direct-vendor').val()||'');
+    if(!item_id&&!po_qty&&!directPoQuotations($row).some(q=>q.vendor_id||q.rate!==''))return;
+    if(!item_id||!Number.isFinite(po_qty)||po_qty<=0){error='Select an item and enter a valid PO quantity for every item.';return;}
+    if(seen.has(item_id)){error='Use one row per item.';return;}seen.add(item_id);
+    const quotations=directPoQuotations($row).filter(q=>q.vendor_id||q.rate!=='');
+    if(!quotations.length||quotations.some(q=>!q.vendor_id||q.rate===''||!Number.isFinite(Number(q.rate))||Number(q.rate)<0)||new Set(quotations.map(q=>q.vendor_id)).size!==quotations.length){error='Enter at least one quotation per item, with distinct suppliers and valid rates.';return;}
+    const chosen=poLowestQuotation(quotations,vendor_id);if(!chosen){error='Choose a quoted supplier for every item.';return;}
+    const selection_reason=$row.find('.po-direct-reason').val().trim();if(Number(chosen.rate)>Math.min(...quotations.map(q=>Number(q.rate)))&&!selection_reason){error='Enter a reason for choosing a higher rate.';return;}
+    items.push({item_id,po_qty,vendor_id,quotations,selection_reason});
   });
-  if(invalid)return showToast('Select Item, enter PO Qty and three supplier rates, and choose a quoted Supplier above',true);
-  if(!items.length)return showToast('Add at least one PO item',true);
-  const $btn=$('#po_direct_save').prop('disabled',true).text('Saving...');
-  const r=await ajax('bsm_purchase_order_manual_save',{vendor_id,warehouse_id,po_date,required_date,remarks,created_by,items:JSON.stringify(items)});
-  $btn.prop('disabled',false).text('Create PO');
-  if(r.success){
-    showToast(`${r.data.po_no||'PO'} created successfully`);
-    await openView('purchase_order_master');
-  }else showToast(r.data?.message||'Unable to create PO',true);
+  if(error)return showToast(error,true);if(!items.length)return showToast('Add at least one PO item',true);
+  const $btn=$(this).prop('disabled',true).text('Saving...');
+  try{const r=await ajax('bsm_purchase_order_manual_save',{warehouse_id,po_date,required_date,items:JSON.stringify(items)});if(r.success){showToast(r.data.message);await openView('purchase_order_master');}else showToast(r.data?.message||'Unable to create PO',true);}catch(e){showToast('Unable to create PO. Please check PO Master before retrying.',true);}finally{$btn.prop('disabled',false);updateDirectPoPreview();}
 });
 
 $(document).on('input','#po_receipt_search',function(){clearTimeout(App.pors);App.pors=setTimeout(()=>loadPurchaseOrderPendingReceipt(),300);});
@@ -4170,6 +4153,13 @@ $(document).on('click','.po-receive-po',async function(e){e.stopPropagation();aw
 $(document).on('input','#po_master_search',function(){clearTimeout(App.poms);App.poms=setTimeout(()=>loadPurchaseOrderMaster(),350);});
 $(document).on('change','#po_master_vendor,#po_master_status',()=>loadPurchaseOrderMaster());
 $(document).on('click','.po-pdf',async function(e){e.stopPropagation();const r=await ajax('bsm_purchase_order_pdf',{id:$(this).data('id')});if(r.success&&r.data?.url)window.open(r.data.url,'_blank');else showToast(r.data?.message||'Unable to generate PO PDF',true);});
+$(document).on('click','.po-quotes',async function(){
+  const r=await ajax('bsm_purchase_order_get',{id:$(this).data('id')});if(!r.success)return showToast(r.data?.message||'Unable to load quotations',true);
+  const head=r.data.head||{},items=r.data.items||[];$('#po-quote-dialog').remove();
+  const dialog=document.createElement('dialog');dialog.id='po-quote-dialog';
+  dialog.innerHTML=`<div class="po-quote-dialog-head"><h3>${esc(head.po_no)} — Item Supplier Comparison</h3><button type="button" class="bsm-btn po-close-quotes">Close</button></div><div class="bsm-table-wrap"><table><thead><tr><th>Item</th><th>Qty</th><th>Supplier 1</th><th>Rate 1</th><th>Supplier 2</th><th>Rate 2</th><th>Supplier 3</th><th>Rate 3</th><th>Chosen Supplier</th><th>Chosen Rate</th><th>Selection Reason</th></tr></thead><tbody>${items.map(it=>{const row={...head,...it,remarks:head.remarks};return `<tr><td>${esc(it.item_name)}</td><td>${esc(it.po_qty)}</td>${poItemQuotes(row).map(v=>`<td>${esc(v)}</td>`).join('')}<td>${esc(poQuotationReason(row))}</td></tr>`;}).join('')}</tbody></table></div>`;
+  document.body.appendChild(dialog);dialog.showModal();dialog.addEventListener('close',()=>dialog.remove());dialog.querySelector('.po-close-quotes').addEventListener('click',()=>dialog.close());
+});
 $(document).on('click','.po-edit',async function(e){
   e.stopPropagation();const id=$(this).data('id');await ensureOptions(['vendors','warehouses']);const r=await ajax('bsm_purchase_order_get',{id});if(!r.success)return showToast(r.data?.message||'Unable to load PO',true);const h=r.data.head||{},items=r.data.items||[],locked=Number(h.received_qty||0)>0.009;
   App.editId=id;$('#bsm-modal').removeClass('bsm-purchase-edit-modal bsm-site-receipt-modal');$('#bsm-modal-title').text('Edit Purchase Order');$('#bsm-form').data('module','purchase_order_edit');
@@ -4183,7 +4173,7 @@ $(document).on('input','#po_items_search',function(){clearTimeout(App.poims);App
 $(document).on('change','#po_items_vendor',()=>loadPurchaseOrderItemsMaster());
 $(document).on('click','#po_pending_export',async function(){const rows=await loadPendingPoItems(true);if(!rows)return;downloadExcelFile('Pending PO Items',['Sl','Site','Item','Unit','Approved Qty','Current Stock','Pending PO Qty'],rows.map((x,i)=>[i+1,x.site_name||'',x.item_name||'',x.unit_name||'',x.approved_qty||0,x.current_stock||0,x.pending_po_qty||0]));});
 $(document).on('click','#po_master_export',async function(){const rows=await loadPurchaseOrderMaster(true);if(!rows)return;downloadExcelFile('PO Master',['Sl','PO No.','PO Date','Supplier','Warehouse','Required Date','Items','PO Qty','Received','Pending','Total','Status','Created By'],rows.map((x,i)=>[i+1,x.po_no||'',dateFmt(x.po_date),x.vendor_name||'',x.warehouse_name||'',dateFmt(x.required_date),x.item_count||0,x.po_qty||0,x.received_qty||0,x.pending_qty||0,x.total_amount||0,x.status||'',x.created_by_name||'']));});
-$(document).on('click','#po_items_export',async function(){const rows=await loadPurchaseOrderItemsMaster(true);if(!rows)return;downloadExcelFile('PO Items Master',['Sl','PO No.','PO Date','Supplier','Item','Unit','Supplier 1','Rate 1','Supplier 2','Rate 2','Supplier 3','Rate 3','Chosen Supplier','Chosen Rate','Rate','PO Qty','Received Qty','Pending Qty','Amount','Status'],rows.map((x,i)=>[i+1,x.po_no||'',dateFmt(x.po_date),x.vendor_name||'',x.item_name||'',x.unit_name||'',...poItemQuotes(x),x.rate||0,x.po_qty||0,x.received_qty||0,x.pending_qty||0,Number(x.po_qty||0)*Number(x.rate||0),x.status||'']));});
+$(document).on('click','#po_items_export',async function(){const rows=await loadPurchaseOrderItemsMaster(true);if(!rows)return;downloadExcelFile('PO Items Master',['Sl','PO No.','PO Date','Supplier','Item','Unit','Supplier 1','Rate 1','Supplier 2','Rate 2','Supplier 3','Rate 3','Chosen Supplier','Chosen Rate','Selection Reason','Rate','PO Qty','Received Qty','Pending Qty','Amount','Status'],rows.map((x,i)=>[i+1,x.po_no||'',dateFmt(x.po_date),x.vendor_name||'',x.item_name||'',x.unit_name||'',...poItemQuotes(x),poQuotationReason(x),x.rate||0,x.po_qty||0,x.received_qty||0,x.pending_qty||0,Number(x.po_qty||0)*Number(x.rate||0),x.status||'']));});
 
 $(document).on('click keydown','.bsm-labour-attendance-row',function(e){
   if($(e.target).closest('button,a,input,select,textarea').length)return;

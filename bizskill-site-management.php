@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.072
+ * Version: 0.0.073
  * Author: BizSkill
  */
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/notifications.php';
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
-    const VERSION = '0.0.072';
+    const VERSION = '0.0.073';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -686,14 +686,47 @@ final class BSM_Site_Management {
         $wpdb->query('START TRANSACTION');$created=[];foreach($groups as $vendor=>$gitems){$dates=array_values(array_filter(array_column($gitems,'required_date')));sort($dates);$quote_record=wp_json_encode(['supplier_quotations'=>array_map(function($line){return ['item_id'=>$line['item_id'],'quotations'=>$line['quotations'],'selected_rate'=>$line['rate']];},$gitems)]);$res=$this->create_purchase_order_record((int)$vendor,$warehouse,current_time('Y-m-d'),$dates[0]??null,$quote_record,$gitems);if(!empty($res['error'])){$wpdb->query('ROLLBACK');wp_send_json_error(['message'=>$res['error']]);}$created[]=$res;}$wpdb->query('COMMIT');wp_send_json_success(['created'=>$created,'message'=>count($created).' PO'.(count($created)>1?'s':'').' created successfully']);
     }
 
+    private function manual_po_groups($items) {
+        global $wpdb;$p=$this->prefix;$groups=[];$seen=[];
+        if(!is_array($items)||!$items)throw new Exception('Add at least one PO item.');
+        foreach($items as $it){
+            $iid=(int)($it['item_id']??0);$vendor=(int)($it['vendor_id']??0);$raw=$it['po_qty']??'';
+            if(!$iid||!is_numeric($raw)||!is_finite((float)$raw)||round((float)$raw,2)<=0)throw new Exception('Select an item and enter a valid PO quantity for every item.');
+            if(isset($seen[$iid]))throw new Exception('Use one row per item.');$seen[$iid]=true;
+            $item=$wpdb->get_row($wpdb->prepare("SELECT id,unit_id FROM {$p}items WHERE id=%d",$iid),ARRAY_A);
+            if(!$item)throw new Exception('Selected item does not exist.');
+            $quotes=[];$suppliers=[];$selected=null;
+            foreach((array)($it['quotations']??[]) as $q){
+                $qid=(int)($q['vendor_id']??0);$rate=$q['rate']??'';
+                if(!$qid||!is_numeric($rate)||!is_finite((float)$rate)||(float)$rate<0)throw new Exception('Enter valid supplier quotations.');
+                if(isset($suppliers[$qid]))throw new Exception('Choose distinct suppliers for each item.');
+                if(!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}vendors WHERE id=%d AND status='active'",$qid)))throw new Exception('Select active suppliers.');
+                $suppliers[$qid]=true;$rate=round((float)$rate,2);$quotes[]=['supplier_id'=>$qid,'rate'=>$rate];if($qid===$vendor)$selected=$rate;
+            }
+            if(count($quotes)<1||count($quotes)>3||$selected===null)throw new Exception('Choose a supplier from one to three quotations for every item.');
+            $reason=sanitize_text_field($it['selection_reason']??'');
+            if($selected>min(array_column($quotes,'rate'))&&$reason==='')throw new Exception('Enter a reason for choosing a higher rate.');
+            $groups[$vendor][]=['item_id'=>$iid,'unit_id'=>(int)$item['unit_id'],'po_qty'=>round((float)$raw,2),'rate'=>$selected,'quotations'=>$quotes,'selection_reason'=>$reason];
+        }
+        return $groups;
+    }
     public function ajax_purchase_order_manual_save(){
-        $current_user=wp_get_current_user();
-        $created_by=$current_user && $current_user->exists() ? $current_user->display_name : '';
-
-        $this->verify_ajax();$this->migrate_purchase_orders();$vendor=(int)($_POST['vendor_id']??0);$warehouse=(int)($_POST['warehouse_id']??0);$po_date=sanitize_text_field($_POST['po_date']??'');$required=sanitize_text_field($_POST['required_date']??'');$remarks=sanitize_textarea_field($_POST['remarks']??'');$items=json_decode(stripslashes($_POST['items']??'[]'),true);
-        if(!$vendor||!$warehouse||!preg_match('/^\d{4}-\d{2}-\d{2}$/',$po_date)||!is_array($items)||!$items)wp_send_json_error(['message'=>'Supplier, Warehouse, PO Date and at least one Item are required']);$clean=[];
-        foreach($items as $it){$iid=(int)($it['item_id']??0);$qty=round((float)($it['po_qty']??0),2);if(!$iid||$qty<=0)continue;global $wpdb;$p=$this->prefix;$x=$wpdb->get_row($wpdb->prepare("SELECT id,unit_id FROM {$p}items WHERE id=%d",$iid),ARRAY_A);if(!$x)continue;$quotes=[];$seen=[];$selected=null;foreach((array)($it['quotations']??[]) as $q){$qid=(int)($q['vendor_id']??0);$raw=$q['rate']??'';if(!$qid||!is_numeric($raw)||!is_finite((float)$raw)||(float)$raw<0)wp_send_json_error(['message'=>'Enter three suppliers with valid rates.']);if(!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}vendors WHERE id=%d AND status='active'",$qid)))wp_send_json_error(['message'=>'Select active suppliers.']);$seen[$qid]=true;$qr=round((float)$raw,2);$quotes[]=['supplier_id'=>$qid,'rate'=>$qr];if($qid===$vendor)$selected=$selected===null?$qr:min($selected,$qr);}if(count($quotes)!==3||$selected===null)wp_send_json_error(['message'=>'Choose a supplier from three quotations.']);$clean[]=['item_id'=>$iid,'unit_id'=>(int)$x['unit_id'],'po_qty'=>$qty,'rate'=>$selected,'quotations'=>$quotes];}
-        if(!$clean)wp_send_json_error(['message'=>'Enter valid PO Items']);$remarks=wp_json_encode(['supplier_quotations'=>array_map(function($line){return ['item_id'=>$line['item_id'],'quotations'=>$line['quotations'],'selected_rate'=>$line['rate']];},$clean)]);$res=$this->create_purchase_order_record($vendor,$warehouse,$po_date,$required,$remarks,$clean);if(!empty($res['error']))wp_send_json_error(['message'=>$res['error']]);wp_send_json_success(['message'=>'PO created successfully','id'=>$res['id'],'po_no'=>$res['po_no']]);
+        $this->verify_ajax();$this->migrate_purchase_orders();global $wpdb;$p=$this->prefix;
+        $warehouse=(int)($_POST['warehouse_id']??0);$date=sanitize_text_field($_POST['po_date']??'');$required=sanitize_text_field($_POST['required_date']??'');
+        foreach([$date,$required] as $n=>$value){if($n===1&&$value==='')continue;$parts=explode('-',$value);if(count($parts)!==3||!preg_match('/^\d{4}-\d{2}-\d{2}$/',$value)||!checkdate((int)$parts[1],(int)$parts[2],(int)$parts[0]))wp_send_json_error(['message'=>'Enter a valid PO Date and Required Date.']);}
+        if(!$warehouse||!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}warehouses WHERE id=%d",$warehouse)))wp_send_json_error(['message'=>'Select a valid warehouse.']);
+        $items=json_decode(wp_unslash($_POST['items']??'[]'),true);$started=false;
+        try{
+            $groups=$this->manual_po_groups($items);$created=[];
+            if($wpdb->query('START TRANSACTION')===false)throw new Exception('Unable to start PO creation.');$started=true;
+            foreach($groups as $vendor=>$lines){
+                $remarks=wp_json_encode(['supplier_quotations'=>array_map(function($line){return ['item_id'=>$line['item_id'],'quotations'=>$line['quotations'],'selected_rate'=>$line['rate'],'selection_reason'=>$line['selection_reason']];},$lines)]);
+                $result=$this->create_purchase_order_record((int)$vendor,$warehouse,$date,$required,$remarks,$lines);
+                if(!empty($result['error']))throw new Exception($result['error']);$created[]=$result;
+            }
+            if($wpdb->query('COMMIT')===false)throw new Exception('Unable to complete PO creation.');$started=false;
+        }catch(Exception $e){if($started)$wpdb->query('ROLLBACK');wp_send_json_error(['message'=>$e->getMessage()]);return;}
+        wp_send_json_success(['created'=>$created,'message'=>count($created).' PO'.(count($created)>1?'s':'').' created successfully']);
     }
 
     public function ajax_purchase_order_master(){
