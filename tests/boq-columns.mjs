@@ -1,0 +1,16 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const src=fs.readFileSync('assets/app.js','utf8');
+const context=vm.createContext({});
+vm.runInContext(src.match(/^const boqColumns=.*$/m)[0]+';globalThis.columns=boqColumns;',context);
+assert.deepEqual(Array.from(context.columns.slice(7),c=>c[1]),['Site Opening','Requisition Qty','Approved','Rejected','Received','Consumption','Return','Balance']);
+const a=src.indexOf('function bsmBoqMonitoringSummary('),b=src.indexOf('async function renderBoqListing(',a);
+vm.runInContext(src.slice(a,b),context);
+const rows=[{site_id:1,item_id:2,boq_qty:10,section:'A',boq_no:'B1',balance:27,received_qty:26},{site_id:1,item_id:2,boq_qty:20,section:'B',boq_no:'B2',balance:27,received_qty:26}];
+const result=context.bsmBoqMonitoringSummary(rows);
+assert.equal(result.length,1);assert.equal(result[0].boq_qty,30);assert.equal(result[0].balance,27);assert.equal(result[0].received_qty,26);
+const exportCode=src.slice(src.indexOf("$(document).on('click','#bsm-boq-export'"),src.indexOf('function ',src.indexOf("$(document).on('click','#bsm-boq-export'")));
+assert.match(exportCode,/const columns=boqColumns/);
+assert.match(exportCode,/columns.map\(x=>x\[1\]\)/);
+console.log('BOQ columns, shared Excel order and monitoring totals: 7 checks passed');

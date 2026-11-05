@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.071
+ * Version: 0.0.072
  * Author: BizSkill
  */
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/notifications.php';
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
-    const VERSION = '0.0.071';
+    const VERSION = '0.0.072';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -2193,6 +2193,31 @@ final class BSM_Site_Management {
         wp_send_json_success(['url'=>trailingslashit($up['baseurl']).'site-management-boq/'.$file,'filename'=>$file]);
     }
 
+    private function boq_item_totals($site,$item) {
+        global $wpdb;$p=$this->prefix;
+        // Drafts and cancelled requisitions are not submitted demand. Pending demand
+        // contributes only to Requested; approval decisions contribute to Approved/Rejected.
+        $d=$wpdb->get_row($wpdb->prepare("SELECT
+            COALESCE(SUM(ri.requested_qty),0) requisition_qty,
+            COALESCE(SUM(CASE WHEN LOWER(COALESCE(h.status,'')) NOT IN ('pending_approval','submitted','rejected') THEN ri.approved_qty ELSE 0 END),0) approved_qty,
+            COALESCE(SUM(CASE WHEN LOWER(COALESCE(h.status,''))='rejected' THEN ri.requested_qty
+                WHEN LOWER(COALESCE(h.status,'')) NOT IN ('pending_approval','submitted') THEN ri.rejected_qty ELSE 0 END),0) rejected_qty
+            FROM {$p}material_requisition_items ri JOIN {$p}material_requisitions h ON h.id=ri.requisition_id
+            WHERE h.site_id=%d AND ri.item_id=%d AND LOWER(COALESCE(h.status,'')) NOT IN ('draft','cancelled')",$site,$item),ARRAY_A);
+        $stock=$this->site_available_stock($site,$item);
+        $in=0;foreach($this->ops_transfer_movements($site,$item) as $movement) $in+=(float)$movement['in'];
+        return [
+            'site_opening_qty'=>round((float)$wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(opening_qty),0) FROM {$p}site_opening_stock WHERE site_id=%d AND item_id=%d",$site,$item)),2),
+            'requisition_qty'=>round((float)$d['requisition_qty'],2),
+            'approved_qty'=>round((float)$d['approved_qty'],2),
+            'rejected_qty'=>round((float)$d['rejected_qty'],2),
+            'received_qty'=>round((float)$stock['received']+$in,2),
+            'consumption_qty'=>(float)$stock['consumed'],
+            'return_qty'=>(float)$stock['returned'],
+            // Actual stock already deducts site transfer dispatches and adds transfer receipts.
+            'balance'=>(float)$stock['available_qty'],
+        ];
+    }
     public function ajax_boq_list() {
         global $wpdb;$site=(int)($_POST['site_id']??0);$this->boq_access($site);$type=sanitize_key($_POST['type']??'boq_master');$p=$this->prefix;$where='1=1';$args=[];
         if(!current_user_can('manage_options')){$u=$wpdb->get_var($wpdb->prepare("SELECT assigned_sites FROM {$p}users WHERE wp_user_id=%d",get_current_user_id()));$assigned=json_decode($u??'[]',true);if(is_array($assigned)&&count($assigned)){$ids=array_values(array_filter(array_map('intval',$assigned)));if($ids)$where.=' AND b.site_id IN ('.implode(',',$ids).')';}}
@@ -2201,14 +2226,13 @@ final class BSM_Site_Management {
         $this->ensure_boq_item_section_column();
         $sql="SELECT b.id,b.boq_no,b.boq_date,b.site_id,bi.section,b.boq_name,b.remarks,s.site_name,bi.id boq_item_id,bi.item_id,i.item_name,u.unit_name,bi.boq_qty FROM {$p}boqs b JOIN {$p}boq_items bi ON bi.boq_id=b.id LEFT JOIN {$p}sites s ON s.id=b.site_id LEFT JOIN {$p}items i ON i.id=bi.item_id LEFT JOIN {$p}units u ON u.id=bi.unit_id WHERE $where ORDER BY b.id DESC,bi.id";
         $rows=$wpdb->get_results($args?$wpdb->prepare($sql,$args):$sql,ARRAY_A);
-        // Site/item aggregates are shared across BOQs. Do not double-count or sum different BOQs.
-        foreach($rows as &$r){$sid=(int)$r['site_id'];$iid=(int)$r['item_id'];
-            $r['requisition_qty']=(float)$wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(ri.approved_qty),0) FROM {$p}material_requisition_items ri JOIN {$p}material_requisitions h ON h.id=ri.requisition_id WHERE h.site_id=%d AND ri.item_id=%d AND LOWER(COALESCE(h.status,'')) NOT IN ('rejected','cancelled','pending_approval')",$sid,$iid));
-            $r['site_qty']=(float)$wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(ri.received_qty),0) FROM {$p}site_receipt_items ri JOIN {$p}site_receipts h ON h.id=ri.receipt_id WHERE h.site_id=%d AND ri.item_id=%d AND LOWER(COALESCE(h.status,'')) NOT IN ('cancelled','rejected')",$sid,$iid));
-            $r['consumption_qty']=(float)$wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(ci.qty),0) FROM {$p}site_consumption_items ci JOIN {$p}site_consumptions h ON h.id=ci.consumption_id WHERE h.site_id=%d AND ci.item_id=%d AND LOWER(COALESCE(h.status,'')) NOT IN ('cancelled','rejected')",$sid,$iid));
-            $r['return_qty']=(float)$wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(ri.qty),0) FROM {$p}material_return_items ri JOIN {$p}material_returns h ON h.id=ri.return_id WHERE h.site_id=%d AND ri.item_id=%d AND LOWER(COALESCE(h.status,'')) NOT IN ('cancelled','rejected')",$sid,$iid));
+        // Operational totals belong to the site/item, regardless of BOQ or section.
+        $totals=[];
+        foreach($rows as &$r){
+            $key=(int)$r['site_id'].':'.(int)$r['item_id'];
+            if(!isset($totals[$key])) $totals[$key]=$this->boq_item_totals((int)$r['site_id'],(int)$r['item_id']);
+            $r=array_merge($r,$totals[$key]);
             $r['boq_name']=$r['boq_no'].' ('.$r['site_name'].')';
-            $r['balance']=round((float)$r['boq_qty']-$r['consumption_qty'],2);
         }unset($r);
         wp_send_json_success(['rows'=>$rows]);
     }
