@@ -2964,3 +2964,18 @@ html,body{
 #po-quote-dialog{width:min(1200px,95vw);max-height:85vh;border:1px solid #8eb8ff;border-radius:12px;padding:20px;color:#152c4b}#po-quote-dialog::backdrop{background:#14233e88}.po-quote-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:12px}#po-quote-dialog table{border-collapse:collapse;width:100%;min-width:1000px}#po-quote-dialog th{background:#10375f;color:#fff}#po-quote-dialog th,#po-quote-dialog td{border:1px solid #8eb8ff;padding:9px;text-align:left}
 
 .bsm-boq-balance-note{margin:0;padding:10px 12px;font-size:12px;color:#274566;background:#f2f7ff;border-bottom:1px solid #b6d0fb}
+
+/* Keep requisition item controls inside the form at every viewport width. */
+.bsm-requisition-lines{min-width:0!important;max-width:100%!important;box-sizing:border-box}
+.bsm-requisition-lines>.bsm-table-wrap{width:100%!important;max-width:100%!important;overflow-x:auto!important;box-sizing:border-box}
+.bsm-requisition-lines table{width:100%!important;min-width:970px!important;table-layout:fixed!important}
+.bsm-requisition-lines th:nth-child(1),.bsm-requisition-lines td:nth-child(1){width:calc(30% - 25.8px)!important}
+.bsm-requisition-lines th:nth-child(2),.bsm-requisition-lines td:nth-child(2){width:calc(10% - 8.6px)!important}
+.bsm-requisition-lines th:nth-child(3),.bsm-requisition-lines td:nth-child(3){width:calc(13% - 11.18px)!important}
+.bsm-requisition-lines th:nth-child(4),.bsm-requisition-lines td:nth-child(4){width:calc(10% - 8.6px)!important}
+.bsm-requisition-lines th:nth-child(5),.bsm-requisition-lines td:nth-child(5){width:calc(11% - 9.46px)!important}
+.bsm-requisition-lines th:nth-child(6),.bsm-requisition-lines td:nth-child(6){width:calc(26% - 22.36px)!important}
+.bsm-requisition-lines th.bsm-line-actions-head,.bsm-requisition-lines td.bsm-line-actions{width:86px!important;min-width:86px!important;max-width:86px!important;box-sizing:border-box!important}
+.bsm-requisition-lines .bsm-select-add{display:flex;align-items:center;gap:6px;min-width:0!important;max-width:100%}
+.bsm-requisition-lines .bsm-select-add>.bsm-searchable-select{flex:1 1 0;min-width:0!important;max-width:100%}
+.bsm-requisition-lines .bsm-select-add>.bsm-quick-add{flex:0 0 36px;width:36px!important;min-width:36px!important;margin:0!important}
