@@ -2946,20 +2946,23 @@ html,body{
 .bsm-labour-report-totals{display:flex;flex-wrap:wrap;gap:12px 24px;padding:14px 16px;background:#f5f8ff;border-top:1px solid #bfd3f4;font-size:13px;}
 
 /* Item-level quotations in the direct PO form. */
-.bsm-direct-po-panel .po-direct-row{border:1px solid #8eb8ff;border-radius:12px;margin:0 0 14px;padding:12px;background:#fff}
-.bsm-direct-po-panel .po-direct-row table{width:100%;min-width:850px}
-.bsm-direct-po-panel .po-direct-row td:first-child{min-width:200px}
-.bsm-direct-po-panel .po-direct-row td:nth-child(4){min-width:200px}
-.bsm-direct-po-panel .po-direct-row input[type=number]{width:100%;min-width:85px}
-.bsm-direct-po-panel .po-item-quotes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
-.bsm-direct-po-panel .po-item-quote{border:1px solid #b6d0fb;border-radius:9px;padding:12px;background:#f3f7ff}
-.bsm-direct-po-panel .po-item-quote label{display:block;margin-top:8px}
-.bsm-direct-po-panel .po-item-quote.is-lowest{background:#effaf0;border-color:#68bd73}
-.bsm-direct-po-panel .po-lowest-badge{font-size:11px;background:#218334;color:#fff;border-radius:4px;padding:3px 6px;float:right}
+.bsm-direct-po-panel .po-direct-table-wrap{max-width:100%;overflow-x:auto!important}
+.bsm-direct-po-panel #po_direct_items{width:100%;min-width:1300px;table-layout:fixed}
+#po_direct_items th:nth-child(1){width:150px}
+#po_direct_items th:nth-child(2){width:55px}
+#po_direct_items th:nth-child(3){width:85px}
+#po_direct_items th:nth-child(4),#po_direct_items th:nth-child(5),#po_direct_items th:nth-child(6){width:200px}
+#po_direct_items th:nth-child(7){width:150px}
+#po_direct_items th:nth-child(8),#po_direct_items th:nth-child(9){width:100px}
+#po_direct_items th:nth-child(10){width:50px}
+.bsm-direct-po-panel .po-inline-quote{display:flex;align-items:center;gap:6px;min-width:0}
+.bsm-direct-po-panel .po-inline-quote>select,.bsm-direct-po-panel .po-inline-quote>.bsm-searchable-select{flex:1;min-width:0;width:0}
+.bsm-direct-po-panel .po-inline-quote>.po-direct-quote-rate{flex:0 0 75px;width:75px;min-width:0}
+.bsm-direct-po-panel #po_direct_items input{box-sizing:border-box;width:100%;min-width:0}
+.bsm-direct-po-panel .po-item-quote.is-lowest{background:#effaf0}
+.bsm-direct-po-panel .po-lowest-badge{font-size:10px;color:#218334;display:block;margin-top:3px}
 .bsm-direct-po-panel [hidden]{display:none!important}
-.bsm-direct-po-panel .po-selection-reason{display:block;margin-top:12px}
-#po_direct_preview table{width:100%}
-@media(max-width:800px){.bsm-direct-po-panel .po-item-quotes{grid-template-columns:1fr}}
+.bsm-direct-po-panel .po-selection-reason td{padding:8px}
 
 #po-quote-dialog{width:min(1200px,95vw);max-height:85vh;border:1px solid #8eb8ff;border-radius:12px;padding:20px;color:#152c4b}#po-quote-dialog::backdrop{background:#14233e88}.po-quote-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:12px}#po-quote-dialog table{border-collapse:collapse;width:100%;min-width:1000px}#po-quote-dialog th{background:#10375f;color:#fff}#po-quote-dialog th,#po-quote-dialog td{border:1px solid #8eb8ff;padding:9px;text-align:left}
 

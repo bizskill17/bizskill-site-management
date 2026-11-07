@@ -675,17 +675,14 @@ function poItemOptions(selected=''){
 }
 
 function directPoItemRow(){
-  return `<div class="po-direct-row">
-    <div class="bsm-table-wrap"><table><thead><tr><th>Item</th><th>Unit</th><th>PO Qty</th><th>Chosen Supplier</th><th>Chosen Rate</th><th>Amount</th><th></th></tr></thead><tbody><tr>
-      <td><select class="po-direct-item" aria-label="Item">${poItemOptions()}</select></td><td class="po-direct-unit">-</td>
-      <td><input type="number" class="po-direct-qty num" aria-label="PO Qty" min="0.01" step="0.01"></td>
-      <td><select class="po-direct-vendor" aria-label="Chosen Supplier"><option value="">Select quoted supplier</option></select></td>
-      <td><input type="number" class="po-direct-rate num" aria-label="Chosen Rate" readonly></td><td class="num po-direct-amount">0.00</td>
-      <td><button type="button" class="bsm-icon-btn bsm-icon-danger po-direct-remove" title="Remove Item">×</button></td>
-    </tr></tbody></table></div>
-    <div class="po-item-quotes">${[1,2,3].map(n=>`<div class="po-item-quote" data-slot="${n}"><strong>Supplier ${n} <span class="po-lowest-badge" hidden>Lowest rate</span></strong><label>Supplier<select class="po-direct-quote-supplier" data-slot="${n}">${poVendorOptions()}</select></label><label>Rate (₹)<input type="number" class="po-direct-quote-rate" data-slot="${n}" min="0" step="0.01"></label></div>`).join('')}</div>
-    <label class="po-selection-reason" hidden>Reason for choosing a higher rate <span class="bsm-required">*</span><input class="po-direct-reason" maxlength="500"></label>
-  </div>`;
+  return `<tbody class="po-direct-row"><tr>
+    <td><select class="po-direct-item" aria-label="Item">${poItemOptions()}</select></td><td class="po-direct-unit">-</td>
+    <td><input type="number" class="po-direct-qty num" aria-label="PO Qty" min="0.01" step="0.01"></td>
+    ${[1,2,3].map(n=>`<td class="po-item-quote" data-slot="${n}"><div class="po-inline-quote"><select class="po-direct-quote-supplier" data-slot="${n}" aria-label="Supplier ${n}">${poVendorOptions()}</select><input type="number" class="po-direct-quote-rate num" data-slot="${n}" aria-label="Supplier ${n} rate" placeholder="Rate ₹" min="0" step="0.01"></div><span class="po-lowest-badge" hidden>Lowest rate</span></td>`).join('')}
+    <td><select class="po-direct-vendor" aria-label="Chosen Supplier"><option value="">Select quoted supplier</option></select></td>
+    <td><input type="number" class="po-direct-rate num" aria-label="Chosen Rate" readonly></td><td class="num po-direct-amount">0.00</td>
+    <td><button type="button" class="bsm-icon-btn bsm-icon-danger po-direct-remove" title="Remove Item">×</button></td>
+  </tr><tr class="po-selection-reason" hidden><td colspan="10"><label>Reason for choosing a higher rate <span class="bsm-required">*</span><input class="po-direct-reason" maxlength="500"></label></td></tr></tbody>`;
 }
 async function renderPurchaseOrderForm(){
   setTitle('PO Form');
@@ -699,10 +696,9 @@ async function renderPurchaseOrderForm(){
         <label><span class="bsm-field-label">Created By</span><input type="text" id="po_direct_created_by" value="${esc((BSM.currentUser&&BSM.currentUser.name)||'')}" readonly></label>
       </div>
       <div class="bsm-lines"><div class="bsm-lines-head"><h3>Items &amp; Supplier Comparison</h3></div>
-        <div id="po_direct_items">${directPoItemRow()}</div>
+        <div class="bsm-table-wrap po-direct-table-wrap"><table id="po_direct_items"><thead><tr><th>Item</th><th>Unit</th><th>PO Qty</th><th>Supplier 1 / Rate (₹)</th><th>Supplier 2 / Rate (₹)</th><th>Supplier 3 / Rate (₹)</th><th>Chosen Supplier</th><th>Chosen Rate</th><th>Amount</th><th></th></tr></thead>${directPoItemRow()}</table></div>
         <button type="button" class="bsm-btn bsm-btn-primary po-direct-add">+ Add Item</button>
       </div>
-      <div class="bsm-lines"><h3>Supplier-wise PO Preview</h3><div id="po_direct_preview"></div><small>Amounts before GST</small></div>
       <div class="bsm-form-actions">
         <button type="button" class="bsm-btn bsm-btn-secondary" id="po_direct_clear">Clear</button>
         <button type="button" class="bsm-btn bsm-btn-primary" id="po_direct_save">Create PO</button>
@@ -4086,7 +4082,6 @@ function refreshDirectPoChosenOptions($row){
 }
 function updateDirectPoPreview(){
   const groups=new Map();$('#po_direct_items .po-direct-row').each(function(){const $row=$(this),vendor=$row.find('.po-direct-vendor').val(),item=$row.find('.po-direct-item').val(),qty=Number($row.find('.po-direct-qty').val()),rate=$row.find('.po-direct-rate').val();if(!vendor||!item||qty<=0||rate==='')return;if(!groups.has(vendor))groups.set(vendor,{items:[],amount:0});const g=groups.get(vendor);g.items.push(labelFor('items',item));g.amount+=qty*Number(rate);});
-  $('#po_direct_preview').html(groups.size?`<div class="bsm-table-wrap"><table><thead><tr><th>Supplier</th><th>Items</th><th class="num">Amount</th></tr></thead><tbody>${[...groups].map(([id,g])=>`<tr><td>${esc(labelFor('vendors',id))}</td><td>${esc(g.items.join(', '))}</td><td class="num">₹${g.amount.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</td></tr>`).join('')}</tbody></table></div><p>${groups.size} purchase order${groups.size===1?'':'s'} will be created</p>`:'Select items, quantities and quoted suppliers to preview purchase orders.');
   $('#po_direct_save').text(groups.size?`Create ${groups.size} PO${groups.size===1?'':'s'}`:'Create PO');
 }
 $(document).on('change','.po-direct-quote-supplier',function(){refreshDirectPoChosenOptions($(this).closest('.po-direct-row'));});

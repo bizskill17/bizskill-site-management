@@ -117,3 +117,6 @@ Version 0.0.078: Submenu tabs explicitly override the sidebar link width so each
 Version 0.0.079: Direct page forms prepare without showing the shared modal, preventing the purchase popup/grey-overlay flash while PO data loads. Normal popup forms retain their existing behaviour.
 
 Version 0.0.080: Removed the Quick Actions section from Site Dashboard.
+
+= 0.0.081 =
+* Show supplier quotations alongside each PO item in a compact table; remove the lower supplier preview table.
