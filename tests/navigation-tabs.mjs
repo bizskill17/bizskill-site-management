@@ -1,0 +1,33 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const src=fs.readFileSync('assets/app.js','utf8');
+const memory=new Map(),hidden=new Set(),state={nav:{html:''},tabs:{html:'',hidden:true,attrs:{}}};
+const context=vm.createContext({BSM:{currentUser:{is_admin:true},notificationAdmin:true,pages:{items:'/items/',requisition_form:'/requisition/'}},sessionStorage:{getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v)},isViewHidden:k=>hidden.has(k),esc:v=>String(v??'').replaceAll('&','&amp;').replaceAll('"','&quot;'),restoreNavScroll:()=>{},$:selector=>{
+ const s=selector==='#bsm-nav'?state.nav:state.tabs;
+ return {html(v){s.html=v;return this;},empty(){s.html='';return this;},prop(k,v){s[k]=v;return this;},attr(k,v){s.attrs[k]=v;return this;},find(){return [];}};
+}});
+vm.runInContext(src.slice(src.indexOf('const App ='),src.indexOf('const status ='))+'globalThis.App=App;',context);
+const a=src.indexOf('function visibleNavGroups('),b=src.indexOf('function setTitle(',a);vm.runInContext(src.slice(a,b),context);
+let checks=0;function check(value,label){assert.ok(value,label);checks++;console.log('PASS: '+label);}
+context.App.current='items';context.buildNav();
+check(!state.nav.html.includes('<details')&&!state.nav.html.includes('bsm-nav-items'),'Sidebar contains no expandable child menus');
+check(state.nav.html.includes('Masters')&&!state.nav.html.includes('Bank Master'),'Sidebar contains module names only');
+check(state.tabs.html.includes('Bank Master')&&state.tabs.html.includes('Warehouses'),'Masters tabs include its first and last views');
+check(state.tabs.html.includes('bsm-subnav-tab active" data-menu-group="Masters" data-view="items"'),'Current view is the active tab');
+check(state.tabs.hidden===false&&state.tabs.attrs['aria-label']==='Masters views','Top navigation has module context');
+check(state.tabs.html.includes('href="/items/"'),'Existing direct links are retained');
+hidden.add('warehouses');context.buildNav();check(!state.tabs.html.includes('Warehouses'),'Hidden views are removed from tabs');
+context.App.current='dashboard';context.buildNav();check(state.tabs.hidden&&state.tabs.html==='','Dashboard has no redundant submenu strip');
+context.App.current='requisition_form';context.buildNav();check(state.tabs.html.includes('Requisitions Pending Approval')&&!state.tabs.html.includes('Bank Master'),'Switching modules replaces the tab set');
+context.rememberNavGroup('Masters','vendors');context.App.current='dashboard';context.buildNav();check(/data-menu-group="Masters" data-view="vendors"/.test(state.nav.html),'Module returns to its last selected visible view');
+hidden.add('vendors');context.buildNav();check(!/data-menu-group="Masters" data-view="vendors"/.test(state.nav.html),'Hidden remembered view falls back safely');
+context.BSM.currentUser={is_admin:false,allowed_views:['pending_material_dispatch','dispatch_items_register','items']};context.App.current='pending_material_dispatch';context.buildNav();check(!state.nav.html.includes('>Masters<')&&!state.nav.html.includes('>Settings<'),'Employee restricted modules remain excluded');
+check(state.tabs.html.includes('Pending Dispatch')&&state.tabs.html.includes('Dispatch Items Master')&&!state.tabs.html.includes('Dispatch Master'),'Employee tabs contain only allowed views');
+context.BSM.currentUser={is_admin:true};context.BSM.notificationAdmin=false;context.App.current='company_settings';context.buildNav();check(!state.tabs.html.includes('>Notification<'),'Notification administration restriction is retained');
+context.rememberNavGroup('Payment','pending_allowance_payment');context.App.current='pending_allowance_payment';context.buildNav();check(state.tabs.attrs['aria-label']==='Payment views','Shared views preserve the module chosen by the user');
+context.App.activeNavGroup='';context.buildNav();check(state.tabs.attrs['aria-label']==='Payment views','Module context survives page reload through session storage');
+check(src.includes("App.current=key;App.page=1;App.search='';buildNav();"),'In-app route changes refresh both navigation levels');
+check(fs.readFileSync('templates/app-shell.php','utf8').includes('id="bsm-subnav"'),'Tab navigation lives outside replaceable page content');
+const css=fs.readFileSync('assets/app.css','utf8');check(css.includes('.bsm-subnav{display:flex')&&css.includes('flex-wrap:nowrap'),'Submenu tabs stay on one horizontally scrolling row');
+console.log(`${checks} navigation checks passed`);

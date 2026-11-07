@@ -237,51 +237,40 @@ $(document).on('click','#bsm-viewvis-save',async function(){
   finally{btn.prop('disabled',false).text('Save');}
 });
 
+function visibleNavGroups(){
+  const allowed=BSM.currentUser?.is_admin?null:new Set(BSM.currentUser?.allowed_views||[]);
+  return App.nav.map((g,index)=>{
+    if(allowed!==null&&['Masters','Settings'].includes(g.group))return null;
+    const items=g.items.filter(([k])=>(allowed===null||allowed.has(k)||k==='my_salary_slips')&&!(g.group==='Payment'&&k==='payment_form')&&(k!=='notifications'||BSM.notificationAdmin)&&!isViewHidden(k));
+    return items.length?{...g,index,items}:null;
+  }).filter(Boolean);
+}
+function rememberNavGroup(group,key){
+  if(!visibleNavGroups().some(g=>g.group===group&&g.items.some(([k])=>k===key)))return;
+  App.activeNavGroup=group;try{sessionStorage.setItem('bsm-active-menu-group',group);sessionStorage.setItem('bsm-menu-last:'+group,key);}catch(e){}
+}
 function buildNav(){
   const groupIcons={'Project Tracker':'▥',BOQ:'▤',Main:'⌂',Masters:'▦',Purchase:'↓','Site Requisition':'≡',Dispatch:'→','Site Material Receipt':'✓',Consumption:'−','Material Return':'↩','Labour Attendance':'♟',Contractor:'▤','HO Receipts and Payments':'₹','Employee Allowance':'₹',Salary:'₹',Inventory:'▥','Contractor Outstanding':'₹',Sites:'▥',Settings:'⚙'};
   const itemIcons={view_settings:'☑',project_tracker:'▤',boq_form:'+',boq_master:'▤',boq_items:'▥',boq_monitoring:'◫',dashboard:'⌂',bank_accounts:'₹',users:'●',designations:'◆',customers:'▤',sites:'⌖',vendors:'▣',labour_contractors:'♟',states:'⌖',item_categories:'▦',units:'◢',items:'◇',warehouses:'⌂',expense_categories:'▤',purchase_form:'+',payment_form:'₹',purchase_pending_approval:'✓',purchase_register:'▤',purchase_items_register:'▥',pending_invoice_copy:'▧',purchase_order_form:'+',pending_po_items:'✓',purchase_order_pending_receipt:'↓',purchase_order_master:'▤',purchase_order_items_master:'▥',pending_contractor_bill_copy:'▧',requisition_form:'+',material_requisitions:'≡',material_requisition_item:'▥',pending_requisition_approval:'✓',pending_material_receipt:'✓',material_inwards:'↓',material_dispatches:'→',pending_material_dispatch:'⇢',dispatch_items_register:'▥',pending_site_receipt:'✓',site_receipts:'✓',site_material_item_receipt:'▥',pending_site_receive_challans:'▧',ho_inventory:'▥',site_inventory:'▥',site_opening_stock:'+',daily_outward_summary:'→',consumption_form:'+',site_consumptions:'−',consumption_items_register:'▥',return_form:'+',material_returns:'↩',material_returns_item_master:'▥',material_stock:'▥',labour_attendance:'♟',office_daily_attendance:'✓',office_attendance_master:'▤',office_monthly_salary:'₹',allowance_form:'+',pending_allowance_approval:'✓',pending_allowance_payment:'₹',allowance_master:'▤',employee_allowance_limits:'▥',allowance_types:'▤',monthly_salary_upload:'↑',salary_slips:'▤',pending_salary_payment:'₹',my_salary_slips:'▤',site_fund_allocations:'₹',site_expenses:'₹',daily_expense_summary:'▤',customer_receipts:'↓',vendor_payments:'↑',contractor_form:'+',contractor_advance:'₹',contractor_advance_register:'▤',pending_contractor_payment:'₹',contractor_bills:'▤',contractor_payments:'↑',gst_invoices:'▤',report_stock:'▥',report_site_fund:'▥',report_site_cost:'▥',report_labour:'▥',report_labour_summary:'▥',report_customer_outstanding:'▥',report_vendor_outstanding:'▥',report_contractor_outstanding:'▥',quotation_form:'+',quotation_master:'▤',quotation_items:'▥',invoice_form:'+',invoice_master:'▤',invoice_items:'▥',company_settings:'⚙'};
+  const groups=visibleNavGroups();
+  let remembered='';try{remembered=sessionStorage.getItem('bsm-active-menu-group')||'';}catch(e){}
+  const preferred=App.activeNavGroup||remembered;
+  const active=groups.find(g=>g.group===preferred&&g.items.some(([k])=>k===App.current))||groups.find(g=>g.items.some(([k])=>k===App.current));
+  App.activeNavGroup=active?.group||'';
   let h='';
-  const allowed=(BSM.currentUser&&BSM.currentUser.is_admin)?null:new Set((BSM.currentUser&&BSM.currentUser.allowed_views)||[]);
-  App.nav.forEach((g,idx)=>{
-    if(allowed!==null && ['Masters','Settings'].includes(g.group)) return;
-    const visibleItems=(allowed===null?g.items:g.items.filter(([k])=>allowed.has(k)||k==='my_salary_slips')).filter(([k])=>!(g.group==='Payment'&&k==='payment_form')).filter(([k])=>k!=='notifications'||BSM.notificationAdmin).filter(([k])=>!isViewHidden(k));
-    if(!visibleItems.length) return;
-
-    // Dashboard is a standalone first-level menu item. Do not show the old "Main" section.
+  groups.forEach(g=>{
     if(g.group==='Main'){
-      visibleItems.forEach(([k,l])=>{
-        const url=(BSM.pages&&BSM.pages[k])?BSM.pages[k]:'#';
-        h+=`<a class="bsm-nav-item bsm-nav-standalone ${k===App.current?'active':''}" data-view="${k}" href="${esc(url)}"><span class="bsm-nav-item-icon">${itemIcons[k]||'•'}</span><span>${esc(l)}</span></a>`;
-      });
-      return;
+      g.items.forEach(([k,l])=>{const url=BSM.pages?.[k]||'#';h+=`<a class="bsm-nav-item bsm-nav-standalone ${k===App.current?'active':''}" data-view="${esc(k)}" href="${esc(url)}" ${k===App.current?'aria-current="page"':''}><span class="bsm-nav-item-icon">${itemIcons[k]||'•'}</span><span>${esc(l)}</span></a>`;});return;
     }
-
-    const isOpen=visibleItems.some(([k])=>k===App.current);
-    const gid=`bsm-nav-group-${idx}`;
-    h+=`<details class="bsm-nav-group" data-group="${idx}" ${isOpen?'open':''}>`;
-    h+=`<summary class="bsm-nav-label" aria-controls="${gid}"><span class="bsm-nav-label-main"><span class="bsm-nav-section-icon">${groupIcons[g.group]||'•'}</span><span>${esc(g.group)}</span></span><span class="bsm-nav-chevron">⌄</span></summary>`;
-    h+=`<div class="bsm-nav-items" id="${gid}">`;
-    let lastSubsection='';
-    let receiptOpened=false;
-    visibleItems.forEach(([k,l,subsection])=>{
-      const isReceipt=g.group==='Material Return' && subsection==='Receipt';
-      if(receiptOpened && !isReceipt){h+='</div></div>';receiptOpened=false;}
-      if(isReceipt && !receiptOpened){
-        h+=`<div class="bsm-nav-receipt"><div class="bsm-nav-receipt-label"><span>▤ &nbsp;Receipt</span></div><div class="bsm-nav-receipt-items">`;
-        receiptOpened=true;
-      }
-      if(g.group==='Labour Contractor' && subsection && subsection!==lastSubsection){
-        h+=`<div class="bsm-nav-subsection">${esc(subsection)}</div>`;
-      }
-      lastSubsection=subsection||'';
-      const url=(BSM.pages&&BSM.pages[k])?BSM.pages[k]:'#';
-      h+=`<a class="bsm-nav-item ${(g.group==='Labour Contractor'||isReceipt)?'bsm-nav-subitem ':''}${k===App.current?'active':''}" data-view="${k}" href="${esc(url)}"><span class="bsm-nav-item-icon">${itemIcons[k]||'•'}</span><span>${esc(l)}</span></a>`;
-    });
-    if(receiptOpened)h+='</div></div>';
-    h+='</div></details>';
+    let last='';try{last=sessionStorage.getItem('bsm-menu-last:'+g.group)||'';}catch(e){}
+    const target=(g.group===active?.group?g.items.find(([k])=>k===App.current):null)||g.items.find(([k])=>k===last)||g.items[0];
+    h+=`<div class="bsm-nav-group${g.group===active?.group?' bsm-module-active':''}" data-group="${g.index}"><a class="bsm-nav-label bsm-module-link" data-menu-group="${esc(g.group)}" data-view="${esc(target[0])}" href="${esc(BSM.pages?.[target[0]]||'#')}" ${g.group===active?.group?'aria-current="true"':''}><span class="bsm-nav-label-main"><span class="bsm-nav-section-icon">${groupIcons[g.group]||itemIcons[target[0]]||'•'}</span><span>${esc(g.group)}</span></span></a></div>`;
   });
-  $('#bsm-nav').html(h);
-  restoreNavScroll();
+  $('#bsm-nav').html(h);restoreNavScroll();
+  const $tabs=$('#bsm-subnav');
+  if(!active||active.group==='Main'){$tabs.empty().prop('hidden',true);return;}
+  $tabs.prop('hidden',false).attr('aria-label',active.group+' views').html(active.items.map(([k,l])=>`<a class="bsm-nav-item bsm-subnav-tab${k===App.current?' active':''}" data-menu-group="${esc(active.group)}" data-view="${esc(k)}" href="${esc(BSM.pages?.[k]||'#')}" ${k===App.current?'aria-current="page"':''}>${esc(l)}</a>`).join(''));
+  const tab=$tabs.find('[aria-current="page"]')[0];if(tab&&typeof tab.scrollIntoView==='function')tab.scrollIntoView({block:'nearest',inline:'nearest'});
 }
 
 function setTitle(t,sub=''){ $('#bsm-page-title').text(t); }
@@ -607,7 +596,7 @@ async function openView(key){
   if(allowed!==null && key!=='my_salary_slips' && (key==='company_settings' || key==='view_settings' || !allowed.has(key))){ showToast('You do not have permission to access this view.',true); return; }
   if(isViewHidden(key)){const fb=firstVisibleView();if(fb&&fb!==key)return openView(fb);$('#bsm-content').html('<div class="bsm-empty">This view is hidden. An administrator can turn it on in Settings → Show / Hide Views.</div>');return;}
   exitInlineFormMode();
-  App.current=key;App.page=1;App.search=''; $('.bsm-nav-item').removeClass('active');$(`.bsm-nav-item[data-view="${key}"]`).addClass('active');$('.bsm-sidebar').removeClass('open');
+  App.current=key;App.page=1;App.search='';buildNav();$('.bsm-sidebar').removeClass('open');
   if(['holiday_list','time_sheet','time_sheet_master','contractor_employees','contractor_calculated_bill','site_transfer_form','site_transfer_master'].includes(key)){await ensureOptions(['sites','contractors','units']);return renderOperations(key);}
   if(key==='notifications')return renderNotifications();
   if(key==='view_settings')return renderViewSettings();
@@ -4008,18 +3997,14 @@ $(document).on('blur','.bsm-date-input',function(){
   if(/^\d{4}-\d{2}-\d{2}$/.test(sql)) $(this).val(dateFmt(sql));
 });
 
-$(document).on('click','.bsm-nav-label',function(){
-  const current=$(this).closest('.bsm-nav-group')[0];
-  // Let the native <details> control toggle first, then close every other section.
-  setTimeout(function(){
-    if(current && current.open){
-      document.querySelectorAll('.bsm-nav-group').forEach(function(group){
-        if(group!==current) group.open=false;
-      });
-    }
-  },0);
+$(document).on('click','.bsm-module-link',function(e){
+  saveNavScroll();const k=$(this).data('view');rememberNavGroup($(this).data('menu-group'),k);
+  if(!(BSM.pages&&BSM.pages[k])){e.preventDefault();openView(k);}
 });
-$(document).on('click','.bsm-nav-item',function(e){saveNavScroll();const k=$(this).data('view');if(!(BSM.pages&&BSM.pages[k])){e.preventDefault();openView(k);}});
+$(document).on('click','.bsm-nav-item',function(e){
+  saveNavScroll();const k=$(this).data('view'),group=$(this).data('menu-group');if(group)rememberNavGroup(group,k);
+  if(!(BSM.pages&&BSM.pages[k])){e.preventDefault();openView(k);}
+});
 $(document).on('scroll','#bsm-nav',function(){saveNavScroll();});
 $(document).on('click','[data-go]',function(){const k=$(this).data('go');if(BSM.pages&&BSM.pages[k])location.href=BSM.pages[k];else openView(k);});
 $(document).on('change','#bsm-dashboard-site',function(){renderDashboard($(this).val()||'');});

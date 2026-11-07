@@ -55,6 +55,7 @@ if ($bsm_company_name === '') {
                 <?php endif; ?>
 
             </header>
+            <nav id="bsm-subnav" class="bsm-subnav" aria-label="Module views" hidden></nav>
             <main id="bsm-content" class="bsm-content"></main>
         </div>
     </div>

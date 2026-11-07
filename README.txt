@@ -109,3 +109,5 @@ Version 0.0.074: Pending Dispatch shows current warehouse stock per pending item
 Version 0.0.075: BOQ Balance reconciles directly to displayed quantities: Site Opening + Received - Consumption - Return - Transfer Out. Outgoing site transfers are now visible in BOQ items, monitoring and Excel; incoming transfer receipts remain included in Received.
 
 Version 0.0.076: Requisition item table contains horizontal overflow, reserves space for row actions and keeps item quick-add controls within their cell.
+
+Version 0.0.077: Main modules remain in the left sidebar; submenus appear as horizontally scrolling tabs above the selected form/view. Navigation preserves permissions, hidden-view settings, direct links and the last selected submenu per module.
