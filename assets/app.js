@@ -317,7 +317,7 @@ function enterInlineFormMode(){
   if(!$host.length||!$panel.length)return;
   $('#bsm-modal').hide();
   $panel.addClass('bsm-inline-panel');
-  $host.append($panel);
+  $host.empty().append($panel);
   $('#bsm-modal-close').hide();
 }
 function hidePurchaseItemUnusedColumns(){
@@ -327,8 +327,9 @@ async function openDirectForm(viewKey,moduleKey,title,mode=''){
   await ensureOptions(optionTypesForView(moduleKey));
   setTitle(title);
   $('#bsm-form-save').prop('disabled',false);
-  $('#bsm-content').html('<div id="bsm-inline-form-host" class="bsm-inline-form-host"></div>');
-  await openForm(moduleKey,0);
+  $('#bsm-modal').stop(true,true).hide();
+  $('#bsm-content').html('<div id="bsm-inline-form-host" class="bsm-inline-form-host"><div class="bsm-loading" role="status">Loading form…</div></div>');
+  await openForm(moduleKey,0,{showModal:false});
   if(viewKey==='requisition_form') await refreshRequisitionBoqItems();
   if(viewKey==='contractor_form'||viewKey==='consumption_form'||viewKey==='quotation_form'||viewKey==='invoice_form'||viewKey==='purchase_form'||viewKey==='requisition_form'||viewKey==='return_form'){
     $('.bsm-modal-head').hide();
@@ -1714,7 +1715,7 @@ function renderContractorEmployeeTable(employees=[]){
 $(document).on('click','#bsm-contractor-employee-add',function(){$('#bsm-contractor-employee-rows').append(contractorEmployeeRow());});
 $(document).on('click','.bsm-contractor-employee-remove',function(){$(this).closest('tr').remove();});
 
-async function openForm(key,id=0){
+async function openForm(key,id=0,{showModal=true}={}){
   const cfg=App.configs[key];App.editId=id;
   $('#bsm-modal').toggleClass('bsm-site-receipt-modal',key==='site_receipts').toggleClass('bsm-purchase-edit-modal',key==='material_inwards' && !!id);
   // Set the active form module BEFORE module-specific initializers run.
@@ -1839,7 +1840,7 @@ async function openForm(key,id=0){
   if(key==='material_dispatches'){positionDispatchPhoto();setupDispatchSource();}
   updateBankFieldVisibility($('#bsm-form'));
   if(key==='contractor_advances') setTimeout(loadContractorPaymentSummary,0);
-  $('#bsm-modal').fadeIn(100);
+  if(showModal) $('#bsm-modal').fadeIn(100);
 }
 
 

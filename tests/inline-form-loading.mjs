@@ -1,0 +1,13 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const src=fs.readFileSync('assets/app.js','utf8');
+let finish,shown=0,mounted=0,loading=false,mode;
+const pending=new Promise(resolve=>finish=resolve);
+const context=vm.createContext({App:{},ensureOptions:async()=>{},optionTypesForView:()=>[],setTitle:()=>{},openForm:async(k,id,options)=>{mode=options.showModal;if(options.showModal!==false)shown++;},prepareRequiredPurchasePOSelector:async()=>pending,enterInlineFormMode:()=>{mounted++;loading=false;},hidePurchaseItemUnusedColumns:()=>{},$:selector=>({length:0,stop(){return this;},hide(){return this;},show(){return this;},prop(){return this;},text(){return this;},html(value){if(selector==='#bsm-content')loading=value.includes('Loading form');return this;}})});
+const a=src.indexOf('async function openDirectForm('),b=src.indexOf('// BOQ is quantity-only',a);vm.runInContext(src.slice(a,b),context);
+const task=context.openDirectForm('purchase_form','material_inwards','Purchase Form','purchase');await new Promise(resolve=>setImmediate(resolve));
+assert.equal(mode,false);assert.equal(shown,0);assert.equal(mounted,0);assert.equal(loading,true);
+finish();await task;assert.equal(mounted,1);assert.equal(loading,false);assert.equal(shown,0);
+assert.match(src,/async function openForm\(key,id=0,\{showModal=true\}=\{\}\)/);
+assert.match(src,/if\(showModal\) \$\('#bsm-modal'\)\.fadeIn\(100\)/);
+assert.match(src,/\$host\.empty\(\)\.append\(\$panel\)/);
+console.log('10 checks passed: delayed PO loading never opens modal; ready form mounts inline; normal popup default retained.');
