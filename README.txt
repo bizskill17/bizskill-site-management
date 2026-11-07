@@ -111,3 +111,5 @@ Version 0.0.075: BOQ Balance reconciles directly to displayed quantities: Site O
 Version 0.0.076: Requisition item table contains horizontal overflow, reserves space for row actions and keeps item quick-add controls within their cell.
 
 Version 0.0.077: Main modules remain in the left sidebar; submenus appear as horizontally scrolling tabs above the selected form/view. Navigation preserves permissions, hidden-view settings, direct links and the last selected submenu per module.
+
+Version 0.0.078: Submenu tabs explicitly override the sidebar link width so each tab fits its label instead of occupying the full row.
