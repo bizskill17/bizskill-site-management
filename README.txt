@@ -120,3 +120,6 @@ Version 0.0.080: Removed the Quick Actions section from Site Dashboard.
 
 = 0.0.081 =
 * Show supplier quotations alongside each PO item in a compact table; remove the lower supplier preview table.
+
+= 0.0.082 =
+* Stack supplier rates below dropdowns, contain PO controls within their columns, and freeze Item, Unit and PO Qty during horizontal scrolling.
