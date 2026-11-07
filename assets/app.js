@@ -1430,17 +1430,6 @@ async function renderDashboard(siteId=''){
   ];
   h+=`<div class="bsm-panel bsm-dashboard-today"><div class="bsm-panel-head"><h3>Today's Activity</h3></div><div class="bsm-table-wrap"><table class="bsm-dashboard-activity-table"><thead><tr>${activityColumns.map(x=>`<th scope="col">${esc(x.label)}</th>`).join('')}</tr></thead><tbody><tr>${activityColumns.map(x=>`<td><button type="button" class="bsm-dashboard-activity-link" data-dashboard-go="${x.view}" aria-label="Open ${esc(x.label)}">${esc(x.value)}</button></td>`).join('')}</tr></tbody></table></div></div>`;
 
-  h+=`<div class="bsm-panel"><div class="bsm-panel-head"><h3>Quick Actions</h3></div><div class="bsm-dashboard-quick-actions">
-    <button class="bsm-btn bsm-btn-primary" data-dashboard-go="purchase_form">+ Purchase</button>
-    <button class="bsm-btn bsm-btn-primary" data-dashboard-go="requisition_form">+ Requisition</button>
-    <button class="bsm-btn bsm-btn-primary" data-dashboard-go="site_expenses">+ Site Expense</button>
-    <button class="bsm-btn bsm-btn-primary" data-dashboard-go="customer_receipts">+ Customer Receipt</button>
-    <button class="bsm-btn bsm-btn-primary" data-dashboard-go="vendor_payments">+ HO Payment</button>
-    <button class="bsm-btn bsm-btn-primary" data-dashboard-go="office_daily_attendance">+ Daily Attendance</button>
-    <button class="bsm-btn bsm-btn-primary" data-dashboard-go="report_contractor_outstanding" data-dashboard-direct="1">Contractor Outstanding</button>
-    <button class="bsm-btn bsm-btn-primary" data-dashboard-go="report_vendor_outstanding" data-dashboard-direct="1">Supplier Outstanding</button>
-    <button class="bsm-btn bsm-btn-primary" id="bsm-dashboard-add-site">+ Add Site</button>
-  </div></div>`;
   $('#bsm-content').html(h);
   bsmEnhanceSearchableSelects($('#bsm-content')[0]);
 }

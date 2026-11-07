@@ -115,3 +115,5 @@ Version 0.0.077: Main modules remain in the left sidebar; submenus appear as hor
 Version 0.0.078: Submenu tabs explicitly override the sidebar link width so each tab fits its label instead of occupying the full row.
 
 Version 0.0.079: Direct page forms prepare without showing the shared modal, preventing the purchase popup/grey-overlay flash while PO data loads. Normal popup forms retain their existing behaviour.
+
+Version 0.0.080: Removed the Quick Actions section from Site Dashboard.
