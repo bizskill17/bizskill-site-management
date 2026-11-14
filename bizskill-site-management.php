@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.083
+ * Version: 0.0.084
  * Author: BizSkill
  */
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/notifications.php';
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
-    const VERSION = '0.0.083';
+    const VERSION = '0.0.084';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -44,6 +44,7 @@ final class BSM_Site_Management {
         add_action('wp_ajax_bsm_project_tracker', [$this, 'ajax_project_tracker']);
         add_action('wp_ajax_bsm_save_view_visibility', [$this, 'ajax_save_view_visibility']);
         add_action('wp_ajax_bsm_clear_transactions', [$this, 'ajax_clear_transactions']);
+        add_action('wp_ajax_bsm_drop_backups', [$this, 'ajax_drop_backups']);
         add_action('wp_ajax_bsm_project_tracker_save', [$this, 'ajax_project_tracker_save']);
         add_action('wp_ajax_bsm_boq_list', [$this, 'ajax_boq_list']);
         add_action('wp_ajax_bsm_boq_pdf', [$this, 'ajax_boq_pdf']);
@@ -1660,7 +1661,6 @@ final class BSM_Site_Management {
 
     /**
      * Settings > Clear Transaction Data. WordPress administrators only; the request must carry confirm=DELETE.
-     * Each table is first copied to {prefix}bsm_bak_YYYYmmddHHii_<table>, so the data can be restored.
      * Document numbering restarts for transaction modules; master numbering (e.g. site codes) is kept.
      */
     public function ajax_clear_transactions() {
@@ -1675,14 +1675,6 @@ final class BSM_Site_Management {
             $table = $this->prefix . $t;
             if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) !== $table) continue;
             $rows = (int)$wpdb->get_var("SELECT COUNT(*) FROM `$table`");
-            if ($rows > 0) {
-                $bak = $this->prefix . 'bak_' . $stamp . '_' . $t;
-                $bak = substr($bak, 0, 64);
-                if ($wpdb->query("CREATE TABLE `$bak` LIKE `$table`") === false || $wpdb->query("INSERT INTO `$bak` SELECT * FROM `$table`") === false) {
-                    $errors[] = "$t: backup failed, not cleared";
-                    continue;
-                }
-            }
             if ($wpdb->query("TRUNCATE TABLE `$table`") === false) $wpdb->query("DELETE FROM `$table`");
             $report[$t] = $rows;
         }
@@ -1694,7 +1686,23 @@ final class BSM_Site_Management {
             $num_reset = (int)$wpdb->query("DELETE FROM `$series` WHERE module NOT IN ($keep)");
         }
         wp_send_json_success(['cleared' => $report, 'rows' => array_sum($report), 'numbering_reset' => $num_reset,
-            'backup_prefix' => $this->prefix . 'bak_' . $stamp . '_', 'errors' => $errors]);
+            'errors' => $errors]);
+    }
+
+    /** Remove backup tables left by older versions of Clear Transaction Data ({prefix}bsm_bak_*). Admins only. */
+    public function ajax_drop_backups() {
+        $this->verify_ajax();
+        if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'Only a WordPress administrator can do this.'], 403);
+        if (sanitize_text_field(wp_unslash($_POST['confirm'] ?? '')) !== 'DELETE') wp_send_json_error(['message' => 'Type DELETE to confirm.'], 400);
+        global $wpdb;
+        $like = $wpdb->esc_like($this->prefix . 'bak_') . '%';
+        $tables = $wpdb->get_col($wpdb->prepare('SHOW TABLES LIKE %s', $like));
+        $dropped = [];
+        foreach ($tables as $t) {
+            if (strpos($t, $this->prefix . 'bak_') !== 0) continue;
+            if ($wpdb->query("DROP TABLE `$t`") !== false) $dropped[] = $t;
+        }
+        wp_send_json_success(['dropped' => count($dropped), 'found' => count($tables)]);
     }
 
     // Views switched off in Settings > Show / Hide Views (applies to every user).

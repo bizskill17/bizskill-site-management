@@ -205,7 +205,7 @@ function renderDataReset(){
   $('#bsm-content').html(`<div class="bsm-panel bsm-reset">
    <p><b>This deletes all transactions</b>: requisitions, purchase orders, purchases, dispatches, site receipts, site-to-site transfers, consumption, returns, stock movements, BOQs, Site Tracker tasks, site opening stock, labour and office attendance, time sheets, contractor bills and payments, customer receipts, site expenses, supplier payments, allowances, salary slips, quotations and invoices.</p>
    <p><b>Kept</b>: all Masters (banks, customers, suppliers, items, sites, users, warehouses, contractors and so on), Company Settings and Show / Hide Views. Document numbers restart from 0001.</p>
-   <p>Every cleared table is first copied to a backup table in the database, so the data can be restored by your developer.</p>
+   <p><b>There is no undo.</b> Take a backup from your hosting panel first if you may need this data later.</p>
    <label>Type <b>DELETE</b> to confirm</label><input type="text" id="bsm-reset-confirm" autocomplete="off" style="max-width:220px;display:block;margin:6px 0 14px">
    <button type="button" class="bsm-btn bsm-btn-danger" id="bsm-reset-go" disabled>Clear Transaction Data</button>
    <div id="bsm-reset-result" style="margin-top:16px"></div></div>`);
@@ -215,7 +215,7 @@ $(document).on('click','#bsm-reset-go',async function(){
   const btn=$(this); btn.prop('disabled',true).text('Clearing…');
   try{const r=await ajax('bsm_clear_transactions',{confirm:$('#bsm-reset-confirm').val()});
     if(!r.success){showToast(r.data?.message||'Unable to clear',true);btn.prop('disabled',false).text('Clear Transaction Data');return;}
-    $('#bsm-reset-result').html(`<div class="bsm-empty">Done. ${r.data.rows} records cleared. Backup tables start with <code>${esc(r.data.backup_prefix)}</code>.${(r.data.errors||[]).length?'<br>Not cleared: '+esc(r.data.errors.join(', ')):''}</div>`);
+    $('#bsm-reset-result').html(`<div class="bsm-empty">Done. ${r.data.rows} records cleared.${(r.data.errors||[]).length?'<br>Not cleared: '+esc(r.data.errors.join(', ')):''}</div>`);
     showToast('Transaction data cleared.');
   }catch(e){showToast('Unable to clear. Please try again.',true);btn.prop('disabled',false).text('Clear Transaction Data');}
 });
