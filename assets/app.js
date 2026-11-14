@@ -26,7 +26,7 @@ const App = {
     {group:'Payment', items:[['report_vendor_outstanding','Supplier Outstanding'],['pending_allowance_payment','Pending Allowance Payment'],['report_contractor_outstanding','Contractor Outstanding'],['pending_salary_payment','Pending Salary Payment'],['vendor_payments','Payment Master']]},
     {group:'Quotation', items:[['quotation_form','Quotation Form'],['quotation_master','Quotation Master'],['quotation_items','Quotation Items Master']]},
     {group:'Tax Invoice', items:[['invoice_form','Invoice Form'],['invoice_master','Invoice Master'],['invoice_items','Invoice Items Master']]},
-    {group:'Settings', items:[['notifications','Notification'],['company_settings','Company Settings'],['view_settings','Show / Hide Views']]}
+    {group:'Settings', items:[['notifications','Notification'],['company_settings','Company Settings'],['view_settings','Show / Hide Views'],['data_reset','Clear Transaction Data']]}
   ],
   configs: {}
 };
@@ -190,7 +190,7 @@ function restoreNavScroll(){
 }
 
 // ---- Show / Hide Views (Settings) ----
-const BSM_PROTECTED_VIEWS=['company_settings','view_settings'];
+const BSM_PROTECTED_VIEWS=['company_settings','view_settings','data_reset'];
 function bsmHiddenSet(){return new Set((BSM.hiddenViews||[]).filter(k=>!BSM_PROTECTED_VIEWS.includes(k)));}
 function isViewHidden(k){return bsmHiddenSet().has(k);}
 function firstVisibleView(){
@@ -198,6 +198,28 @@ function firstVisibleView(){
   for(const g of App.nav){if(allowed!==null&&['Masters','Settings'].includes(g.group))continue;for(const [k] of g.items){if(isViewHidden(k))continue;if(allowed===null||allowed.has(k)||k==='my_salary_slips')return k;}}
   return '';
 }
+// ---- Settings > Clear Transaction Data (WordPress admins only) ----
+function renderDataReset(){
+  setTitle('Clear Transaction Data');
+  if(!(BSM.currentUser&&BSM.currentUser.is_admin)){$('#bsm-content').html('<div class="bsm-empty">Only administrators can use this.</div>');return;}
+  $('#bsm-content').html(`<div class="bsm-panel bsm-reset">
+   <p><b>This deletes all transactions</b>: requisitions, purchase orders, purchases, dispatches, site receipts, site-to-site transfers, consumption, returns, stock movements, BOQs, Site Tracker tasks, site opening stock, labour and office attendance, time sheets, contractor bills and payments, customer receipts, site expenses, supplier payments, allowances, salary slips, quotations and invoices.</p>
+   <p><b>Kept</b>: all Masters (banks, customers, suppliers, items, sites, users, warehouses, contractors and so on), Company Settings and Show / Hide Views. Document numbers restart from 0001.</p>
+   <p>Every cleared table is first copied to a backup table in the database, so the data can be restored by your developer.</p>
+   <label>Type <b>DELETE</b> to confirm</label><input type="text" id="bsm-reset-confirm" autocomplete="off" style="max-width:220px;display:block;margin:6px 0 14px">
+   <button type="button" class="bsm-btn bsm-btn-danger" id="bsm-reset-go" disabled>Clear Transaction Data</button>
+   <div id="bsm-reset-result" style="margin-top:16px"></div></div>`);
+}
+$(document).on('input','#bsm-reset-confirm',function(){$('#bsm-reset-go').prop('disabled',this.value!=='DELETE');});
+$(document).on('click','#bsm-reset-go',async function(){
+  const btn=$(this); btn.prop('disabled',true).text('Clearing…');
+  try{const r=await ajax('bsm_clear_transactions',{confirm:$('#bsm-reset-confirm').val()});
+    if(!r.success){showToast(r.data?.message||'Unable to clear',true);btn.prop('disabled',false).text('Clear Transaction Data');return;}
+    $('#bsm-reset-result').html(`<div class="bsm-empty">Done. ${r.data.rows} records cleared. Backup tables start with <code>${esc(r.data.backup_prefix)}</code>.${(r.data.errors||[]).length?'<br>Not cleared: '+esc(r.data.errors.join(', ')):''}</div>`);
+    showToast('Transaction data cleared.');
+  }catch(e){showToast('Unable to clear. Please try again.',true);btn.prop('disabled',false).text('Clear Transaction Data');}
+});
+
 function renderViewSettings(){
   setTitle('Show / Hide Views');
   if(!(BSM.currentUser&&BSM.currentUser.is_admin)){$('#bsm-content').html('<div class="bsm-empty">Only administrators can change this setting.</div>');return;}
@@ -251,7 +273,7 @@ function rememberNavGroup(group,key){
 }
 function buildNav(){
   const groupIcons={'Project Tracker':'▥',BOQ:'▤',Main:'⌂',Masters:'▦',Purchase:'↓','Site Requisition':'≡',Dispatch:'→','Site Material Receipt':'✓',Consumption:'−','Material Return':'↩','Labour Attendance':'♟',Contractor:'▤','HO Receipts and Payments':'₹','Employee Allowance':'₹',Salary:'₹',Inventory:'▥','Contractor Outstanding':'₹',Sites:'▥',Settings:'⚙'};
-  const itemIcons={view_settings:'☑',project_tracker:'▤',boq_form:'+',boq_master:'▤',boq_items:'▥',boq_monitoring:'◫',dashboard:'⌂',bank_accounts:'₹',users:'●',designations:'◆',customers:'▤',sites:'⌖',vendors:'▣',labour_contractors:'♟',states:'⌖',item_categories:'▦',units:'◢',items:'◇',warehouses:'⌂',expense_categories:'▤',purchase_form:'+',payment_form:'₹',purchase_pending_approval:'✓',purchase_register:'▤',purchase_items_register:'▥',pending_invoice_copy:'▧',purchase_order_form:'+',pending_po_items:'✓',purchase_order_pending_receipt:'↓',purchase_order_master:'▤',purchase_order_items_master:'▥',pending_contractor_bill_copy:'▧',requisition_form:'+',material_requisitions:'≡',material_requisition_item:'▥',pending_requisition_approval:'✓',pending_material_receipt:'✓',material_inwards:'↓',material_dispatches:'→',pending_material_dispatch:'⇢',dispatch_items_register:'▥',pending_site_receipt:'✓',site_receipts:'✓',site_material_item_receipt:'▥',pending_site_receive_challans:'▧',ho_inventory:'▥',site_inventory:'▥',site_opening_stock:'+',daily_outward_summary:'→',consumption_form:'+',site_consumptions:'−',consumption_items_register:'▥',return_form:'+',material_returns:'↩',material_returns_item_master:'▥',material_stock:'▥',labour_attendance:'♟',office_daily_attendance:'✓',office_attendance_master:'▤',office_monthly_salary:'₹',allowance_form:'+',pending_allowance_approval:'✓',pending_allowance_payment:'₹',allowance_master:'▤',employee_allowance_limits:'▥',allowance_types:'▤',monthly_salary_upload:'↑',salary_slips:'▤',pending_salary_payment:'₹',my_salary_slips:'▤',site_fund_allocations:'₹',site_expenses:'₹',daily_expense_summary:'▤',customer_receipts:'↓',vendor_payments:'↑',contractor_form:'+',contractor_advance:'₹',contractor_advance_register:'▤',pending_contractor_payment:'₹',contractor_bills:'▤',contractor_payments:'↑',gst_invoices:'▤',report_stock:'▥',report_site_fund:'▥',report_site_cost:'▥',report_labour:'▥',report_labour_summary:'▥',report_customer_outstanding:'▥',report_vendor_outstanding:'▥',report_contractor_outstanding:'▥',quotation_form:'+',quotation_master:'▤',quotation_items:'▥',invoice_form:'+',invoice_master:'▤',invoice_items:'▥',company_settings:'⚙'};
+  const itemIcons={data_reset:'⌫',view_settings:'☑',project_tracker:'▤',boq_form:'+',boq_master:'▤',boq_items:'▥',boq_monitoring:'◫',dashboard:'⌂',bank_accounts:'₹',users:'●',designations:'◆',customers:'▤',sites:'⌖',vendors:'▣',labour_contractors:'♟',states:'⌖',item_categories:'▦',units:'◢',items:'◇',warehouses:'⌂',expense_categories:'▤',purchase_form:'+',payment_form:'₹',purchase_pending_approval:'✓',purchase_register:'▤',purchase_items_register:'▥',pending_invoice_copy:'▧',purchase_order_form:'+',pending_po_items:'✓',purchase_order_pending_receipt:'↓',purchase_order_master:'▤',purchase_order_items_master:'▥',pending_contractor_bill_copy:'▧',requisition_form:'+',material_requisitions:'≡',material_requisition_item:'▥',pending_requisition_approval:'✓',pending_material_receipt:'✓',material_inwards:'↓',material_dispatches:'→',pending_material_dispatch:'⇢',dispatch_items_register:'▥',pending_site_receipt:'✓',site_receipts:'✓',site_material_item_receipt:'▥',pending_site_receive_challans:'▧',ho_inventory:'▥',site_inventory:'▥',site_opening_stock:'+',daily_outward_summary:'→',consumption_form:'+',site_consumptions:'−',consumption_items_register:'▥',return_form:'+',material_returns:'↩',material_returns_item_master:'▥',material_stock:'▥',labour_attendance:'♟',office_daily_attendance:'✓',office_attendance_master:'▤',office_monthly_salary:'₹',allowance_form:'+',pending_allowance_approval:'✓',pending_allowance_payment:'₹',allowance_master:'▤',employee_allowance_limits:'▥',allowance_types:'▤',monthly_salary_upload:'↑',salary_slips:'▤',pending_salary_payment:'₹',my_salary_slips:'▤',site_fund_allocations:'₹',site_expenses:'₹',daily_expense_summary:'▤',customer_receipts:'↓',vendor_payments:'↑',contractor_form:'+',contractor_advance:'₹',contractor_advance_register:'▤',pending_contractor_payment:'₹',contractor_bills:'▤',contractor_payments:'↑',gst_invoices:'▤',report_stock:'▥',report_site_fund:'▥',report_site_cost:'▥',report_labour:'▥',report_labour_summary:'▥',report_customer_outstanding:'▥',report_vendor_outstanding:'▥',report_contractor_outstanding:'▥',quotation_form:'+',quotation_master:'▤',quotation_items:'▥',invoice_form:'+',invoice_master:'▤',invoice_items:'▥',company_settings:'⚙'};
   const groups=visibleNavGroups();
   let remembered='';try{remembered=sessionStorage.getItem('bsm-active-menu-group')||'';}catch(e){}
   const preferred=App.activeNavGroup||remembered;
@@ -601,6 +623,7 @@ async function openView(key){
   if(['holiday_list','time_sheet','time_sheet_master','contractor_employees','contractor_calculated_bill','site_transfer_form','site_transfer_master'].includes(key)){await ensureOptions(['sites','contractors','units']);return renderOperations(key);}
   if(key==='notifications')return renderNotifications();
   if(key==='view_settings')return renderViewSettings();
+  if(key==='data_reset')return renderDataReset();
   if(key==='project_tracker')return renderProjectTracker();
   if(key==='dashboard'){await ensureOptions(['sites']);return renderDashboard();}
   if(key.startsWith('boq_')){await ensureOptions(['sites','items','units','sections']);return key==='boq_form'?renderBoqForm():renderBoqListing(key);}

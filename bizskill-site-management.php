@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.082
+ * Version: 0.0.083
  * Author: BizSkill
  */
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/notifications.php';
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
-    const VERSION = '0.0.082';
+    const VERSION = '0.0.083';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -43,6 +43,7 @@ final class BSM_Site_Management {
 
         add_action('wp_ajax_bsm_project_tracker', [$this, 'ajax_project_tracker']);
         add_action('wp_ajax_bsm_save_view_visibility', [$this, 'ajax_save_view_visibility']);
+        add_action('wp_ajax_bsm_clear_transactions', [$this, 'ajax_clear_transactions']);
         add_action('wp_ajax_bsm_project_tracker_save', [$this, 'ajax_project_tracker_save']);
         add_action('wp_ajax_bsm_boq_list', [$this, 'ajax_boq_list']);
         add_action('wp_ajax_bsm_boq_pdf', [$this, 'ajax_boq_pdf']);
@@ -338,6 +339,7 @@ final class BSM_Site_Management {
             'pending_po_approval' => ['Pending PO Approval','pending-po-approval'],
             'company_settings' => ['Company Settings', 'company-settings'],
             'view_settings' => ['Show / Hide Views', 'view-settings'],
+            'data_reset' => ['Clear Transaction Data', 'clear-transaction-data'],
         ];
     }
 
@@ -1629,7 +1631,71 @@ final class BSM_Site_Management {
     }
 
     // Views that can never be hidden, so an admin can always reach Settings again.
-    private const PROTECTED_VIEWS = ['company_settings', 'view_settings'];
+    private const PROTECTED_VIEWS = ['company_settings', 'view_settings', 'data_reset'];
+
+    // Master tables: never touched by Clear Transaction Data.
+    private const MASTER_TABLES = ['bank_accounts', 'customers', 'designations', 'expense_categories', 'gst_rates',
+        'item_categories', 'items', 'labour_contractors', 'sections', 'sites', 'states', 'units', 'users',
+        'user_profiles', 'user_salary_history', 'vendors', 'warehouses', 'company_settings', 'allowance_types',
+        'employee_allowance_limits', 'contractor_employees', 'holidays'];
+
+    // Everything else Civilio stores: transactions, BOQs, Site Tracker, opening stock, logs, document numbering.
+    private const TRANSACTION_TABLES = ['approvals', 'documents', 'notifications',
+        'material_requisition_items', 'material_requisitions',
+        'purchase_order_item_allocations', 'purchase_order_items', 'purchase_orders',
+        'material_inward_items', 'material_inwards',
+        'material_dispatch_items', 'material_dispatches',
+        'site_receipt_items', 'site_receipts',
+        'site_transfer_items', 'site_transfers',
+        'site_consumption_items', 'site_consumptions',
+        'material_return_items', 'material_returns',
+        'stock_ledger', 'site_opening_stock',
+        'boq_items', 'boqs', 'project_progress_history', 'project_subtasks', 'project_tasks',
+        'labour_attendance', 'office_attendance', 'time_entries',
+        'contractor_advance_adjustments', 'contractor_payments', 'contractor_bills',
+        'customer_receipts', 'site_expenses', 'site_fund_ledger', 'site_fund_allocations',
+        'vendor_payment_allocations', 'vendor_payments',
+        'employee_allowances', 'salary_slips',
+        'quotation_items', 'quotations', 'tax_invoice_items', 'tax_invoices', 'gst_invoice_items', 'gst_invoices'];
+
+    /**
+     * Settings > Clear Transaction Data. WordPress administrators only; the request must carry confirm=DELETE.
+     * Each table is first copied to {prefix}bsm_bak_YYYYmmddHHii_<table>, so the data can be restored.
+     * Document numbering restarts for transaction modules; master numbering (e.g. site codes) is kept.
+     */
+    public function ajax_clear_transactions() {
+        $this->verify_ajax();
+        if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'Only a WordPress administrator can clear data.'], 403);
+        if (sanitize_text_field(wp_unslash($_POST['confirm'] ?? '')) !== 'DELETE') wp_send_json_error(['message' => 'Type DELETE to confirm.'], 400);
+        global $wpdb;
+        @set_time_limit(300);
+        $stamp = current_time('YmdHi');
+        $report = []; $errors = [];
+        foreach (self::TRANSACTION_TABLES as $t) {
+            $table = $this->prefix . $t;
+            if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) !== $table) continue;
+            $rows = (int)$wpdb->get_var("SELECT COUNT(*) FROM `$table`");
+            if ($rows > 0) {
+                $bak = $this->prefix . 'bak_' . $stamp . '_' . $t;
+                $bak = substr($bak, 0, 64);
+                if ($wpdb->query("CREATE TABLE `$bak` LIKE `$table`") === false || $wpdb->query("INSERT INTO `$bak` SELECT * FROM `$table`") === false) {
+                    $errors[] = "$t: backup failed, not cleared";
+                    continue;
+                }
+            }
+            if ($wpdb->query("TRUNCATE TABLE `$table`") === false) $wpdb->query("DELETE FROM `$table`");
+            $report[$t] = $rows;
+        }
+        // Restart numbering for transaction documents only.
+        $series = $this->prefix . 'number_series';
+        $num_reset = 0;
+        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $series)) === $series) {
+            $keep = "'" . implode("','", array_map('esc_sql', self::MASTER_TABLES)) . "'";
+            $num_reset = (int)$wpdb->query("DELETE FROM `$series` WHERE module NOT IN ($keep)");
+        }
+        wp_send_json_success(['cleared' => $report, 'rows' => array_sum($report), 'numbering_reset' => $num_reset,
+            'backup_prefix' => $this->prefix . 'bak_' . $stamp . '_', 'errors' => $errors]);
+    }
 
     // Views switched off in Settings > Show / Hide Views (applies to every user).
     private function hidden_views() {
