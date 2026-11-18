@@ -179,9 +179,8 @@ trait BSM_Workforce_Transfers {
     }
     private function ops_holiday_dates($employee,$start,$end) {
         global $wpdb; $dates=[];
-        foreach($wpdb->get_results($wpdb->prepare("SELECT holiday_date,employee_ids FROM {$this->prefix}holidays WHERE holiday_date BETWEEN %s AND %s",$start,$end),ARRAY_A) as $h) {
-            $ids=json_decode($h['employee_ids']?:'[]',true)?:[];
-            if(!$ids || in_array((int)$employee,array_map('intval',$ids),true)) $dates[$h['holiday_date']]=true;
+        foreach($wpdb->get_results($wpdb->prepare("SELECT holiday_date FROM {$this->prefix}holidays WHERE holiday_date BETWEEN %s AND %s",$start,$end),ARRAY_A) as $h) {
+            $dates[$h['holiday_date']]=true;
         } return $dates;
     }
     private function ops_transfer_movements($site=0,$item=0,$start='',$end='') {
@@ -250,13 +249,10 @@ trait BSM_Workforce_Transfers {
                 $result=['destinations'=>$destinations,'can_punch_contractor'=>$this->ops_can_punch_contractor($user),'admin'=>$admin,'time_admin'=>current_user_can('manage_options'),'employee_id'=>(int)$user['id'],'employees'=>$employees,'workers'=>$workers];break;
             case 'holiday_list':
                 $holidays=$wpdb->get_results("SELECT * FROM {$p}holidays ORDER BY holiday_date DESC",ARRAY_A);
-                if(!$admin)$holidays=array_values(array_filter($holidays,function($h)use($user){$ids=json_decode($h['employee_ids']?:'[]',true)?:[];return !$ids||in_array((int)$user['id'],array_map('intval',$ids),true);}));
                 $result=['rows'=>$holidays];break;
             case 'holiday_save':
                 $this->ops_require_admin();$id=(int)($d['id']??0);$name=sanitize_text_field($d['holiday_name']??'');if(!$name)throw new Exception('Holiday Name is required.');
-                $ids=array_values(array_unique(array_filter(array_map('intval',(array)($d['employee_ids']??[])))));
-                foreach($ids as $eid)if(!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}users WHERE id=%d",$eid)))throw new Exception('Invalid Employee.');
-                $row=['holiday_date'=>$this->ops_date($d['holiday_date']??''),'holiday_name'=>$name,'employee_ids'=>wp_json_encode($ids)];
+                $row=['holiday_date'=>$this->ops_date($d['holiday_date']??''),'holiday_name'=>$name,'employee_ids'=>'[]'];
                 $duplicate=(int)$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}holidays WHERE holiday_date=%s AND holiday_name=%s AND id<>%d",$row['holiday_date'],$name,$id));if($duplicate)throw new Exception('This Holiday already exists.');
                 $this->ops_write($id?$wpdb->update($p.'holidays',$row,['id'=>$id]):$wpdb->insert($p.'holidays',$row));break;
             case 'holiday_delete':$this->ops_require_admin();$this->ops_write($wpdb->delete($p.'holidays',['id'=>(int)$d['id']]));break;

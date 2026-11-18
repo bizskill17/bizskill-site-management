@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.085
+ * Version: 0.0.086
  * Author: BizSkill
  */
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/notifications.php';
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
-    const VERSION = '0.0.085';
+    const VERSION = '0.0.086';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -6314,7 +6314,7 @@ final class BSM_Site_Management {
         global $wpdb; $p=$this->prefix;
         $page=max(1,(int)($_POST['page']??1));$export_all=!empty($_POST['export_all']);$per=$export_all?0:20;$offset=$export_all?0:(($page-1)*20);
         $search=sanitize_text_field($_POST['search']??'');$date_from=sanitize_text_field($_POST['date_from']??'');$date_to=sanitize_text_field($_POST['date_to']??'');$user_id=(int)($_POST['user_id']??0);$status=strtoupper(sanitize_text_field($_POST['status']??''));
-        $holiday_status="CASE WHEN EXISTS(SELECT 1 FROM {$p}holidays h WHERE h.holiday_date=a.attendance_date AND (COALESCE(h.employee_ids,'[]')='[]' OR JSON_CONTAINS(COALESCE(NULLIF(h.employee_ids,''),'[]'),CAST(a.user_id AS CHAR)))) THEN 'H' ELSE a.attendance_status END";
+        $holiday_status="CASE WHEN EXISTS(SELECT 1 FROM {$p}holidays h WHERE h.holiday_date=a.attendance_date) THEN 'H' ELSE a.attendance_status END";
         $where='1=1';$args=[];
         if($date_from){$where.=' AND a.attendance_date>=%s';$args[]=$date_from;} if($date_to){$where.=' AND a.attendance_date<=%s';$args[]=$date_to;} if($user_id){$where.=' AND a.user_id=%d';$args[]=$user_id;} if(in_array($status,['P','A','H'],true)){$where.=" AND ($holiday_status)=%s";$args[]=$status;}
         if($search!==''){$n='%'.$wpdb->esc_like($search).'%';$where.=" AND (u.name LIKE %s OR COALESCE(d.designation_name,u.designation,'') LIKE %s OR a.attendance_status LIKE %s)";$args[]=$n;$args[]=$n;$args[]=$n;}

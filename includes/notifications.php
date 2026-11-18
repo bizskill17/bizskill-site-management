@@ -248,8 +248,7 @@ trait BSM_Notifications {
         $s=$this->nt_settings();if(!$s['enabled'])return;$now=new DateTimeImmutable('now',new DateTimeZone('Asia/Kolkata'));if(!in_array((int)$now->format('N'),array_map('intval',$s['days']),true))return;
         global $wpdb;
         if(empty($s['include_holidays'])){
-            $holidays=$wpdb->get_col($wpdb->prepare("SELECT employee_ids FROM {$this->prefix}holidays WHERE holiday_date=%s",$now->format('Y-m-d')))?:[];
-            foreach($holidays as $ids){$raw=trim((string)$ids);if($raw===''||$raw==='null'||json_decode($raw,true)===[])return;}
+            if($wpdb->get_var($wpdb->prepare("SELECT id FROM {$this->prefix}holidays WHERE holiday_date=%s LIMIT 1",$now->format('Y-m-d'))))return;
         }
         $sites=$wpdb->get_col("SELECT id FROM {$this->prefix}sites WHERE status='active'")?:[];
         foreach($this->nt_catalog() as $type=>$definition){if($definition[2]==='instant'||empty($s['types'][$type]))continue;
