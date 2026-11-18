@@ -2947,20 +2947,24 @@ html,body{
 
 /* Item-level quotations in the direct PO form. */
 .bsm-direct-po-panel .po-direct-table-wrap{width:100%;max-width:100%;overflow-x:auto!important;isolation:isolate}
-.bsm-direct-po-panel #po_direct_items{width:1104px;min-width:1104px;table-layout:fixed;border-collapse:separate;border-spacing:0;border:0!important}
+.bsm-direct-po-panel #po_direct_items{width:100%!important;min-width:1250px!important;table-layout:fixed!important;border-collapse:separate;border-spacing:0;border:0!important}
 #po_direct_items th:nth-child(1){width:170px}
 #po_direct_items th:nth-child(2){width:50px}
-#po_direct_items th:nth-child(3){width:75px}
-#po_direct_items th:nth-child(4),#po_direct_items th:nth-child(5),#po_direct_items th:nth-child(6){width:145px}
-#po_direct_items th:nth-child(7){width:150px}
-#po_direct_items th:nth-child(8){width:80px}
+#po_direct_items th:nth-child(3){width:85px}
+#po_direct_items th:nth-child(4),#po_direct_items th:nth-child(5),#po_direct_items th:nth-child(6){width:calc((100% - 695px)/3);white-space:nowrap}
+#po_direct_items th:nth-child(7){width:145px}
+#po_direct_items th:nth-child(8){width:85px;white-space:normal!important}
 #po_direct_items th:nth-child(9){width:100px}
-#po_direct_items th:nth-child(10){width:44px}
+#po_direct_items th:nth-child(10){width:60px}
 .bsm-direct-po-panel #po_direct_items th,.bsm-direct-po-panel #po_direct_items td{box-sizing:border-box;min-width:0}
-.bsm-direct-po-panel .po-inline-quote{display:flex;flex-direction:column;align-items:stretch;gap:6px;min-width:0}
+.bsm-direct-po-panel .po-inline-quote{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:6px;min-width:0}
 .bsm-direct-po-panel #po_direct_items .bsm-searchable-select,.bsm-direct-po-panel #po_direct_items .bsm-select-control{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box}
 .bsm-direct-po-panel #po_direct_items input,.bsm-direct-po-panel #po_direct_items select:not(.bsm-native-select){box-sizing:border-box;width:100%;max-width:100%;min-width:0}
 .bsm-direct-po-panel #po_direct_items .bsm-select-search{min-width:0!important;text-overflow:ellipsis}
+.bsm-direct-po-panel #po_direct_items .po-inline-quote>.bsm-searchable-select{flex:1 1 0;width:0!important;min-width:0!important}
+.bsm-direct-po-panel #po_direct_items .po-inline-quote>.po-direct-quote-rate{flex:0 0 70px;width:70px;max-width:70px;padding-left:5px!important;padding-right:5px!important}
+.bsm-direct-po-panel #po_direct_items .po-item-quote{position:relative;padding-bottom:7px!important}
+.bsm-direct-po-panel #po_direct_items .po-item-quote.is-lowest .po-direct-quote-rate{background:#e5f8df;border-color:#68bd73}
 .bsm-direct-po-panel .po-item-quote.is-lowest{background:#effaf0}
 .bsm-direct-po-panel .po-lowest-badge{font-size:10px;color:#218334;display:block;margin-top:3px}
 .bsm-direct-po-panel [hidden]{display:none!important}

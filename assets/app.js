@@ -719,7 +719,7 @@ async function renderPurchaseOrderForm(){
         <label><span class="bsm-field-label">Created By</span><input type="text" id="po_direct_created_by" value="${esc((BSM.currentUser&&BSM.currentUser.name)||'')}" readonly></label>
       </div>
       <div class="bsm-lines"><div class="bsm-lines-head"><h3>Items &amp; Supplier Comparison</h3></div>
-        <div class="bsm-table-wrap po-direct-table-wrap"><table id="po_direct_items"><thead><tr><th>Item</th><th>Unit</th><th>PO Qty</th><th>Supplier 1 / Rate (₹)</th><th>Supplier 2 / Rate (₹)</th><th>Supplier 3 / Rate (₹)</th><th>Chosen Supplier</th><th>Chosen Rate</th><th>Amount</th><th></th></tr></thead>${directPoItemRow()}</table></div>
+        <div class="bsm-table-wrap po-direct-table-wrap"><table id="po_direct_items"><thead><tr><th>Item</th><th>Unit</th><th>PO Qty</th><th>Supplier 1 / Rate (₹)</th><th>Supplier 2 / Rate (₹)</th><th>Supplier 3 / Rate (₹)</th><th>Chosen Supplier</th><th>Chosen Rate (₹)</th><th>Amount (₹)</th><th>Action</th></tr></thead>${directPoItemRow()}</table></div>
         <button type="button" class="bsm-btn bsm-btn-primary po-direct-add">+ Add Item</button>
       </div>
       <div class="bsm-form-actions">
