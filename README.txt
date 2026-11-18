@@ -138,3 +138,6 @@ Version 0.0.080: Removed the Quick Actions section from Site Dashboard.
 
 = 0.0.089 =
 * Exclude globally hidden views and empty sections from user view permissions.
+
+= 0.0.090 =
+* Remove Customer/Project from Site forms and listings; allow sites to be created without a linked customer.

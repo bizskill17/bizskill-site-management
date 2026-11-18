@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.089
+ * Version: 0.0.090
  * Author: BizSkill
  */
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/notifications.php';
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
-    const VERSION = '0.0.089';
+    const VERSION = '0.0.090';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -3339,7 +3339,7 @@ final class BSM_Site_Management {
         if($key==='designations' && empty(trim((string)($data['designation_name']??'')))) wp_send_json_error(['message'=>'Designation Name is required']);
         if($key==='states' && empty(trim((string)($data['state_name']??'')))) wp_send_json_error(['message'=>'State Name is required']);
         if($key==='sites'){
-            foreach(['site_name'=>'Site Name','customer_id'=>'Customer','site_location'=>'Site Location','site_manager_user_id'=>'Site Manager','site_supervisor_user_id'=>'Site Supervisor','start_date'=>'Start Date','expected_end_date'=>'Expected Completion Date','work_order_value'=>'Work Order Value'] as $f=>$label){
+            foreach(['site_name'=>'Site Name','site_location'=>'Site Location','site_manager_user_id'=>'Site Manager','site_supervisor_user_id'=>'Site Supervisor','start_date'=>'Start Date','expected_end_date'=>'Expected Completion Date','work_order_value'=>'Work Order Value'] as $f=>$label){
                 if(!isset($data[$f]) || $data[$f]==='') wp_send_json_error(['message'=>$label.' is required']);
             }
         }
