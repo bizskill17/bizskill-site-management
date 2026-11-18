@@ -129,3 +129,6 @@ Version 0.0.080: Removed the Quick Actions section from Site Dashboard.
 
 = 0.0.086 =
 * Holidays apply to all employees; remove Applicability and employee selection from the form and list, including attendance and scheduled notification checks.
+
+= 0.0.087 =
+* Remove the balance formula explanation above the BOQ Items Master table.
