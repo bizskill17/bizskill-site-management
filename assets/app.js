@@ -2864,7 +2864,7 @@ function toggleUserSalaryFields(){
   });
 }
 function allUserViews(){
-  const out=[];App.nav.forEach(g=>{if(['Masters','Settings'].includes(g.group))return;g.items.forEach(([key,label])=>out.push({key,label,group:g.group}))});return out;
+  const out=[];App.nav.forEach(g=>{if(['Masters','Settings'].includes(g.group))return;g.items.forEach(([key,label])=>{if(!isViewHidden(key))out.push({key,label,group:g.group});})});return out;
 }
 function parseJsonArray(v){if(Array.isArray(v))return v;try{const x=JSON.parse(v||'[]');return Array.isArray(x)?x:[]}catch(e){return []}}
 function renderUserAccess(row={}){

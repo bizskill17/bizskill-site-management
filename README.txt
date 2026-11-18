@@ -135,3 +135,6 @@ Version 0.0.080: Removed the Quick Actions section from Site Dashboard.
 
 = 0.0.088 =
 * Group user view permissions into collapsible sections with section and global Select All controls and partial-selection indicators.
+
+= 0.0.089 =
+* Exclude globally hidden views and empty sections from user view permissions.
