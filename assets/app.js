@@ -2875,16 +2875,27 @@ function renderUserAccess(row={}){
   const allowedSaved=parseJsonArray(row.allowed_views);const allowed=new Set((allowedSaved.length?allowedSaved:allUserViews().map(v=>v.key)).map(String));
   const siteRows=(App.options.sites||[]);
   const siteHtml=`<div class="bsm-access-sites"><span class="bsm-field-label">Site</span><div class="bsm-multiselect" id="bsm-user-sites"><div class="bsm-multiselect-control"><input type="text" class="bsm-multiselect-search" aria-label="Search and select Sites" placeholder="" autocomplete="off"><span>⌄</span></div><div class="bsm-multiselect-menu">${siteRows.map(s=>`<label class="bsm-multiselect-option"><input type="checkbox" value="${esc(s.id)}" ${selectedSites.has(String(s.id))?'checked':''}><span>${esc(s.label)}</span></label>`).join('')}</div><div class="bsm-multiselect-selected"></div></div></div>`;
-  const viewHtml=`<div class="bsm-access-table"><table><thead><tr><th>View</th><th>Action</th></tr></thead><tbody>${allUserViews().map(v=>`<tr><td><span class="bsm-access-group">${esc(v.group)}</span> - ${esc(v.label)}</td><td><input type="checkbox" class="bsm-view-permission" value="${esc(v.key)}" ${allowed.has(v.key)?'checked':''}></td></tr>`).join('')}</tbody></table></div>`;
-  $box.html(siteHtml+viewHtml).show();updateUserSiteChips();
+  const groups=new Map();allUserViews().forEach(v=>{if(!groups.has(v.group))groups.set(v.group,[]);groups.get(v.group).push(v);});
+  const viewHtml=`<div class="bsm-permissions"><div class="bsm-permissions-title"><strong>View Permissions</strong><label class="bsm-permission-select"><input type="checkbox" class="bsm-permissions-all">Select All Views</label></div><div class="bsm-permissions-scroll">${[...groups].map(([group,views],i)=>`<section class="bsm-permission-section"><div class="bsm-permission-heading"><button type="button" class="bsm-permission-toggle" aria-expanded="true" aria-controls="bsm-permission-section-${i}"><span class="bsm-permission-chevron" aria-hidden="true">▾</span>${esc(group)} <small>(${views.length})</small></button><label class="bsm-permission-select"><input type="checkbox" class="bsm-permissions-group" aria-label="Select all ${esc(group)} views">Select All</label></div><div class="bsm-permission-views" id="bsm-permission-section-${i}">${views.map(v=>`<label class="bsm-permission-view"><span>${esc(v.label)}</span><input type="checkbox" class="bsm-view-permission" value="${esc(v.key)}" ${allowed.has(v.key)?'checked':''}></label>`).join('')}</div></section>`).join('')}</div></div>`;
+  $box.html(siteHtml+viewHtml).show();updateUserSiteChips();syncUserPermissionControls();
+
 }
+function syncUserPermissionControls(){
+  const $box=$('#bsm-user-access');
+  function update($control,$views){const count=$views.length,checked=$views.filter(':checked').length;$control.prop('checked',count>0&&checked===count).prop('indeterminate',checked>0&&checked<count);}
+  $box.find('.bsm-permission-section').each(function(){update($(this).find('.bsm-permissions-group'),$(this).find('.bsm-view-permission'));});
+  update($box.find('.bsm-permissions-all'),$box.find('.bsm-view-permission'));
+}
+$(document).on('click','.bsm-permission-toggle',function(){const open=$(this).attr('aria-expanded')!=='true';$(this).attr('aria-expanded',String(open)).find('.bsm-permission-chevron').text(open?'▾':'▸');$(this).closest('.bsm-permission-section').find('.bsm-permission-views').prop('hidden',!open);});
+$(document).on('change','#bsm-user-access .bsm-view-permission',function(){const key=this.value,checked=this.checked;$('#bsm-user-access .bsm-view-permission').filter(function(){return this.value===key;}).prop('checked',checked);syncUserPermissionControls();});
+$(document).on('change','.bsm-permissions-group,.bsm-permissions-all',function(){const checked=this.checked,$box=$('#bsm-user-access'),$views=$(this).hasClass('bsm-permissions-all')?$box.find('.bsm-view-permission'):$(this).closest('.bsm-permission-section').find('.bsm-view-permission'),keys=new Set($views.map(function(){return this.value;}).get());$box.find('.bsm-view-permission').filter(function(){return keys.has(this.value);}).prop('checked',checked);syncUserPermissionControls();});
 function updateUserSiteChips(){const names=[];$('#bsm-user-sites input[type="checkbox"]:checked').each(function(){names.push($(this).closest('label').find('span').text())});$('#bsm-user-sites .bsm-multiselect-selected').text(names.length?names.join(', '):'');}
 async function saveUser(){
   if(!validateMobileFields($('#bsm-form')))return;
   const data={id:App.editId};$('#bsm-form-fields').find('input,select,textarea').not('.bsm-multiselect-search,.bsm-view-permission,#bsm-user-sites input').each(function(){if(this.name)data[this.name]=isDateFieldName(this.name)?dateSql($(this).val()):$(this).val();});
   if(data.role==='bsm_employee'){
     data.assigned_sites=$('#bsm-user-sites input[type="checkbox"]:checked').map(function(){return Number(this.value)}).get();
-    data.allowed_views=$('.bsm-view-permission:checked').map(function(){return this.value}).get();
+    data.allowed_views=[...new Set($('#bsm-user-access .bsm-view-permission:checked').map(function(){return this.value}).get())];
     if(!data.allowed_views.length){showToast('Please allow at least one View for Employee.',true);return;}
   }else{data.assigned_sites=[];data.allowed_views=[];}
   if(!App.editId)data.status='active';const r=await ajax('bsm_user_save',{data:JSON.stringify(data)});if(r.success){showToast(r.data.message);$('#bsm-modal').hide();delete App.options.users;renderUsers();}else{showToast(r.data?.message||'Save failed',true);if(r.data?.field){const $f=$('#bsm-form-fields').find(`[name="${r.data.field}"]`);if($f.length){$f.addClass('bsm-invalid').trigger('focus');setTimeout(()=>$f.removeClass('bsm-invalid'),2200);}}}
