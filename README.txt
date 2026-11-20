@@ -141,3 +141,6 @@ Version 0.0.080: Removed the Quick Actions section from Site Dashboard.
 
 = 0.0.090 =
 * Remove Customer/Project from Site forms and listings; allow sites to be created without a linked customer.
+
+= 0.0.091 =
+* Prevent duplicate Site Names on create and edit, ignoring case and repeated whitespace, including inactive sites.
