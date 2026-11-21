@@ -1,0 +1,26 @@
+const fs=require('fs'),assert=require('node:assert/strict'),{JSDOM}=require('jsdom');
+const source=fs.readFileSync('assets/app.js','utf8'),php=fs.readFileSync('bizskill-site-management.php','utf8');
+const w=new JSDOM('<div id="bsm-content"></div><div id="bsm-tracker"></div>',{runScripts:'outside-only'}).window;
+w.eval(fs.readFileSync(require.resolve('jquery'),'utf8'));const $=w.$;
+w.App={options:{sites:[{id:1,label:'Site A'}],items:[{id:2,label:'Cement',unit_id:3}],units:[{id:3,label:'Bag'}]},trackerSites:[{id:1,site_name:'Site A',tasks:[{id:1,section:'Old Section',task_name:'Foundation',subtasks:[{id:1,subtask_name:'Footing',completion:40}]},{id:2,section:'',task_name:'Roof',subtasks:[]}]}]};
+w.esc=x=>String(x??'');w.labelFor=()=> 'Bag';w.setTitle=()=>{};w.bsmEnhanceSearchableSelects=()=>{};w.BSM={today:'2026-11-21'};w.excelButton=()=>'';w.showToast=()=>{};w.openView=()=>{};
+const calls=[];w.ajax=async(action,data)=>{calls.push({action,data});return action==='bsm_boq_get'?{success:true,data:{site_id:1,items:[{item_id:2,section:'A',boq_qty:10},{item_id:2,section:'B',boq_qty:5}]}}:{success:true,data:{}}};
+w.eval(source.slice(source.indexOf('const boqColumns='),source.indexOf('let trackerSite=')));
+w.eval('var trackerSite=1;'+source.slice(source.indexOf('function trackerPct('),source.indexOf("$(document).on('change','.tracker-value'")));
+(async()=>{
+ await w.renderBoqForm(1);
+ assert.equal($('.bsm-boq-row').length,1);assert.equal($('.bsm-boq-qty').val(),'15');assert.equal($('#bsm-boq-form th').length,4);assert(!$('#bsm-boq-form').text().includes('Section'));
+ $('#bsm-boq-form').trigger('submit');await new Promise(r=>setTimeout(r,0));
+ const saved=calls.find(x=>x.action==='bsm_boq_save');assert(saved);assert.deepEqual(JSON.parse(saved.data.items),[{item_id:'2',boq_qty:'15'}]);
+ w.trackerDraw();assert($('#bsm-tracker').text().includes('Foundation'));assert($('#bsm-tracker').text().includes('Roof'));assert(!$('#bsm-tracker').text().includes('Section'));assert.equal($('.tracker-flat-table th').length,4);
+ w.trackerModal({mode:'task'});assert.equal($('#tracker-entry-form [name="section"]').length,0);$('#tracker-entry-form [name="task_name"]').val('Walls');$('#tracker-entry-form [name="subtask_names[]"]').val('Brickwork');$('#tracker-entry-form').trigger('submit');await new Promise(r=>setTimeout(r,0));
+ assert(calls.some(x=>x.action==='bsm_project_tracker_save'&&x.data.type==='task_with_subtasks'&&x.data.name==='Walls'&&!('section'in x.data)));
+ $('.tracker-action-edit').first().trigger('click');assert.equal($('#tracker-edit-form [name="section"]').length,0);assert.equal($('#tracker-edit-form [name="task_name"]').val(),'Foundation');
+ assert(!source.includes("['sections','Section']"));assert(!source.includes("F('site_sections'"));
+ const block=(a,b)=>php.slice(php.indexOf(a),php.indexOf(b,php.indexOf(a)));
+ assert(!block('public function ajax_boq_template','public function ajax_boq_import').includes('Section'));
+ assert(!block('public function ajax_boq_import','public function ajax_boq_save').includes('Section'));
+ assert(!block('public function ajax_boq_save','public function ajax_boq_get').includes('in_array($section'));
+ assert(!php.includes('$this->split_existing_mixed_section_boqs();'));assert(!php.includes('DROP COLUMN'));
+ console.log('Section removal: BOQ edit totals/save, historical tracker visibility, task create/edit, templates/import and data preservation passed.');
+})().catch(e=>{console.error(e);process.exitCode=1});

@@ -5,7 +5,7 @@ const App = {
   current: 'dashboard', page: 1, search: '', editId: 0, options: {},
   nav: [
     {group:'Main', items:[['dashboard','Site Dashboard']]},
-    {group:'Masters', items:[['bank_accounts','Bank Master'],['customers','Customers'],['designations','Designations'],['expense_categories','Expense Categories'],['gst_rates','GST Rates'],['item_categories','Item Categories'],['items','Items'],['labour_contractors','Labour Contractors'],['sections','Section'],['sites','Site Master'],['states','States'],['units','Units'],['users','Users'],['vendors','Suppliers'],['warehouses','Warehouses']]},
+    {group:'Masters', items:[['bank_accounts','Bank Master'],['customers','Customers'],['designations','Designations'],['expense_categories','Expense Categories'],['gst_rates','GST Rates'],['item_categories','Item Categories'],['items','Items'],['labour_contractors','Labour Contractors'],['sites','Site Master'],['states','States'],['units','Units'],['users','Users'],['vendors','Suppliers'],['warehouses','Warehouses']]},
     {group:'Sites', items:[['project_tracker','Site Tracker'],['report_customer_outstanding','Site Balance'],['customer_receipts','Site Payment Receipts']]},
     {group:'BOQ', items:[['boq_form','BOQ Form'],['boq_master','BOQ Master'],['boq_items','BOQ Items Master'],['boq_monitoring','BOQ Monitoring']]},
     {group:'Site Requisition', items:[['requisition_form','Requisition Form'],['material_requisitions','Requisitions Master'],['material_requisition_item','Requisition Item Master'],['pending_requisition_approval','Requisitions Pending Approval']]},
@@ -45,11 +45,10 @@ function C(key,label,type='text'){ return {key,label,type}; }
 App.configs = {
   bank_accounts:{title:'Bank Master', fields:[F('bank_name','Bank Name',{required:true}),F('account_holder_name','Account Holder Name',{required:true}),F('account_number','Account Number',{required:true}),F('ifsc_code','IFSC Code'),F('branch_name','Branch'),F('account_type','Account Type',{type:'select',options:[['Current','Current'],['Savings','Savings'],['OD','OD'],['CC','CC'],['Other','Other']]}),F('upi_id','UPI ID'),F('status','Status',status())], columns:[C('bank_name','Bank Name'),C('account_holder_name','Account Holder'),C('account_number','Account Number'),C('ifsc_code','IFSC'),C('branch_name','Branch'),C('account_type','Account Type'),C('upi_id','UPI ID'),C('status','Status')]},
   company_settings:{title:'Company Settings', singleton:true, fields:[F('company_name','Company Name'),F('address','Address',textarea),F('city','City'),F('state_id','State',Object.assign({addMaster:'states'},ref('states'))),F('pin_code','PIN Code'),F('gstin','GSTIN'),F('pan','PAN'),F('phone','Phone'),F('email','Email',{type:'email'}),F('bank_account_holder','Account Holder'),F('bank_name','Bank Name'),F('bank_branch','Branch'),F('bank_ifsc','IFSC Code'),F('bank_account_no','Account No.'),F('pdf_theme_color','PDF Theme Color',{type:'color'})], columns:[C('company_name','Company'),C('gstin','GSTIN'),C('state_id','State','ref:states')]},
-  sections:{title:'Section',fields:[F('section_name','Section Name',{required:true}),F('status','Status',status())],columns:[C('section_name','Section Name'),C('status','Status')]},
   designations:{title:'Designations', fields:[F('designation_name','Designation Name',{required:true}),F('status','Status',status())], columns:[C('designation_name','Designation'),C('status','Status')]},
   states:{title:'States', fields:[F('state_name','State Name',{required:true}),F('status','Status',status())], columns:[C('state_name','State'),C('status','Status')]},
   customers:{title:'Customers', fields:[F('customer_name','Customer Name',{required:true}),F('contact_person','Contact Person'),F('mobile','Mobile'),F('email','Email',{type:'email'}),F('address','Address',textarea),F('city','City'),F('state_id','State',Object.assign({addMaster:'states'},ref('states'))),F('pin_code','PIN Code'),F('gstin','GSTIN'),F('pan','PAN'),F('gst_type','GST Type',{type:'select',options:[['','Select'],['intra_state','Intra-State'],['inter_state','Inter-State'],['no_gst','No GST']]}),F('status','Status',status())], columns:[C('customer_name','Customer'),C('contact_person','Contact'),C('mobile','Mobile'),C('address','Address'),C('state_id','State','ref:states'),C('city','City'),C('gstin','GSTIN'),C('gst_type','GST Type'),C('status','Status')]},
-  sites:{title:'Sites', fields:[F('site_name','Site Name', {required:true}),F('site_location','Site Location',{required:true}),F('site_sections','Section',{type:'site_sections'}),F('site_manager_user_id','Site Manager',Object.assign({required:true},ref('users'))),F('site_supervisor_user_id','Site Supervisor',Object.assign({required:true},ref('users'))),F('start_date','Start Date',Object.assign({required:true},date)),F('expected_end_date','Expected Completion Date',Object.assign({required:true},date)),F('work_order_value','Work Order Value',Object.assign({required:true},money)),F('status','Status',status(['active','on_hold','completed'])),F('remarks','Remarks',textarea),F('whatsapp_group_id','Site WhatsApp Group ID')], columns:[C('site_code','Site Code'),C('site_name','Site'),C('site_location','Site Location'),C('site_sections','Section'),C('site_manager_user_id','Site Manager','ref:users'),C('start_date','Start Date','date'),C('work_order_value','Work Order Value','money'),C('status','Status'),C('whatsapp_group_id','WhatsApp Group ID')]},
+  sites:{title:'Sites', fields:[F('site_name','Site Name', {required:true}),F('site_location','Site Location',{required:true}),F('site_manager_user_id','Site Manager',Object.assign({required:true},ref('users'))),F('site_supervisor_user_id','Site Supervisor',Object.assign({required:true},ref('users'))),F('start_date','Start Date',Object.assign({required:true},date)),F('expected_end_date','Expected Completion Date',Object.assign({required:true},date)),F('work_order_value','Work Order Value',Object.assign({required:true},money)),F('status','Status',status(['active','on_hold','completed'])),F('remarks','Remarks',textarea),F('whatsapp_group_id','Site WhatsApp Group ID')], columns:[C('site_code','Site Code'),C('site_name','Site'),C('site_location','Site Location'),C('site_manager_user_id','Site Manager','ref:users'),C('start_date','Start Date','date'),C('work_order_value','Work Order Value','money'),C('status','Status'),C('whatsapp_group_id','WhatsApp Group ID')]},
   vendors:{title:'Suppliers', fields:[F('vendor_name','Supplier Name',{required:true}),F('contact_person','Contact Person',{required:true}),F('mobile','Mobile',{required:true}),F('email','Email',{type:'email'}),F('address','Address',Object.assign({required:true},textarea)),F('city','City',{required:true}),F('state_id','State',Object.assign({required:true,addMaster:'states'},ref('states'))),F('gstin','GSTIN'),F('gst_type','GST Type',{type:'select',required:true,options:[['intra_state','Intra-State'],['inter_state','Inter-State'],['no_gst','No GST']]}),F('pan','PAN'),F('bank_name','Bank Name'),F('bank_account','Bank Account'),F('ifsc','IFSC'),F('status','Status',status())], columns:[C('vendor_name','Supplier'),C('contact_person','Contact'),C('mobile','Mobile'),C('gstin','GSTIN'),C('gst_type','GST Type'),C('status','Status')]},
   labour_contractors:{title:'Labour Contractors', fields:[F('payment_basis','Payment Basis',{type:'select',options:[['direct','Direct Payment to Contractor'],['employee','Contractor + Employee'],['time','According to Time']]}),F('contractor_name','Contractor Name',{required:true}),F('contact_person','Contact Person',{required:true}),F('mobile','Mobile',{required:true}),F('email','Email',{type:'email'}),F('address','Address',Object.assign({required:true},textarea)),F('city','City',{required:true}),F('state_id','State',Object.assign({required:true,addMaster:'states'},ref('states'))),F('gstin','GSTIN'),F('pan','PAN'),F('bank_name','Bank Name'),F('bank_account','Bank Account'),F('ifsc','IFSC'),F('status','Status',status())], columns:[C('payment_basis','Payment Basis'),C('contractor_name','Contractor'),C('contact_person','Contact'),C('mobile','Mobile'),C('gstin','GSTIN'),C('status','Status')]},
   labour_attendance:{title:'Daily Labour Attendance', attendanceTable:true, fields:[F('site_id','Site',Object.assign({required:true},ref('sites'))),F('attendance_date','Date',Object.assign({required:true},date))], items:[F('contractor_id','Labour Contractor',Object.assign({required:true},ref('contractors'))),F('no_of_labour','Employees / Working Hours',{type:'number',min:0,step:'1'})], columns:[C('attendance_date','Date','date'),C('updated_by_name','Updated By'),C('site_id','Site','ref:sites'),C('contractor_id','Contractor','ref:contractors'),C('no_of_labour','Attend','number')]},
@@ -84,7 +83,7 @@ App.configs = {
 };
 
 
-const masterModules = ['users','designations','customers','sites','vendors','labour_contractors','states','item_categories','sections','units','gst_rates','items','warehouses','expense_categories','allowance_types'];
+const masterModules = ['users','designations','customers','sites','vendors','labour_contractors','states','item_categories','units','gst_rates','items','warehouses','expense_categories','allowance_types'];
 function excelIcon(){return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h9l5 5v13H5z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M14 3v5h5M8 10l4 7m0-7-4 7m6-6h3m-3 3h3m-3 3h3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>`;}
 function excelButton(id='bsm-export-excel'){return `<button id="${id}" class="bsm-icon-btn bsm-excel-btn" title="Download Excel" aria-label="Download Excel">${excelIcon()}</button>`;}
 function plainCell(row,col){let v=row[col.key];if(col.key==='payment_basis')return {direct:'Direct Payment to Contractor',employee:'Contractor + Employee',time:'According to Time'}[v]||v||'Direct Payment to Contractor';if(col.key==='payment_type') return row.payment_type_label||({head_office_vendor:'Head Office Supplier Payment',site_vendor:'Supplier Payment for Site',site_fund:'Site Petty Cash Transfer',contractor_payment:'Labour Contractor Payment',contractor_advance:'Labour Contractor Advance',employee_allowance:'Employee Allowance',salary:'Salary'}[v]||String(v||'').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase()));if(col.key==='gst_type') return gstTypeLabel(v);if(col.key==='bill_type') return billTypeLabel(v);if(col.type==='money') return Number(v||0).toFixed(2);if(col.type==='date') return dateFmt(v);if(col.type==='number') return String(Number(v||0));if(col.type==='percent') return Number(v||0).toFixed(2)+'%';if(col.type&&col.type.startsWith('ref:')){const lbl=labelFor(col.type.split(':')[1],v);if(col.key==='state_id'&&!lbl&&row.state)return row.state;return lbl;}if(col.key==='status'||col.key==='paid_by') return String(v||'').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase());return v==null?'':String(v);}
@@ -131,7 +130,6 @@ function renderCell(row,col){ let v=row[col.key]; if(col.type==='photo')return v
 
 function optionTypesForView(key){
   const needed=new Set();
-  if(key==='sites') needed.add('sections');
   if(key==='purchase_pending_approval') return ['vendors','warehouses','items','units'];
   if(key==='pending_requisition_approval') return ['sites','users','items','units'];
   if(key==='pending_material_dispatch') return ['sites','warehouses','items','units'];
@@ -385,43 +383,32 @@ async function openDirectForm(viewKey,moduleKey,title,mode=''){
 }
 
 // BOQ is quantity-only: values in requisitions/receipts/consumption/returns are live site/item aggregates.
-const boqColumns=[['site_name','Site'],['section','Section'],['boq_no','BOQ No.'],['boq_date','Date'],['item_name','Item'],['unit_name','Unit'],['boq_qty','BOQ Qty'],['site_opening_qty','Site Opening'],['requisition_qty','Requisition Qty'],['approved_qty','Approved'],['rejected_qty','Rejected'],['received_qty','Received'],['consumption_qty','Consumption'],['return_qty','Return'],['transfer_out_qty','Transfer Out'],['balance','Balance']];
+const boqColumns=[['site_name','Site'],['boq_no','BOQ No.'],['boq_date','Date'],['item_name','Item'],['unit_name','Unit'],['boq_qty','BOQ Qty'],['site_opening_qty','Site Opening'],['requisition_qty','Requisition Qty'],['approved_qty','Approved'],['rejected_qty','Rejected'],['received_qty','Received'],['consumption_qty','Consumption'],['return_qty','Return'],['transfer_out_qty','Transfer Out'],['balance','Balance']];
 function boqOptions(type,selected=''){return '<option value="">Select '+(type==='sites'?'Site':'Item')+'</option>'+(App.options[type]||[]).map(o=>`<option value="${esc(o.id)}" ${String(o.id)===String(selected)?'selected':''}>${esc(o.label)}</option>`).join('');}
 function boqNum(v){return Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:2});}
-function boqItemRow(item={}){return `<tr class="bsm-boq-row"><td><select class="bsm-boq-row-section" required><option value="">Select Section</option>${(App.boqSiteSections||[]).map(x=>`<option value="${esc(x.label)}" ${String(item.section||'')===String(x.label)?'selected':''}>${esc(x.label)}</option>`).join('')}</select></td><td><select class="bsm-boq-item" required>${boqOptions('items',item.item_id)}</select></td><td class="bsm-boq-unit">${esc(labelFor('units',(App.options.items||[]).find(x=>String(x.id)===String(item.item_id))?.unit_id)||'-')}</td><td><input class="bsm-boq-qty" type="number" min="0" step="0.01" required value="${esc(item.boq_qty??'')}"></td><td><button type="button" class="bsm-btn bsm-boq-remove">Delete</button></td></tr>`;}
-async function bsmLoadBoqSiteSections(siteId, existingItems=[]) {
-  App.boqSiteSections=[];
-  if(!siteId){$('#bsm-boq-rows .bsm-boq-row-section').html('<option value="">Select Site First</option>').prop('disabled',true);return;}
-  const r=await ajax('bsm_boq_site_sections',{site_id:siteId});
-  if(String($('#bsm-boq-site').val())!==String(siteId))return;
-  if(!r.success){showToast(r.data?.message||'Unable to load Sections',true);return;}
-  App.boqSiteSections=r.data.sections||[];
-  $('#bsm-boq-rows tr').each(function(i){const value=existingItems[i]?.section||'';const $select=$(this).find('.bsm-boq-row-section');const opts='<option value="">'+(App.boqSiteSections.length?'Select Section':'No Sections assigned')+'</option>'+App.boqSiteSections.map(x=>`<option value="${esc(x.label)}" ${x.label===value?'selected':''}>${esc(x.label)}</option>`).join('');$select.html(opts).prop('disabled',!App.boqSiteSections.length);bsmRefreshSearchableSelect($select[0]);});
-}
+function boqItemRow(item={}){return `<tr class="bsm-boq-row"><td><select class="bsm-boq-item" required>${boqOptions('items',item.item_id)}</select></td><td class="bsm-boq-unit">${esc(labelFor('units',(App.options.items||[]).find(x=>String(x.id)===String(item.item_id))?.unit_id)||'-')}</td><td><input class="bsm-boq-qty" type="number" min="0" step="0.01" required value="${esc(item.boq_qty??'')}"></td><td><button type="button" class="bsm-btn bsm-boq-remove">Delete</button></td></tr>`;}
 function bsmBoqSiteUI(){const has=!!$('#bsm-boq-site').val();$('#bsm-boq-template,#bsm-boq-upload').toggle(has);}
 async function renderBoqForm(id=0){
-  setTitle(id?'Edit BOQ':'BOQ Form');let b={};if(id){const r=await ajax('bsm_boq_get',{id});if(!r.success){showToast(r.data?.message||'Could not load BOQ',true);return;}b=r.data;}
-  $('#bsm-content').html(`<div class="bsm-panel bsm-boq-form-panel"><form id="bsm-boq-form"><div class="bsm-boq-header-row"><label class="bsm-boq-date-field">BOQ Date<input id="bsm-boq-date" type="date" lang="en-GB" required value="${esc(b.boq_date||BSM.today||new Date().toISOString().slice(0,10))}"></label><label class="bsm-boq-site-field">Site *<select id="bsm-boq-site" required>${boqOptions('sites',b.site_id)}</select></label></div><div class="bsm-boq-header-tools"><button type="button" id="bsm-boq-template" class="bsm-btn bsm-boq-btn-template">⇩ Download Template</button><button type="button" id="bsm-boq-upload" class="bsm-btn bsm-boq-btn-upload">⇧ Upload Template</button><input id="bsm-boq-upload-file" type="file" accept=".xlsx" style="display:none"><button type="button" id="bsm-boq-add" class="bsm-btn bsm-boq-btn-add">+ Add Item</button></div><div class="bsm-table-wrap bsm-boq-table-wrap"><table class="bsm-table"><thead><tr><th>Section *</th><th>Item *</th><th>Unit</th><th>BOQ Qty *</th><th>Action</th></tr></thead><tbody id="bsm-boq-rows">${(b.items?.length?b.items:[{}]).map(boqItemRow).join('')}</tbody></table></div><div class="bsm-form-actions"><button type="submit" class="bsm-btn bsm-btn-primary">Save BOQ</button><button type="button" id="bsm-boq-cancel" class="bsm-btn bsm-btn-cancel">Cancel</button></div></form></div>`);
+  setTitle(id?'Edit BOQ':'BOQ Form');let b={};if(id){const r=await ajax('bsm_boq_get',{id});if(!r.success){showToast(r.data?.message||'Could not load BOQ',true);return;}b=r.data;const grouped=new Map();for(const row of b.items||[]){const key=String(row.item_id);if(!grouped.has(key))grouped.set(key,{...row,boq_qty:0});grouped.get(key).boq_qty+=Number(row.boq_qty||0);}b.items=[...grouped.values()];}
+  $('#bsm-content').html(`<div class="bsm-panel bsm-boq-form-panel"><form id="bsm-boq-form"><div class="bsm-boq-header-row"><label class="bsm-boq-date-field">BOQ Date<input id="bsm-boq-date" type="date" lang="en-GB" required value="${esc(b.boq_date||BSM.today||new Date().toISOString().slice(0,10))}"></label><label class="bsm-boq-site-field">Site *<select id="bsm-boq-site" required>${boqOptions('sites',b.site_id)}</select></label></div><div class="bsm-boq-header-tools"><button type="button" id="bsm-boq-template" class="bsm-btn bsm-boq-btn-template">⇩ Download Template</button><button type="button" id="bsm-boq-upload" class="bsm-btn bsm-boq-btn-upload">⇧ Upload Template</button><input id="bsm-boq-upload-file" type="file" accept=".xlsx" style="display:none"><button type="button" id="bsm-boq-add" class="bsm-btn bsm-boq-btn-add">+ Add Item</button></div><div class="bsm-table-wrap bsm-boq-table-wrap"><table class="bsm-table"><thead><tr><th>Item *</th><th>Unit</th><th>BOQ Qty *</th><th>Action</th></tr></thead><tbody id="bsm-boq-rows">${(b.items?.length?b.items:[{}]).map(boqItemRow).join('')}</tbody></table></div><div class="bsm-form-actions"><button type="submit" class="bsm-btn bsm-btn-primary">Save BOQ</button><button type="button" id="bsm-boq-cancel" class="bsm-btn bsm-btn-cancel">Cancel</button></div></form></div>`);
   $('#bsm-boq-form').data('id',id);bsmEnhanceSearchableSelects($('#bsm-content'));bsmBoqSiteUI();
-  await bsmLoadBoqSiteSections(b.site_id||'',b.items||[]);
+  
 }
-$(document).on('change','#bsm-boq-site',function(){bsmBoqSiteUI();bsmLoadBoqSiteSections($(this).val());});
+$(document).on('change','#bsm-boq-site',function(){bsmBoqSiteUI();});
 // Monitoring is a site/item summary: multiple sections and BOQs are consolidated.
 // Operational quantities already represent the entire site/item, so take them once.
 function bsmBoqMonitoringSummary(rows){
   const grouped=new Map();
   for(const row of rows){
     const key=String(row.site_id)+'|'+String(row.item_id);
-    if(!grouped.has(key))grouped.set(key,{...row,boq_qty:0,_sections:new Set(),_numbers:new Set()});
+    if(!grouped.has(key))grouped.set(key,{...row,boq_qty:0,_numbers:new Set()});
     const result=grouped.get(key);
     result.boq_qty+=Number(row.boq_qty||0);
-    if(row.section)result._sections.add(row.section);
     if(row.boq_no)result._numbers.add(row.boq_no);
   }
   return [...grouped.values()].map(row=>{
-    row.section=[...row._sections].join(', ');
     row.boq_no=[...row._numbers].join(', ');
-    delete row._sections;delete row._numbers;
+    delete row._numbers;
     return row;
   });
 }
@@ -434,9 +421,9 @@ async function renderBoqListing(key){
 async function loadBoqRows(key=App.current){
   const r=await ajax('bsm_boq_list',{type:key,site_id:$('#bsm-boq-filter-site').val()||'',search:$('#bsm-boq-search').val()||''});if(!r.success){$('#bsm-boq-list').text(r.data?.message||'Unable to load BOQ');return;}
   const sourceRows=r.data.rows||[];const rows=key==='boq_monitoring'?bsmBoqMonitoringSummary(sourceRows):sourceRows;App.boqRows=rows;
-  const columns=key==='boq_master'?[['site_name','Site'],['section','Section'],['boq_no','BOQ No.'],['boq_date','Date'],['item_name','Item'],['boq_qty','BOQ Qty']]:boqColumns;
-  const by=key==='boq_master'?[...new Map(rows.map(x=>[x.id,x])).values()].map(x=>({...x,section:[...new Set(rows.filter(z=>z.id===x.id).map(z=>z.section).filter(Boolean))].join(', ')})):rows;
-  $('#bsm-boq-list').html(`<div class="bsm-table-wrap"><table class="bsm-table"><thead><tr>${(key==='boq_master'?[['site_name','Site'],['section','Section'],['boq_no','BOQ No.'],['boq_date','Date']]:columns).map(c=>`<th>${esc(c[1])}</th>`).join('')}${key==='boq_master'?'<th>Action</th>':''}</tr></thead><tbody>${by.map(row=>`<tr>${(key==='boq_master'?[['site_name'],['section'],['boq_no'],['boq_date']]:columns).map(c=>`<td>${esc(c[0]==='boq_date'?dateFmt(row[c[0]]):c[0].endsWith('qty')||c[0]==='balance'?boqNum(row[c[0]]):row[c[0]]||'-')}</td>`).join('')}${key==='boq_master'?`<td><button type="button" class="bsm-btn bsm-boq-pdf" data-id="${row.id}" title="Download BOQ PDF">⇩ PDF</button> <button class="bsm-btn bsm-boq-edit" data-id="${row.id}">Edit</button> <button class="bsm-btn bsm-boq-delete" data-id="${row.id}">Delete</button></td>`:''}</tr>`).join('')||`<tr><td colspan="${key==='boq_master'?5:columns.length}">No BOQ records found.</td></tr>`}</tbody></table></div>`);
+  const columns=key==='boq_master'?[['site_name','Site'],['boq_no','BOQ No.'],['boq_date','Date'],['item_name','Item'],['boq_qty','BOQ Qty']]:boqColumns;
+  const by=key==='boq_master'?[...new Map(rows.map(x=>[x.id,x])).values()]:rows;
+  $('#bsm-boq-list').html(`<div class="bsm-table-wrap"><table class="bsm-table"><thead><tr>${(key==='boq_master'?[['site_name','Site'],['boq_no','BOQ No.'],['boq_date','Date']]:columns).map(c=>`<th>${esc(c[1])}</th>`).join('')}${key==='boq_master'?'<th>Action</th>':''}</tr></thead><tbody>${by.map(row=>`<tr>${(key==='boq_master'?[['site_name'],['boq_no'],['boq_date']]:columns).map(c=>`<td>${esc(c[0]==='boq_date'?dateFmt(row[c[0]]):c[0].endsWith('qty')||c[0]==='balance'?boqNum(row[c[0]]):row[c[0]]||'-')}</td>`).join('')}${key==='boq_master'?`<td><button type="button" class="bsm-btn bsm-boq-pdf" data-id="${row.id}" title="Download BOQ PDF">⇩ PDF</button> <button class="bsm-btn bsm-boq-edit" data-id="${row.id}">Edit</button> <button class="bsm-btn bsm-boq-delete" data-id="${row.id}">Delete</button></td>`:''}</tr>`).join('')||`<tr><td colspan="${key==='boq_master'?4:columns.length}">No BOQ records found.</td></tr>`}</tbody></table></div>`);
 }
 $(document).on('click','.bsm-boq-pdf',async function(){
   const $btn=$(this);const id=Number($btn.attr('data-id')||0);if(!id)return;
@@ -452,12 +439,12 @@ $(document).on('click','#bsm-boq-template',async function(){
 $(document).on('click','#bsm-boq-upload',()=>$('#bsm-boq-upload-file').trigger('click'));
 $(document).on('change','#bsm-boq-upload-file',async function(){
   const file=this.files?.[0];if(!file)return;const fd=new FormData();fd.append('action','bsm_boq_import');fd.append('nonce',BSM.nonce);fd.append('site_id',$('#bsm-boq-site').val());fd.append('file',file);
-  try{const r=await $.ajax({url:BSM.ajax,method:'POST',data:fd,processData:false,contentType:false});if(!r.success)throw Error(r.data?.message||'Upload failed');const items=r.data.items||[];$('#bsm-boq-rows').html(items.map(boqItemRow).join(''));bsmEnhanceSearchableSelects($('#bsm-boq-rows'));await bsmLoadBoqSiteSections($('#bsm-boq-site').val(),items);showToast(items.length+' BOQ items loaded. Click Save BOQ to save.');}catch(e){showToast(e.message||'Upload failed',true);}this.value='';
+  try{const r=await $.ajax({url:BSM.ajax,method:'POST',data:fd,processData:false,contentType:false});if(!r.success)throw Error(r.data?.message||'Upload failed');const items=r.data.items||[];$('#bsm-boq-rows').html(items.map(boqItemRow).join(''));bsmEnhanceSearchableSelects($('#bsm-boq-rows'));showToast(items.length+' BOQ items loaded. Click Save BOQ to save.');}catch(e){showToast(e.message||'Upload failed',true);}this.value='';
 });
 $(document).on('click','#bsm-boq-add',()=>{$('#bsm-boq-rows').append(boqItemRow());bsmEnhanceSearchableSelects($('#bsm-boq-rows'));});
 $(document).on('click','.bsm-boq-remove',function(){if($('#bsm-boq-rows tr').length>1)$(this).closest('tr').remove();else showToast('At least one BOQ item is required',true);});
 $(document).on('change','.bsm-boq-item',function(){const item=(App.options.items||[]).find(o=>String(o.id)===String($(this).val()));$(this).closest('tr').find('.bsm-boq-unit').text(labelFor('units',item?.unit_id)||'-');});
-$(document).on('submit','#bsm-boq-form',async function(e){e.preventDefault();const items=$('#bsm-boq-rows tr').map(function(){return {item_id:$(this).find('.bsm-boq-item').val(),section:$(this).find('.bsm-boq-row-section').val(),boq_qty:$(this).find('.bsm-boq-qty').val()};}).get();if(items.some(x=>!x.section)){showToast('Select a Section for each BOQ item',true);return;}if(new Set(items.map(x=>x.section+'|'+x.item_id)).size!==items.length||items.some(x=>!x.item_id||x.boq_qty===''||Number(x.boq_qty)<0)){showToast('Select unique items and valid BOQ quantities',true);return;}const r=await ajax('bsm_boq_save',{id:$(this).data('id')||0,site_id:$('#bsm-boq-site').val(),boq_date:$('#bsm-boq-date').val(),items:JSON.stringify(items)});if(!r.success)return showToast(r.data?.message||'Save failed',true);showToast((r.data?.count||1)+' Section BOQ(s) saved');openView('boq_master');});
+$(document).on('submit','#bsm-boq-form',async function(e){e.preventDefault();const items=$('#bsm-boq-rows tr').map(function(){return {item_id:$(this).find('.bsm-boq-item').val(),boq_qty:$(this).find('.bsm-boq-qty').val()};}).get();if(new Set(items.map(x=>x.item_id)).size!==items.length||items.some(x=>!x.item_id||x.boq_qty===''||Number(x.boq_qty)<0)){showToast('Select unique items and valid BOQ quantities',true);return;}const r=await ajax('bsm_boq_save',{id:$(this).data('id')||0,site_id:$('#bsm-boq-site').val(),boq_date:$('#bsm-boq-date').val(),items:JSON.stringify(items)});if(!r.success)return showToast(r.data?.message||'Save failed',true);showToast('BOQ saved');openView('boq_master');});
 $(document).on('click','#bsm-boq-cancel',()=>openView('boq_master'));
 $(document).on('click','#bsm-boq-new',()=>openView('boq_form'));
 $(document).on('click','.bsm-boq-edit',function(){renderBoqForm($(this).data('id'));});
@@ -482,78 +469,63 @@ function trackerBar(v){return `<div class="tracker-progress"><span style="width:
 function trackerDraw(){
   const sites=App.trackerSites||[],$box=$('#bsm-tracker');
   if(!trackerSite){
-    let html=`<div class="bsm-toolbar"><input class="bsm-search" id="tracker-search" aria-label="Search" placeholder="" value="${esc(App.trackerSearch||'')}"><div class="bsm-spacer"></div><button class="bsm-btn" id="tracker-excel">Excel Download</button></div><div class="bsm-table-wrap"><table><thead><tr><th>Site</th><th>Sections</th><th>Tasks</th><th>Sub-tasks</th><th>Completion</th><th>Status</th></tr></thead><tbody>`;
+    let html=`<div class="bsm-toolbar"><input class="bsm-search" id="tracker-search" aria-label="Search" placeholder="" value="${esc(App.trackerSearch||'')}"><div class="bsm-spacer"></div><button class="bsm-btn" id="tracker-excel">Excel Download</button></div><div class="bsm-table-wrap"><table><thead><tr><th>Site</th><th>Tasks</th><th>Sub-tasks</th><th>Completion</th><th>Status</th></tr></thead><tbody>`;
     const filtered=sites.filter(s=>String(s.site_name).toLowerCase().includes(String(App.trackerSearch||'').toLowerCase()));
-    filtered.forEach(s=>{const count=(s.tasks||[]).reduce((n,t)=>n+(t.subtasks||[]).length,0);html+=`<tr class="tracker-site-row" data-id="${s.id}"><td><a href="#" class="tracker-open" data-id="${s.id}">${esc(s.site_name)}</a></td><td>${(s.sections||[]).length}</td><td>${(s.tasks||[]).length}</td><td>${count}</td><td>${s.has_tasks?trackerPct(s.completion):'—'}${trackerBar(s.completion)}</td><td>${!s.has_tasks?'Not Started':Number(s.completion)>=100?'Completed':'In Progress'}</td></tr>`;});
+    filtered.forEach(s=>{const count=(s.tasks||[]).reduce((n,t)=>n+(t.subtasks||[]).length,0);html+=`<tr class="tracker-site-row" data-id="${s.id}"><td><a href="#" class="tracker-open" data-id="${s.id}">${esc(s.site_name)}</a></td><td>${(s.tasks||[]).length}</td><td>${count}</td><td>${s.has_tasks?trackerPct(s.completion):'—'}${trackerBar(s.completion)}</td><td>${!s.has_tasks?'Not Started':Number(s.completion)>=100?'Completed':'In Progress'}</td></tr>`;});
     html+='</tbody></table></div>';if(!filtered.length)html+='<div class="bsm-empty">No sites found.</div>';$box.html(html);return;
   }
   const site=sites.find(s=>+s.id===+trackerSite);if(!site){trackerSite=0;return trackerDraw();}
   let html='';
-  const sectionFilter=App.trackerSectionFilter||'';
   const taskFilter=App.trackerTaskFilter||'';
-  const availableSections=(site.sections||[]);
-  const availableTasks=(site.tasks||[]).filter(t=>!sectionFilter||t.section===sectionFilter);
-  const sectionOpts=availableSections.map(v=>`<option value="${esc(v)}" ${v===sectionFilter?'selected':''}>${esc(v)}</option>`).join('');
+  const availableTasks=site.tasks||[];
   const taskOpts=availableTasks.map(t=>`<option value="${t.id}" ${String(t.id)===String(taskFilter)?'selected':''}>${esc(t.task_name)}</option>`).join('');
   const detailSearch=String(App.trackerDetailSearch||'').toLowerCase().trim();
-  html+=`<div class="tracker-head tracker-single-toolbar"><button type="button" class="bsm-btn tracker-back-icon" id="tracker-back" title="All Sites" aria-label="Back to All Sites">←</button><input type="text" class="bsm-search tracker-detail-search" id="tracker-detail-search" aria-label="Search" placeholder="" value="${esc(App.trackerDetailSearch||'')}"><label class="tracker-toolbar-label">Section<span class="tracker-select-wrap"><select id="tracker-filter-section"><option value="">All Sections</option>${sectionOpts}</select>${sectionFilter?'<button type="button" class="tracker-clear-filter" data-filter="section" title="Clear Section filter" aria-label="Clear Section filter">×</button>':''}</span></label><label class="tracker-toolbar-label">Task<span class="tracker-select-wrap"><select id="tracker-filter-task"><option value="">All Tasks</option>${taskOpts}</select>${taskFilter?'<button type="button" class="tracker-clear-filter" data-filter="task" title="Clear Task filter" aria-label="Clear Task filter">×</button>':''}</span></label><div class="bsm-spacer"></div>${excelButton('tracker-excel')}<button type="button" class="bsm-icon-btn bsm-btn-primary tracker-add-task-icon" id="tracker-add-task-main" title="Add Task" aria-label="Add Task">+</button></div>`;
-  html+='<div class="bsm-table-wrap tracker-flat-wrap"><table class="tracker-flat-table"><thead><tr><th>Section</th><th>Task</th><th>Sub-task</th><th>Progress %</th><th>Action</th></tr></thead><tbody>';
+  html+=`<div class="tracker-head tracker-single-toolbar"><button type="button" class="bsm-btn tracker-back-icon" id="tracker-back" title="All Sites" aria-label="Back to All Sites">←</button><input type="text" class="bsm-search tracker-detail-search" id="tracker-detail-search" aria-label="Search" placeholder="" value="${esc(App.trackerDetailSearch||'')}"><label class="tracker-toolbar-label">Task<span class="tracker-select-wrap"><select id="tracker-filter-task"><option value="">All Tasks</option>${taskOpts}</select>${taskFilter?'<button type="button" class="tracker-clear-filter" data-filter="task" title="Clear Task filter" aria-label="Clear Task filter">×</button>':''}</span></label><div class="bsm-spacer"></div>${excelButton('tracker-excel')}<button type="button" class="bsm-icon-btn bsm-btn-primary tracker-add-task-icon" id="tracker-add-task-main" title="Add Task" aria-label="Add Task">+</button></div>`;
+  html+='<div class="bsm-table-wrap tracker-flat-wrap"><table class="tracker-flat-table"><thead><tr><th>Task</th><th>Sub-task</th><th>Progress %</th><th>Action</th></tr></thead><tbody>';
   let count=0,band=-1;
-  (site.sections||[]).filter(section=>!sectionFilter||section===sectionFilter).forEach(section=>{
-    const tasks=(site.tasks||[]).filter(t=>t.section===section&&(!taskFilter||String(t.id)===String(taskFilter)));
-    tasks.forEach(t=>{
+  (site.tasks||[]).filter(t=>!taskFilter||String(t.id)===String(taskFilter)).forEach(t=>{
       const ss=t.subtasks||[];
       // Each Task gets its own background colour (cycles through a palette).
       const startCount=count;band++;const bandCls=`tracker-task-band-${band%6}`;
       if(!ss.length){
-        const matches=!detailSearch||[section,t.task_name,'Add Sub-task','—'].some(v=>String(v||'').toLowerCase().includes(detailSearch));
-        if(matches){count++;html+=`<tr class="${bandCls}"><td>${esc(section)}</td><td><strong>${esc(t.task_name)}</strong></td><td><button class="tracker-inline tracker-add-subtask" data-task="${t.id}" title="Add Sub-task">+ Add Sub-task</button></td><td>—</td><td>${trackerActions(t.id,0)}</td></tr>`;}
+        const matches=!detailSearch||[t.task_name,'Add Sub-task','—'].some(v=>String(v||'').toLowerCase().includes(detailSearch));
+        if(matches){count++;html+=`<tr class="${bandCls}"><td><strong>${esc(t.task_name)}</strong></td><td><button class="tracker-inline tracker-add-subtask" data-task="${t.id}" title="Add Sub-task">+ Add Sub-task</button></td><td>—</td><td>${trackerActions(t.id,0)}</td></tr>`;}
       }
       ss.forEach(sub=>{
         const pct=Number(sub.completion)||0;
-        const matches=!detailSearch||[section,t.task_name,sub.subtask_name,pct===0?'':String(pct),pct===0?'%':`${pct}%`].some(v=>String(v||'').toLowerCase().includes(detailSearch));
+        const matches=!detailSearch||[t.task_name,sub.subtask_name,pct===0?'':String(pct),pct===0?'%':`${pct}%`].some(v=>String(v||'').toLowerCase().includes(detailSearch));
         if(!matches)return;
-        count++;html+=`<tr class="${bandCls}"><td>${esc(section)}</td><td><strong>${esc(t.task_name)}</strong></td><td>${esc(sub.subtask_name)}</td><td><div class="tracker-edit"><input type="number" min="0" max="100" step="0.01" class="tracker-value" data-id="${sub.id}" value="${pct===0?'':pct}" placeholder=""><span>%</span></div></td><td>${trackerActions(t.id,sub.id)}</td></tr>`;
+        count++;html+=`<tr class="${bandCls}"><td><strong>${esc(t.task_name)}</strong></td><td>${esc(sub.subtask_name)}</td><td><div class="tracker-edit"><input type="number" min="0" max="100" step="0.01" class="tracker-value" data-id="${sub.id}" value="${pct===0?'':pct}" placeholder=""><span>%</span></div></td><td>${trackerActions(t.id,sub.id)}</td></tr>`;
       });
       if(count===startCount)band--; // task hidden by search: don't use up a colour
-    });
   });
-  if(!count)html+='<tr><td colspan="5">No matching Tasks or Sub-tasks found.</td></tr>';
+  if(!count)html+='<tr><td colspan="4">No matching Tasks or Sub-tasks found.</td></tr>';
   html+='</tbody></table></div>';
-  if(!site.sections.length)html+='<div class="bsm-empty">Assign Sections to this Site in Site Master first.</div>';
   $box.html(html);
 }
-$(document).on('click','.tracker-open',function(e){e.preventDefault();trackerSite=Number($(this).data('id'));App.trackerSectionFilter='';App.trackerTaskFilter='';App.trackerDetailSearch='';trackerDraw();});
-$(document).on('change','#tracker-filter-section',function(){
-  App.trackerSectionFilter=$(this).val()||'';
-  App.trackerTaskFilter='';
-  trackerDraw();
-});
+$(document).on('click','.tracker-open',function(e){e.preventDefault();trackerSite=Number($(this).data('id'));App.trackerTaskFilter='';App.trackerDetailSearch='';trackerDraw();});
 $(document).on('change','#tracker-filter-task',function(){
   App.trackerTaskFilter=$(this).val()||'';
   trackerDraw();
 });
-$(document).on('click','.tracker-clear-filter',function(e){e.preventDefault();e.stopPropagation();const filter=$(this).data('filter');if(filter==='section'){App.trackerSectionFilter='';App.trackerTaskFilter='';}else if(filter==='task'){App.trackerTaskFilter='';}trackerDraw();});
+$(document).on('click','.tracker-clear-filter',function(e){e.preventDefault();e.stopPropagation();const filter=$(this).data('filter');if(filter==='task'){App.trackerTaskFilter='';}trackerDraw();});
 $(document).on('click','#tracker-back',function(){trackerSite=0;App.trackerDetailSearch='';trackerDraw();});
 $(document).on('input','#tracker-search',function(){App.trackerSearch=$(this).val();const start=this.selectionStart;trackerDraw();const x=document.getElementById('tracker-search');if(x){x.focus();x.setSelectionRange(start,start);}});
 $(document).on('input','#tracker-detail-search',function(){App.trackerDetailSearch=$(this).val();const start=this.selectionStart;trackerDraw();const x=document.getElementById('tracker-detail-search');if(x){x.focus();x.setSelectionRange(start,start);}});
 function trackerActions(taskId,subId=0){return `<div class="tracker-actions"><button type="button" class="tracker-action-btn tracker-action-edit" data-task="${taskId}" data-sub="${subId}" title="Edit" aria-label="Edit"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L9 17l-4 1 1-4Z"/></svg></button><button type="button" class="tracker-action-btn tracker-action-delete" data-task="${taskId}" data-sub="${subId}" title="Delete" aria-label="Delete"><svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" aria-hidden="true"><path d="M8 2h8l1 2h4v2H3V4h4l1-2Zm-3 6h14l-1 13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 8Zm4 3v8h2v-8H9Zm4 0v8h2v-8h-2Z"/></svg></button></div>`;}
-function trackerModal({mode='task',taskId=0,section='',taskName='' }={}){
+function trackerModal({mode='task',taskId=0 ,taskName='' }={}){
   const site=(App.trackerSites||[]).find(s=>+s.id===+trackerSite);
   if(!site)return showToast('Select a Site first',true);
-  const sections=site.sections||[];
-  if(mode==='task'&&!sections.length)return showToast('Assign Sections to the Site in Site Master first',true);
   $('#tracker-entry-overlay').remove();
   const isTask=mode==='task';
-  const sectionOptions=sections.map(x=>`<option value="${esc(x)}" ${x===section?'selected':''}>${esc(x)}</option>`).join('');
-  const sectionBlock=isTask?`<label><span class="tracker-field-label">Section <span class="tracker-required">*</span></span><select name="section" required><option value="">Select Section</option>${sectionOptions}</select></label>`:`<label>Section<input value="${esc(section)}" readonly></label><label>Task<input value="${esc(taskName)}" readonly></label>`;
+  const sectionBlock=isTask?'':`<label>Task<input value="${esc(taskName)}" readonly></label>`;
   const nameBlock=isTask?`<label><span class="tracker-field-label">Task Name <span class="tracker-required">*</span></span><input name="task_name" maxlength="255" required placeholder="Enter Task name"></label>`:'';
   const modal=`<div id="tracker-entry-overlay" class="tracker-modal-overlay"><div class="tracker-modal" role="dialog" aria-modal="true" aria-labelledby="tracker-modal-title"><div class="tracker-modal-title"><h3 id="tracker-modal-title">${isTask?'Add Task':'Add Sub-task'}</h3><button type="button" class="tracker-modal-close" aria-label="Close">×</button></div><form id="tracker-entry-form" data-mode="${mode}" data-task="${taskId}">${sectionBlock}${nameBlock}<div class="tracker-subtask-group"><span class="tracker-field-label">Sub-task Name <span class="tracker-required">*</span></span><div class="tracker-subtask-rows"><div class="tracker-subtask-row"><input name="subtask_names[]" maxlength="255" required placeholder="Enter Sub-task name"><button type="button" class="tracker-subtask-add" title="Add another Sub-task" aria-label="Add another Sub-task">＋</button></div></div></div><div class="tracker-modal-actions"><button type="button" class="bsm-btn tracker-modal-cancel">Cancel</button><button type="submit" class="bsm-btn bsm-btn-primary" id="tracker-modal-save">Save</button></div></form></div></div>`;
   $('body').append(modal);
   $('#tracker-entry-form input[name="task_name"],#tracker-entry-form input[name="subtask_names[]"]').first().trigger('focus');
 }
 $(document).on('click','.tracker-add-task,#tracker-add-task-main',function(){trackerModal({mode:'task'});});
-$(document).on('click','.tracker-add-subtask',function(){const id=Number($(this).data('task'));const site=(App.trackerSites||[]).find(s=>+s.id===+trackerSite);const task=(site?.tasks||[]).find(t=>+t.id===id);if(!task)return showToast('Task not found',true);trackerModal({mode:'subtask',taskId:id,section:task.section,taskName:task.task_name});});
+$(document).on('click','.tracker-add-subtask',function(){const id=Number($(this).data('task'));const site=(App.trackerSites||[]).find(s=>+s.id===+trackerSite);const task=(site?.tasks||[]).find(t=>+t.id===id);if(!task)return showToast('Task not found',true);trackerModal({mode:'subtask',taskId:id,taskName:task.task_name});});
 
 $(document).on('click','.tracker-action-edit',function(){
  const taskId=Number($(this).data('task'));
@@ -561,8 +533,7 @@ $(document).on('click','.tracker-action-edit',function(){
  if(!task)return showToast('Task not found',true);
  $('#tracker-edit-overlay').remove();
  const allSub=(task.subtasks||[]).map(sub=>`<div class="tracker-subtask-row tracker-edit-row" data-id="${sub.id}"><input name="existing_subtask" maxlength="255" required value="${esc(sub.subtask_name)}" aria-label="Sub-task name"></div>`).join('');
- const opts=(site.sections||[]).map(x=>`<option value="${esc(x)}" ${x===task.section?'selected':''}>${esc(x)}</option>`).join('');
- const body=`<label><span class="tracker-field-label">Section <span class="tracker-required">*</span></span><select name="section" required>${opts}</select></label><label><span class="tracker-field-label">Task Name <span class="tracker-required">*</span></span><input name="task_name" maxlength="255" required value="${esc(task.task_name)}"></label><div class="tracker-subtask-group"><div class="tracker-edit-subtitle"><span class="tracker-field-label">Sub-task Names</span><button type="button" class="tracker-edit-add" title="Add Sub-task" aria-label="Add Sub-task">＋</button></div><div class="tracker-subtask-rows">${allSub}</div></div>`;
+ const body=`<label><span class="tracker-field-label">Task Name <span class="tracker-required">*</span></span><input name="task_name" maxlength="255" required value="${esc(task.task_name)}"></label><div class="tracker-subtask-group"><div class="tracker-edit-subtitle"><span class="tracker-field-label">Sub-task Names</span><button type="button" class="tracker-edit-add" title="Add Sub-task" aria-label="Add Sub-task">＋</button></div><div class="tracker-subtask-rows">${allSub}</div></div>`;
  $('body').append(`<div id="tracker-edit-overlay" class="tracker-modal-overlay"><div class="tracker-modal" role="dialog" aria-modal="true" aria-labelledby="tracker-edit-heading"><div class="tracker-modal-title"><h3 id="tracker-edit-heading">EDIT</h3><button type="button" class="tracker-edit-cancel" aria-label="Close">×</button></div><form id="tracker-edit-form" data-task="${taskId}">${body}<div class="tracker-modal-actions"><button type="button" class="bsm-btn tracker-edit-cancel">Cancel</button><button type="submit" class="bsm-btn bsm-btn-primary">Save Changes</button></div></form></div></div>`);
  $('#tracker-edit-form [name="task_name"]').trigger('focus');
 });
@@ -583,12 +554,12 @@ $(document).on('keydown','#tracker-entry-form input,#tracker-entry-form select,#
 $(document).on('click','.tracker-edit-cancel',()=>$('#tracker-edit-overlay').remove());
 $(document).on('submit','#tracker-edit-form',async function(e){
  e.preventDefault();const form=$(this),taskId=Number(form.data('task'));
- const taskName=(form.find('[name="task_name"]').val()||'').trim(),section=form.find('[name="section"]').val()||'';
+ const taskName=(form.find('[name="task_name"]').val()||'').trim();
  const existing=[],added=[];
  form.find('.tracker-edit-row').each(function(){const name=$(this).find('input').val().trim(),id=Number($(this).data('id'));if(id)existing.push({id,name});else added.push(name);});
- if(!taskName||!section||existing.some(x=>!x.name)||added.some(x=>!x))return showToast('Fill in all required fields',true);
+ if(!taskName||existing.some(x=>!x.name)||added.some(x=>!x))return showToast('Fill in all required fields',true);
  const btn=form.find('[type="submit"]');btn.prop('disabled',true).text('Saving…');
- try{const r=await ajax('bsm_project_tracker_save',{type:'edit_task_full',id:taskId,task_name:taskName,section,existing_subtasks:existing,new_subtasks:added});if(!r.success)return showToast(r.data?.message||'Unable to save',true);$('#tracker-edit-overlay').remove();await trackerLoad();showToast('Updated successfully');}
+ try{const r=await ajax('bsm_project_tracker_save',{type:'edit_task_full',id:taskId,task_name:taskName,existing_subtasks:existing,new_subtasks:added});if(!r.success)return showToast(r.data?.message||'Unable to save',true);$('#tracker-edit-overlay').remove();await trackerLoad();showToast('Updated successfully');}
  catch(err){showToast('Unable to update',true);}finally{btn.prop('disabled',false).text('Save Changes');}
 });
 $(document).on('click','.tracker-action-delete',async function(){const taskId=Number($(this).data('task')),subId=Number($(this).data('sub'));const isSub=!!subId;if(!window.confirm(isSub?'Delete this Sub-task permanently?':'Delete this Task and all its Sub-tasks permanently?'))return;const btn=$(this);btn.prop('disabled',true);try{const r=await ajax('bsm_project_tracker_save',{type:isSub?'delete_subtask':'delete_task',id:isSub?subId:taskId});if(!r.success)return showToast(r.data?.message||'Unable to delete',true);await trackerLoad();showToast('Deleted successfully');}catch(err){showToast('Unable to delete',true);}finally{btn.prop('disabled',false);}});
@@ -604,15 +575,15 @@ $(document).on('submit','#tracker-entry-form',async function(e){
   e.preventDefault();const form=$(this),mode=form.data('mode'),taskId=Number(form.data('task'));
   const names=form.find('input[name="subtask_names[]"]').map(function(){return $(this).val().trim();}).get();
   if(!names.length||names.some(x=>!x))return showToast('Enter all Sub-task Names',true);
-  const params=mode==='task'?{type:'task_with_subtasks',site_id:trackerSite,section:form.find('[name="section"]').val(),name:form.find('[name="task_name"]').val().trim(),subtask_names:names}:{type:'subtasks',task_id:taskId,subtask_names:names};
-  if(mode==='task'&&(!params.section||!params.name))return showToast('Select Section and enter Task name',true);
+  const params=mode==='task'?{type:'task_with_subtasks',site_id:trackerSite,name:form.find('[name="task_name"]').val().trim(),subtask_names:names}:{type:'subtasks',task_id:taskId,subtask_names:names};
+  if(mode==='task'&&(!params.name))return showToast('Enter Task name',true);
   const btn=form.find('#tracker-modal-save');btn.prop('disabled',true).text('Saving…');
   try{const r=await ajax('bsm_project_tracker_save',params);if(!r.success)return showToast(r.data?.message||'Unable to save',true);$('#tracker-entry-overlay').remove();await trackerLoad();showToast('Saved successfully');}
   catch(err){showToast('Unable to save. Please try again.',true);}
   finally{btn.prop('disabled',false).text('Save');}
 });
 $(document).on('change','.tracker-value',async function(){const el=this,id=Number($(el).data('id')),value=Number(el.value);if(!Number.isFinite(value)||value<0||value>100){showToast('Progress must be 0 to 100',true);return trackerDraw();}el.disabled=true;const r=await ajax('bsm_project_tracker_save',{type:'progress',id,completion:value});if(!r.success)showToast(r.data?.message||'Unable to save Progress',true);await trackerLoad();});
-$(document).on('click','#tracker-excel',function(){const sites=(App.trackerSites||[]).filter(s=>!trackerSite||+s.id===+trackerSite);const rows=[];sites.forEach(site=>(site.tasks||[]).filter(t=>!trackerSite||((!App.trackerSectionFilter||t.section===App.trackerSectionFilter)&&(!App.trackerTaskFilter||String(t.id)===String(App.trackerTaskFilter)))).forEach(t=>(t.subtasks||[]).forEach(sub=>rows.push([site.site_name,t.section,t.task_name,sub.subtask_name,sub.completion]))));downloadExcelFile('Project Tracker',['Site','Section','Task','Sub-task','Progress %'],rows);});
+$(document).on('click','#tracker-excel',function(){const sites=(App.trackerSites||[]).filter(s=>!trackerSite||+s.id===+trackerSite);const rows=[];sites.forEach(site=>(site.tasks||[]).filter(t=>!trackerSite||(!App.trackerTaskFilter||String(t.id)===String(App.trackerTaskFilter))).forEach(t=>(t.subtasks||[]).forEach(sub=>rows.push([site.site_name,t.task_name,sub.subtask_name,sub.completion]))));downloadExcelFile('Project Tracker',['Site','Task','Sub-task','Progress %'],rows);});
 
 async function openView(key){
   const allowed=(BSM.currentUser&&BSM.currentUser.is_admin)?null:new Set((BSM.currentUser&&BSM.currentUser.allowed_views)||[]);
@@ -626,7 +597,7 @@ async function openView(key){
   if(key==='data_reset')return renderDataReset();
   if(key==='project_tracker')return renderProjectTracker();
   if(key==='dashboard'){await ensureOptions(['sites']);return renderDashboard();}
-  if(key.startsWith('boq_')){await ensureOptions(['sites','items','units','sections']);return key==='boq_form'?renderBoqForm():renderBoqListing(key);}
+  if(key.startsWith('boq_')){await ensureOptions(['sites','items','units']);return key==='boq_form'?renderBoqForm():renderBoqListing(key);}
   if(key==='purchase_form') return openDirectForm(key,'material_inwards','Purchase Form','purchase');
   if(key==='purchase_pending_approval'){await ensureOptions(optionTypesForView(key));return renderPurchasePendingApproval();}
   if(key==='purchase_register'){await ensureOptions(optionTypesForView('material_inwards'));return renderPurchaseRegister();}
@@ -1632,13 +1603,6 @@ async function loadList(key){
 function selectHtml(id,label,type,val,required=false){ const arr=App.options[type]||[]; return `<label>${esc(label)}<select id="${id}" ${required?'required':''}><option value="">Select</option>${arr.map(x=>`<option value="${x.id}" ${String(x.id)===String(val)?'selected':''}>${esc(x.label)}</option>`).join('')}</select></label>`; }
 function fieldHtml(f,val=''){
   const req=f.required?'required':''; const ro=f.readonly?'readonly':''; const dis=f.readonly?'disabled':''; const wide=f.wide?'wide':''; const v=val==null?'':val; let input='';
-  if(f.type==='site_sections') {
-    const selected=new Set(String(v||'').split(',').map(x=>x.trim()).filter(Boolean));
-    const opts=(App.options.sections||[]);
-    const options=opts.map(o=>`<label class="bsm-site-section-option"><input type="checkbox" value="${esc(o.label)}" ${selected.has(String(o.label))?'checked':''}><span>${esc(o.label)}</span></label>`).join('');
-    const old=[...selected].filter(x=>!opts.some(o=>String(o.label)===x)).map(x=>`<label class="bsm-site-section-option"><input type="checkbox" value="${esc(x)}" checked><span>${esc(x)} (Existing)</span></label>`).join('');
-    return `<div class="bsm-site-section-field"><span class="bsm-field-label">Section</span><div class="bsm-site-section-multi"><button type="button" class="bsm-site-section-toggle">${selected.size?esc([...selected].join(', ')):'Select Sections'} <span>⌄</span></button><div class="bsm-site-section-menu"><input class="bsm-site-section-search" type="text" aria-label="Search Sections" placeholder="" autocomplete="off">${options}${old}${!opts.length&&!old?'<div class="bsm-site-section-empty">Add Sections in Section Master first.</div>':''}</div></div><input type="hidden" name="site_sections" value="${esc([...selected].join(', '))}"></div>`;
-  }
   if(f.name==='dispatch_from'){
     const selected=v==='site'?'site':'warehouse';
     return `<div class="bsm-dispatch-source-field" style="min-width:0;display:flex;flex-direction:column;gap:6px"><span class="bsm-field-label" style="font-size:12px;line-height:18px;color:#475569">Dispatch From<span class="bsm-required">*</span></span><div class="bsm-dispatch-source-buttons" style="display:flex;width:100%;height:44px;border:1px solid #8cb5ff;border-radius:10px;overflow:hidden;background:#fff;box-sizing:border-box" role="group" aria-label="Dispatch From">${[['warehouse','Warehouse'],['site','Site']].map(([value,label])=>`<button type="button" class="bsm-dispatch-source-button ${selected===value?'is-selected':''}" style="flex:1;min-width:0;margin:0;padding:10px 8px;border:0;border-radius:0;box-shadow:none;font-size:13px;font-weight:600;cursor:pointer;background:${selected===value?'#1769ff':'#fff'};color:${selected===value?'#fff':'#1760d9'}" data-source="${value}" aria-pressed="${selected===value}">${label}</button>`).join('')}</div><input type="hidden" name="dispatch_from" value="${selected}"></div>`;
@@ -4302,10 +4266,6 @@ $(document).on('click','#bsm-company-upi-qr-upload-btn',async function(){
 });
 
 $(document).on('input','#bsm-purchase-approval-search',function(){const el=this;clearTimeout(App.pas);App.pas=setTimeout(()=>{App.specialSearch=$(el).val();drawPurchasePendingApproval();},350);});
-$(document).on('click','.bsm-site-section-toggle',function(e){e.preventDefault();e.stopPropagation();$(this).closest('.bsm-site-section-multi').toggleClass('open');});
-$(document).on('input','.bsm-site-section-search',function(){const q=String($(this).val()).toLowerCase();$(this).closest('.bsm-site-section-menu').find('.bsm-site-section-option').each(function(){$(this).toggle($(this).text().toLowerCase().includes(q));});});
-$(document).on('change','.bsm-site-section-option input',function(){const $f=$(this).closest('.bsm-site-section-field'),names=$f.find('.bsm-site-section-option input:checked').map(function(){return $(this).val();}).get();$f.find('input[name="site_sections"]').val(names.join(', '));$f.find('.bsm-site-section-toggle').html(`${esc(names.length?names.join(', '):'Select Sections')} <span>⌄</span>`);});
-$(document).on('click',function(e){if(!$(e.target).closest('.bsm-site-section-multi').length)$('.bsm-site-section-multi').removeClass('open');});
 $(document).on('submit','#bsm-form',function(e){e.preventDefault();if($(this).data('module')==='users')saveUser();else if($(this).data('module')==='requisition_approval')saveApproval();else if($(this).data('module')==='purchase_approval')savePurchaseApproval();else saveForm();});
 $(document).on('change','#bsm-form[data-module="site_receipts"] select[name="dispatch_id"]',function(){fillSiteReceiptFromDispatch($(this).val());});
 $(document).on('change','#bsm-form[data-module="site_consumptions"] select[name="site_id"]',function(){refreshConsumptionItemOptions();});

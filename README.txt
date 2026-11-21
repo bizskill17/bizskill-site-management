@@ -144,3 +144,6 @@ Version 0.0.080: Removed the Quick Actions section from Site Dashboard.
 
 = 0.0.091 =
 * Prevent duplicate Site Names on create and edit, ignoring case and repeated whitespace, including inactive sites.
+
+= 0.0.092 =
+* Removed Section from Site Master, BOQs, templates, imports, PDFs, navigation and Site Tracker. Existing records and tasks are preserved; Tracker progress is calculated across tasks.

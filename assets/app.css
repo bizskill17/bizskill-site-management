@@ -3020,3 +3020,10 @@ html,body{
 .bsm-permissions input[type=checkbox]{appearance:auto!important;width:17px!important;height:17px!important;min-height:0!important;flex:0 0 17px;margin:0!important;padding:0!important;cursor:pointer}
 .bsm-permission-views[hidden]{display:none!important}
 @media(max-width:600px){.bsm-permissions-title,.bsm-permission-heading{gap:6px;padding-left:8px;padding-right:8px}.bsm-permission-view{padding-left:18px;padding-right:12px}.bsm-permissions-title{flex-wrap:wrap}.bsm-permissions-scroll{max-height:45vh}}
+
+/* Section retired: Item, Unit, Quantity and Action remain in the BOQ row. */
+.bsm-app .bsm-boq-table-wrap .bsm-table th:nth-child(1){width:52%}
+.bsm-app .bsm-boq-table-wrap .bsm-table th:nth-child(2){width:9%}
+.bsm-app .bsm-boq-table-wrap .bsm-table th:nth-child(3){width:27%}
+.bsm-app .bsm-boq-table-wrap .bsm-table th:nth-child(4){width:12%}
+.tracker-flat-table th:nth-child(3),.tracker-flat-table td:nth-child(3){width:1%;white-space:nowrap}

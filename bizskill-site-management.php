@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.091
+ * Version: 0.0.092
  * Author: BizSkill
  */
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/notifications.php';
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
-    const VERSION = '0.0.091';
+    const VERSION = '0.0.092';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -50,7 +50,6 @@ final class BSM_Site_Management {
         add_action('wp_ajax_bsm_boq_pdf', [$this, 'ajax_boq_pdf']);
         add_action('wp_ajax_bsm_requisition_boq_items', [$this, 'ajax_requisition_boq_items']);
         add_action('wp_ajax_bsm_boq_get', [$this, 'ajax_boq_get']);
-        add_action('wp_ajax_bsm_boq_site_sections', [$this, 'ajax_boq_site_sections']);
         add_action('wp_ajax_bsm_boq_save', [$this, 'ajax_boq_save']);
         add_action('wp_ajax_bsm_boq_template', [$this, 'ajax_boq_template']);
         add_action('wp_ajax_bsm_boq_import', [$this, 'ajax_boq_import']);
@@ -156,7 +155,7 @@ final class BSM_Site_Management {
             $this->create_project_tracker_tables();
             $this->ensure_site_sections_column();
             $this->ensure_boq_section_column(); $this->ensure_boq_item_section_column();
-            $this->migrate_boq_sections();
+            // Legacy Section data is retained without Section migrations.
             $this->migrate_users_table();
             $this->migrate_office_attendance_table();
             $this->migrate_phase_0122();
@@ -247,7 +246,6 @@ final class BSM_Site_Management {
             'labour_contractors' => ['Labour Contractors', 'labour-contractors'],
             'states' => ['States', 'states'],
             'item_categories' => ['Item Categories', 'item-categories'],
-            'sections' => ['Section', 'sections'],
             'units' => ['Units', 'units'],
             'gst_rates' => ['GST Rates', 'gst-rates'],
             'items' => ['Items', 'items'],
@@ -359,7 +357,7 @@ final class BSM_Site_Management {
             $this->create_project_tracker_tables();
             $this->ensure_site_sections_column();
             $this->ensure_boq_section_column(); $this->ensure_boq_item_section_column();
-            $this->split_existing_mixed_section_boqs();
+            // Legacy Section data is retained without Section migrations.
             // Critical schema repair for sites upgraded from older builds where
             // bsm_users.user_id may still be numeric. This must run on upgrade,
             // not only on fresh activation.
@@ -412,18 +410,9 @@ final class BSM_Site_Management {
             $wpdb->query("ALTER TABLE `{$table}` ADD COLUMN `section` VARCHAR(190) NOT NULL DEFAULT '' AFTER `item_id`");
         }
         $exists = (bool)$wpdb->get_var($wpdb->prepare("SHOW COLUMNS FROM `{$table}` LIKE %s", 'section'));
-        if ($exists) {
-            $wpdb->query("UPDATE `{$table}` bi INNER JOIN `{$this->prefix}boqs` b ON b.id=bi.boq_id SET bi.section=b.section WHERE bi.section='' AND b.section<>''");
-        }
         return $exists;
     }
 
-    private function migrate_boq_sections() {
-        global $wpdb;
-        $p=$this->prefix;
-        // Preserve historical free-text BOQ section values after changing the UI to a master dropdown.
-        $wpdb->query("INSERT IGNORE INTO {$p}sections (section_name,status) SELECT DISTINCT TRIM(section),'active' FROM {$p}boqs WHERE section IS NOT NULL AND TRIM(section)<>''");
-    }
 
     private function migrate_company_settings_terms() {
         global $wpdb;
@@ -1636,7 +1625,7 @@ final class BSM_Site_Management {
 
     // Master tables: never touched by Clear Transaction Data.
     private const MASTER_TABLES = ['bank_accounts', 'customers', 'designations', 'expense_categories', 'gst_rates',
-        'item_categories', 'items', 'labour_contractors', 'sections', 'sites', 'states', 'units', 'users',
+        'item_categories', 'items', 'labour_contractors', 'sites', 'states', 'units', 'users',
         'user_profiles', 'user_salary_history', 'vendors', 'warehouses', 'company_settings', 'allowance_types',
         'employee_allowance_limits', 'contractor_employees', 'holidays'];
 
@@ -1749,7 +1738,6 @@ final class BSM_Site_Management {
             'labour_contractors' => ['table'=>'labour_contractors','label'=>'Labour Contractors','pk'=>'id'],
             'labour_attendance' => ['table'=>'labour_attendance','label'=>'Daily Labour Attendance','pk'=>'id'],
             'item_categories' => ['table'=>'item_categories','label'=>'Item Categories','pk'=>'id'],
-            'sections' => ['table'=>'sections','label'=>'Section','pk'=>'id'],
             'units' => ['table'=>'units','label'=>'Units','pk'=>'id'],
             'gst_rates' => ['table'=>'gst_rates','label'=>'GST Rates','pk'=>'id'],
             'items' => ['table'=>'items','label'=>'Items','pk'=>'id'],
@@ -2058,33 +2046,24 @@ final class BSM_Site_Management {
         $site=(int)($_POST['site_id']??0);
         if(!$site)wp_die('Select Site first');
         $this->boq_access($site);
-        $assigned_raw=(string)$wpdb->get_var($wpdb->prepare("SELECT site_sections FROM {$this->prefix}sites WHERE id=%d",$site));
-        $allowed=array_map('trim',explode(',',$assigned_raw));
-        $sections=$wpdb->get_col("SELECT section_name FROM {$this->prefix}sections WHERE status='active' ORDER BY section_name");
-        $sections=array_values(array_intersect($sections,$allowed));
-        if(!$sections)wp_die('No active Sections assigned to this Site');
         $items=$wpdb->get_results("SELECT id,item_name FROM {$this->prefix}items ORDER BY item_name",ARRAY_A);
         $tmp=wp_tempnam('boq-template.xlsx');$zip=new ZipArchive();if($zip->open($tmp,ZipArchive::OVERWRITE)!==true)wp_die('Could not create template');
         $xmlHeader='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
-        $zip->addFromString('[Content_Types].xml',$xmlHeader.'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>');
+        $zip->addFromString('[Content_Types].xml',$xmlHeader.'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>');
         $zip->addFromString('_rels/.rels',$xmlHeader.'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
-        $zip->addFromString('xl/_rels/workbook.xml.rels',$xmlHeader.'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/></Relationships>');
-        $zip->addFromString('xl/workbook.xml',$xmlHeader.'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="BOQ Upload" sheetId="1" r:id="rId1"/><sheet name="Item List" sheetId="2" state="hidden" r:id="rId2"/><sheet name="Section List" sheetId="3" state="hidden" r:id="rId3"/></sheets><definedNames><definedName name="BOQItemNames">&apos;Item List&apos;!$A$2:$A$'.max(2,count($items)+1).'</definedName><definedName name="BOQSectionNames">&apos;Section List&apos;!$A$2:$A$'.max(2,count($sections)+1).'</definedName></definedNames></workbook>');
-        $sheet=$xmlHeader.'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="45" customWidth="1"/><col min="2" max="2" width="20" customWidth="1"/><col min="3" max="3" width="30" customWidth="1"/></cols><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Item</t></is></c><c r="B1" t="inlineStr"><is><t>BOQ Qty</t></is></c><c r="C1" t="inlineStr"><is><t>Section</t></is></c></row></sheetData><dataValidations count="3"><dataValidation type="list" allowBlank="1" showErrorMessage="1" error="Select an item from the list" sqref="A2:A1001"><formula1>BOQItemNames</formula1></dataValidation><dataValidation type="decimal" operator="greaterThanOrEqual" allowBlank="1" showErrorMessage="1" error="Quantity must be zero or more" sqref="B2:B1001"><formula1>0</formula1></dataValidation><dataValidation type="list" allowBlank="0" showErrorMessage="1" error="Select a Section" sqref="C2:C1001"><formula1>BOQSectionNames</formula1></dataValidation></dataValidations></worksheet>';
+        $zip->addFromString('xl/_rels/workbook.xml.rels',$xmlHeader.'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/></Relationships>');
+        $zip->addFromString('xl/workbook.xml',$xmlHeader.'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="BOQ Upload" sheetId="1" r:id="rId1"/><sheet name="Item List" sheetId="2" state="hidden" r:id="rId2"/></sheets><definedNames><definedName name="BOQItemNames">&apos;Item List&apos;!$A$2:$A$'.max(2,count($items)+1).'</definedName></definedNames></workbook>');
+        $sheet=$xmlHeader.'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="45" customWidth="1"/><col min="2" max="2" width="20" customWidth="1"/></cols><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Item</t></is></c><c r="B1" t="inlineStr"><is><t>BOQ Qty</t></is></c></row></sheetData><dataValidations count="2"><dataValidation type="list" allowBlank="1" showErrorMessage="1" error="Select an item from the list" sqref="A2:A1001"><formula1>BOQItemNames</formula1></dataValidation><dataValidation type="decimal" operator="greaterThanOrEqual" allowBlank="1" showErrorMessage="1" error="Quantity must be zero or more" sqref="B2:B1001"><formula1>0</formula1></dataValidation></dataValidations></worksheet>';
         $zip->addFromString('xl/worksheets/sheet1.xml',$sheet);
         $list=$xmlHeader.'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Item</t></is></c></row>';
         foreach($items as $i=>$item){$row=$i+2;$name=$this->boq_xlsx_xml_escape($item['item_name']);$list.='<row r="'.$row.'"><c r="A'.$row.'" t="inlineStr"><is><t>'.$name.'</t></is></c></row>';}
         $list.='</sheetData></worksheet>';$zip->addFromString('xl/worksheets/sheet2.xml',$list);
-        $secXml=$xmlHeader.'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Section</t></is></c></row>';
-        foreach($sections as $i=>$s){$row=$i+2;$secXml.='<row r="'.$row.'"><c r="A'.$row.'" t="inlineStr"><is><t>'.$this->boq_xlsx_xml_escape($s).'</t></is></c></row>';}
-        $secXml.='</sheetData></worksheet>';$zip->addFromString('xl/worksheets/sheet3.xml',$secXml);$zip->close();
+        $zip->close();
         nocache_headers();header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');header('Content-Disposition: attachment; filename="BOQ-Upload-Template.xlsx"');header('Content-Length: '.filesize($tmp));readfile($tmp);unlink($tmp);exit;
     }
     public function ajax_boq_import() {
         $this->boq_access();global $wpdb;
         $site=(int)($_POST['site_id']??0);if(!$site)wp_send_json_error(['message'=>'Select Site first']);$this->boq_access($site);
-        $assigned_raw=(string)$wpdb->get_var($wpdb->prepare("SELECT site_sections FROM {$this->prefix}sites WHERE id=%d",$site));
-        $assigned=array_map('trim',explode(',',$assigned_raw));
         if(empty($_FILES['file']['tmp_name'])||!is_uploaded_file($_FILES['file']['tmp_name']))wp_send_json_error(['message'=>'Choose an Excel template']);
         $file=$_FILES['file'];if(($file['size']??0)>2*1024*1024)wp_send_json_error(['message'=>'File exceeds 2 MB']);
         if(strtolower(pathinfo($file['name'],PATHINFO_EXTENSION))!=='xlsx')wp_send_json_error(['message'=>'Upload the .xlsx template']);
@@ -2097,56 +2076,39 @@ final class BSM_Site_Management {
         $lookup=[];$masters=$wpdb->get_results("SELECT id,item_name FROM {$this->prefix}items",ARRAY_A);
         foreach($masters as $m)$lookup[mb_strtolower(trim($m['item_name']))][]=$m;
         $out=[];$errors=[];$used=[];
-        foreach($xml->sheetData->row as $row){$n=(int)$row['r'];if($n===1)continue;if($n>1001){$errors[]='Maximum 1000 items allowed';break;}$values=['A'=>'','B'=>'','C'=>''];
+        foreach($xml->sheetData->row as $row){$n=(int)$row['r'];if($n===1)continue;if($n>1001){$errors[]='Maximum 1000 items allowed';break;}$values=['A'=>'','B'=>''];
             foreach($row->c as $c){$col=preg_replace('/[0-9]/','',(string)$c['r']);if(!isset($values[$col]))continue;$v=(string)$c->v;if((string)$c['t']==='s')$v=$ss[(int)$v]??'';elseif((string)$c['t']==='inlineStr'){$v=(string)$c->is->t;foreach($c->is->r as $rr)$v.=(string)$rr->t;}$values[$col]=trim($v);}
-            if($values['A']===''&&$values['B']===''&&$values['C']==='')continue;
+            if($values['A']===''&&$values['B']==='')continue;
             $matches=$lookup[mb_strtolower($values['A'])]??[];
             if(count($matches)!==1){$errors[]='Row '.$n.': Item is missing, invalid or ambiguous';continue;}
             if($values['B']===''||!is_numeric($values['B'])||(float)$values['B']<0){$errors[]='Row '.$n.': Invalid BOQ Qty';continue;}
-            $sec=$values['C'];
-            if(!$sec||!in_array($sec,$assigned,true)||!(int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$this->prefix}sections WHERE section_name=%s AND status='active'",$sec))){$errors[]='Row '.$n.': Invalid Site Section';continue;}
-            $id=(int)$matches[0]['id'];$key=$sec.'|'.$id;if(isset($used[$key])){$errors[]='Row '.$n.': Duplicate Section + Item';continue;}$used[$key]=true;
-            $out[]=['item_id'=>$id,'section'=>$sec,'boq_qty'=>(float)$values['B']];
+            $id=(int)$matches[0]['id'];$key=$id;if(isset($used[$key])){$errors[]='Row '.$n.': Duplicate Item';continue;}$used[$key]=true;
+            $out[]=['item_id'=>$id,'boq_qty'=>(float)$values['B']];
         }
         if($errors)wp_send_json_error(['message'=>implode('; ',array_slice($errors,0,8))]);
         if(!$out)wp_send_json_error(['message'=>'No filled item rows found']);wp_send_json_success(['items'=>$out]);
     }
 
-    public function ajax_boq_site_sections() {
-        $this->verify_ajax(); global $wpdb;
-        $site=(int)($_POST['site_id']??0);
-        if(!$site)wp_send_json_error(['message'=>'Select a Site']);
-        $site_sections=$wpdb->get_var($wpdb->prepare("SELECT site_sections FROM {$this->prefix}sites WHERE id=%d",$site));
-        if($site_sections===null)wp_send_json_error(['message'=>'Site not found']);
-        $assigned=array_unique(array_filter(array_map('trim',explode(',',(string)$site_sections))));
-        $all=$wpdb->get_results("SELECT section_name FROM {$this->prefix}sections WHERE status='active' ORDER BY section_name",ARRAY_A);
-        $out=[];foreach($all as $r){if(in_array($r['section_name'],$assigned,true))$out[]=['label'=>$r['section_name']];}
-        wp_send_json_success(['sections'=>$out]);
-    }
 
     public function ajax_boq_save() {
         global $wpdb; $site=(int)($_POST['site_id']??0); $this->boq_access($site);
         $id=(int)($_POST['id']??0);$date=sanitize_text_field($_POST['boq_date']??'');
         $items=json_decode(wp_unslash($_POST['items']??'[]'),true);
         if(!$site||!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$this->prefix}sites WHERE id=%d",$site))||!preg_match('/^\d{4}-\d{2}-\d{2}$/',$date)||!is_array($items)||!count($items)) wp_send_json_error(['message'=>'Site, date and at least one item are required']);
-        if (!$this->ensure_boq_item_section_column()) wp_send_json_error(['message'=>'BOQ item Section database update failed']);
-        $assigned_raw=(string)$wpdb->get_var($wpdb->prepare("SELECT site_sections FROM {$this->prefix}sites WHERE id=%d",$site));
-        $assigned=array_map('trim',explode(',',$assigned_raw));
-        $active=$wpdb->get_col("SELECT section_name FROM {$this->prefix}sections WHERE status='active'");
+        if (!$this->ensure_boq_item_section_column()) wp_send_json_error(['message'=>'BOQ item database update failed']);
         $clean=[];
         foreach($items as $item){
             $iid=(int)($item['item_id']??0);
-            $section=substr(sanitize_text_field($item['section']??''),0,190);
+            $section='';
             $q=isset($item['boq_qty'])&&is_numeric($item['boq_qty'])?(float)$item['boq_qty']:-1;
-            $key=$section.'|'.$iid;
-            if(!$iid||!is_finite($q)||$q<0||isset($clean[$key])) wp_send_json_error(['message'=>'Invalid quantity or duplicate Section + Item combination']);
-            if($section===''||!in_array($section,$assigned,true)||!in_array($section,$active,true)) wp_send_json_error(['message'=>'Select an active Section assigned to the Site for each item']);
+            $key=$iid;
+            if(!$iid||!is_finite($q)||$q<0||isset($clean[$key])) wp_send_json_error(['message'=>'Invalid quantity or duplicate Item']);
             $unit=$wpdb->get_var($wpdb->prepare("SELECT unit_id FROM {$this->prefix}items WHERE id=%d",$iid));
             if($unit===null) wp_send_json_error(['message'=>'Invalid Item Master selection']);
             $clean[$key]=['item_id'=>$iid,'section'=>$section,'unit_id'=>(int)$unit,'boq_qty'=>$q];
         }
         $table=$this->prefix.'boqs';$it=$this->prefix.'boq_items';
-        if (!$this->ensure_boq_section_column()) wp_send_json_error(['message'=>'BOQ Section database update failed']);
+        if (!$this->ensure_boq_section_column()) wp_send_json_error(['message'=>'BOQ database update failed']);
         if($id){
             $old=$wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id=%d",$id),ARRAY_A);
             if(!$old)wp_send_json_error(['message'=>'BOQ not found']);
@@ -2179,11 +2141,11 @@ final class BSM_Site_Management {
                     $ok=$wpdb->update($table,['boq_no'=>$number,'boq_name'=>$number.' ('.$site_name.')'],['id'=>$target]);
                 }
             }
-            if($ok===false){$wpdb->query('ROLLBACK');error_log('[Site Management BOQ] Section header save failed: '.$wpdb->last_error);wp_send_json_error(['message'=>'Could not save BOQ header for Section '.$section]);}
+            if($ok===false){$wpdb->query('ROLLBACK');error_log('[Site Management BOQ] BOQ header save failed: '.$wpdb->last_error);wp_send_json_error(['message'=>'Could not save BOQ header']);}
             foreach($rows as $r){
                 if($wpdb->insert($it,['boq_id'=>$target]+$r)===false){
                     $wpdb->query('ROLLBACK');error_log('[Site Management BOQ] Item save failed: '.$wpdb->last_error);
-                    wp_send_json_error(['message'=>'Could not save BOQ items for Section '.$section]);
+                    wp_send_json_error(['message'=>'Could not save BOQ items']);
                 }
             }
             $created[]=$target;$index++;
@@ -2191,30 +2153,6 @@ final class BSM_Site_Management {
         $wpdb->query('COMMIT');wp_send_json_success(['ids'=>$created,'count'=>count($created)]);
     }
 
-    /** One-time conversion: retain original BOQ number for first Section, create separate headers for others. */
-    private function split_existing_mixed_section_boqs() {
-        global $wpdb;
-        $table=$this->prefix.'boqs';$items=$this->prefix.'boq_items';
-        $mixed=$wpdb->get_col("SELECT boq_id FROM {$items} WHERE section IS NOT NULL AND TRIM(section)<>'' GROUP BY boq_id HAVING COUNT(DISTINCT section)>1");
-        foreach((array)$mixed as $id){
-            $boq=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE id=%d",(int)$id),ARRAY_A);
-            if(!$boq)continue;
-            $sections=$wpdb->get_col($wpdb->prepare("SELECT DISTINCT section FROM {$items} WHERE boq_id=%d AND TRIM(section)<>'' ORDER BY id",(int)$id));
-            if(count($sections)<2)continue;
-            $site_name=$wpdb->get_var($wpdb->prepare("SELECT site_name FROM {$this->prefix}sites WHERE id=%d",(int)$boq['site_id']));
-            $wpdb->query('START TRANSACTION');$ok=true;
-            foreach(array_slice($sections,1) as $section){
-                $data=['boq_no'=>'TEMP-'.wp_generate_uuid4(),'boq_date'=>$boq['boq_date'],'site_id'=>$boq['site_id'],'section'=>$section,'boq_name'=>'Pending','remarks'=>$boq['remarks']??'','created_by'=>$boq['created_by']??0,'created_at'=>$boq['created_at']??current_time('mysql'),'updated_at'=>current_time('mysql')];
-                if($wpdb->insert($table,$data)===false){$ok=false;break;}
-                $new_id=(int)$wpdb->insert_id;
-                $number='BOQ-'.wp_date('y').'/'.wp_date('y',strtotime('+1 year')).'-'.str_pad($new_id,5,'0',STR_PAD_LEFT);
-                if($wpdb->update($table,['boq_no'=>$number,'boq_name'=>$number.' ('.$site_name.')'],['id'=>$new_id])===false){$ok=false;break;}
-                if($wpdb->query($wpdb->prepare("UPDATE {$items} SET boq_id=%d WHERE boq_id=%d AND section=%s",$new_id,(int)$id,$section))===false){$ok=false;break;}
-            }
-            if($ok && $wpdb->update($table,['section'=>$sections[0]],['id'=>(int)$id])!==false)$wpdb->query('COMMIT');
-            else{$wpdb->query('ROLLBACK');error_log('[Site Management BOQ] Could not split legacy BOQ '.(int)$id.': '.$wpdb->last_error);}
-        }
-    }
     public function ajax_boq_delete() {
         global $wpdb;$id=(int)($_POST['id']??0);$b=$wpdb->get_row($wpdb->prepare("SELECT site_id FROM {$this->prefix}boqs WHERE id=%d",$id));if(!$b)wp_send_json_error(['message'=>'BOQ not found']);$this->boq_access((int)$b->site_id);
         $wpdb->delete($this->prefix.'boq_items',['boq_id'=>$id]);$wpdb->delete($this->prefix.'boqs',['id'=>$id]);wp_send_json_success();
@@ -2268,12 +2206,11 @@ final class BSM_Site_Management {
             $text($c,36,702,'Site: '.($boq['site_name']??'-'),9);
             
             $c.="0.06 0.29 0.56 rg\n36 665 523 26 re f\n1 1 1 rg\n";
-            foreach([[43,'Sl.'],[75,'Section'],[175,'Item'],[390,'Unit'],[474,'BOQ Qty']] as $h)$text($c,$h[0],674,$h[1],9,true);
+            foreach([[43,'Sl.'],[75,'Item'],[390,'Unit'],[474,'BOQ Qty']] as $h)$text($c,$h[0],674,$h[1],9,true);
             $y=665;foreach($chunk as $i=>$r){$y-=24;
                 $c.="0.72 0.79 0.87 RG 0.4 w\n36 $y 523 24 re S\n0 0 0 rg\n";
                 $text($c,43,$y+8,(string)($pageIdx*23+$i+1),8);
-                $text($c,75,$y+8,substr((string)($r['section']??'-'),0,18),8);
-                $text($c,175,$y+8,substr((string)($r['item_name']??'-'),0,35),8);
+                $text($c,75,$y+8,substr((string)($r['item_name']??'-'),0,35),8);
                 $text($c,390,$y+8,substr((string)($r['unit_name']??'-'),0,12),8);
                 $text($c,474,$y+8,number_format((float)$r['boq_qty'],2,'.',''),8);
             }
@@ -2332,7 +2269,7 @@ final class BSM_Site_Management {
         global $wpdb;$site=(int)($_POST['site_id']??0);$this->boq_access($site);$type=sanitize_key($_POST['type']??'boq_master');$p=$this->prefix;$where='1=1';$args=[];
         if(!current_user_can('manage_options')){$u=$wpdb->get_var($wpdb->prepare("SELECT assigned_sites FROM {$p}users WHERE wp_user_id=%d",get_current_user_id()));$assigned=json_decode($u??'[]',true);if(is_array($assigned)&&count($assigned)){$ids=array_values(array_filter(array_map('intval',$assigned)));if($ids)$where.=' AND b.site_id IN ('.implode(',',$ids).')';}}
         if($site){$where.=' AND b.site_id=%d';$args[]=$site;}
-        $search=sanitize_text_field(wp_unslash($_POST['search']??''));if($search){$where.=' AND (b.boq_no LIKE %s OR b.boq_name LIKE %s OR bi.section LIKE %s OR s.site_name LIKE %s OR i.item_name LIKE %s)';$term='%'.$wpdb->esc_like($search).'%';array_push($args,$term,$term,$term,$term,$term);}
+        $search=sanitize_text_field(wp_unslash($_POST['search']??''));if($search){$where.=' AND (b.boq_no LIKE %s OR b.boq_name LIKE %s OR s.site_name LIKE %s OR i.item_name LIKE %s)';$term='%'.$wpdb->esc_like($search).'%';array_push($args,$term,$term,$term,$term);}
         $this->ensure_boq_item_section_column();
         $sql="SELECT b.id,b.boq_no,b.boq_date,b.site_id,bi.section,b.boq_name,b.remarks,s.site_name,bi.id boq_item_id,bi.item_id,i.item_name,u.unit_name,bi.boq_qty FROM {$p}boqs b JOIN {$p}boq_items bi ON bi.boq_id=b.id LEFT JOIN {$p}sites s ON s.id=b.site_id LEFT JOIN {$p}items i ON i.id=bi.item_id LEFT JOIN {$p}units u ON u.id=bi.unit_id WHERE $where ORDER BY b.id DESC,bi.id";
         $rows=$wpdb->get_results($args?$wpdb->prepare($sql,$args):$sql,ARRAY_A);
@@ -3140,31 +3077,7 @@ final class BSM_Site_Management {
         $data=json_decode(stripslashes($_POST['data']??'{}'),true);
         if($key==='sites'&&!$this->nt_admin())unset($data['whatsapp_group_id']);
         if($key==='material_inwards'&&!empty($data['purchase_order_id'])){$po_state=$wpdb->get_var($wpdb->prepare("SELECT status FROM {$this->prefix}purchase_orders WHERE id=%d",(int)$data['purchase_order_id']));if(in_array($po_state,['pending_approval','rejected'],true))wp_send_json_error(['message'=>'Approve the PO before recording receipt.']);}
-        if($key==='sites'){
-            if (!$this->ensure_site_sections_column()) wp_send_json_error(['message'=>'Section database column could not be created. Check database permissions.']);
-            $raw=(string)($data['site_sections']??'');
-            $names=array_values(array_unique(array_filter(array_map('trim',explode(',',$raw)))));
-            if(count($names)>100) wp_send_json_error(['message'=>'Too many Sections selected']);
-            $verified=[];
-            foreach($names as $name){
-                $name=substr(sanitize_text_field($name),0,190);
-                $valid=(int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$this->prefix}sections WHERE section_name=%s AND status='active'",$name));
-                if(!$valid){
-                    $existing=(int)($data['id']??0);
-                    $stored=$existing?(string)$wpdb->get_var($wpdb->prepare("SELECT site_sections FROM {$this->prefix}sites WHERE id=%d",$existing)):'';
-                    if(!in_array($name,array_map('trim',explode(',',$stored)),true)) wp_send_json_error(['message'=>'Invalid or inactive Section: '.$name]);
-                }
-                $verified[]=$name;
-            }
-            $data['site_sections']=implode(', ',$verified);
-        }
-        if($key==='sections'){
-            $name=substr(sanitize_text_field(wp_unslash($data['section_name']??'')),0,190);
-            if($name==='') wp_send_json_error(['message'=>'Section Name is required']);
-            $data['section_name']=$name;
-            $duplicate=(int)$wpdb->get_var($wpdb->prepare("SELECT id FROM {$this->prefix}sections WHERE section_name=%s AND id<>%d LIMIT 1",$name,(int)($data['id']??0)));
-            if($duplicate) wp_send_json_error(['message'=>'Section already exists']);
-        }
+        if($key==='sites')unset($data['site_sections']);
         if($key==='contractor_advances' && empty($data['site_id'])){
             wp_send_json_error(['message'=>'Site is required']);
         }
@@ -3821,12 +3734,6 @@ final class BSM_Site_Management {
             try{$id=$this->ops_save_contractor_employees($id,$row,$contractor_employees_input);}catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);}
         }elseif($id){ $ok=$wpdb->update($table,$row,['id'=>$id]); if($ok===false) wp_send_json_error(['message'=>$wpdb->last_error]); }
         else { $ok=$wpdb->insert($table,$row); if(!$ok) wp_send_json_error(['message'=>$wpdb->last_error?:'Save failed']); $id=(int)$wpdb->insert_id; }
-        if($key==='sites' && array_key_exists('site_sections',$data)) {
-            $stored=(string)$wpdb->get_var($wpdb->prepare("SELECT site_sections FROM {$table} WHERE id=%d", $id));
-            if($stored !== (string)$data['site_sections']) {
-                wp_send_json_error(['message'=>'Sections could not be saved. Please retry or contact the administrator.']);
-            }
-        }
         if(!empty($m['child'])) {
             $child=$this->prefix.$m['child']; $deleted=$wpdb->delete($child,[$m['fk']=>$id]);
             if($key==='material_dispatches' && $deleted===false)wp_send_json_error(['message'=>'Unable to replace dispatch items']);
@@ -4617,7 +4524,6 @@ final class BSM_Site_Management {
             case 'vendors':$rows=$wpdb->get_results("SELECT id,vendor_name label FROM {$this->prefix}vendors WHERE status='active' ORDER BY vendor_name",ARRAY_A);break;
             case 'contractors':$rows=$wpdb->get_results("SELECT id,contractor_name label FROM {$this->prefix}labour_contractors WHERE status='active' ORDER BY contractor_name",ARRAY_A);break;
             case 'categories':$rows=$wpdb->get_results("SELECT id,category_name label FROM {$this->prefix}item_categories WHERE status='active' ORDER BY category_name",ARRAY_A);break;
-            case 'sections':$rows=$wpdb->get_results("SELECT id,section_name label FROM {$this->prefix}sections WHERE status='active' ORDER BY section_name",ARRAY_A);break;
             case 'expense_categories':$rows=$wpdb->get_results("SELECT id,category_name label FROM {$this->prefix}expense_categories WHERE status='active' ORDER BY category_name",ARRAY_A);break;
             case 'allowance_types':$rows=$wpdb->get_results("SELECT id,allowance_type_name label FROM {$this->prefix}allowance_types WHERE status='active' ORDER BY allowance_type_name",ARRAY_A);break;
             case 'units':$rows=$wpdb->get_results("SELECT id,unit_name label FROM {$this->prefix}units WHERE status='active' ORDER BY unit_name",ARRAY_A);break;
@@ -4649,7 +4555,7 @@ final class BSM_Site_Management {
         $this->verify_ajax();
         $types_raw = sanitize_text_field($_POST['types'] ?? '');
         if ($types_raw !== '') {
-            $allowed = ['sites','customers','vendors','contractors','categories','expense_categories','sections','allowance_types','units','gst_rates','items','warehouses','users','designations','states','banks','requisitions','dispatches','inwards','returns','contractor_bills','gst_invoices'];
+            $allowed = ['sites','customers','vendors','contractors','categories','expense_categories','allowance_types','units','gst_rates','items','warehouses','users','designations','states','banks','requisitions','dispatches','inwards','returns','contractor_bills','gst_invoices'];
             $out = [];
             foreach (array_unique(array_filter(array_map('sanitize_key', explode(',', $types_raw)))) as $type) {
                 if (in_array($type, $allowed, true)) $out[$type] = $this->option_rows($type);
@@ -6523,7 +6429,7 @@ final class BSM_Site_Management {
     public function ajax_project_tracker() {
         $this->verify_ajax(); global $wpdb;
         $site=(int)($_POST['site_id']??0);
-        $sites=$wpdb->get_results("SELECT id,site_name,site_code,site_sections,status FROM {$this->prefix}sites ORDER BY site_name",ARRAY_A);
+        $sites=$wpdb->get_results("SELECT id,site_name,site_code,status FROM {$this->prefix}sites ORDER BY site_name",ARRAY_A);
         $tasks=$wpdb->get_results("SELECT id,site_id,section,task_name,sort_order FROM {$this->prefix}project_tasks ORDER BY sort_order,id",ARRAY_A);
         $subs=$wpdb->get_results("SELECT id,task_id,subtask_name,completion,sort_order FROM {$this->prefix}project_subtasks ORDER BY sort_order,id",ARRAY_A);
         $by_task=[]; foreach($subs as $sub){$by_task[(int)$sub['task_id']][]=$sub;}
@@ -6537,10 +6443,7 @@ final class BSM_Site_Management {
         foreach($sites as $row){
             if($site && (int)$row['id']!==$site)continue;
             $row['tasks']=$by_site[(int)$row['id']]??[];
-            $sections=array_values(array_unique(array_filter(array_map('trim',explode(',',(string)$row['site_sections'])))));
-            $row['sections']=$sections;
-            $progress=[];
-            foreach($sections as $section){$matching=array_values(array_filter($row['tasks'],fn($t)=>$t['section']===$section));if($matching)$progress[]=array_sum(array_column($matching,'completion'))/count($matching);}
+            $progress=array_column($row['tasks'],'completion');
             $row['completion']=count($progress)?round(array_sum($progress)/count($progress),2):0;
             $row['has_tasks']=count($progress)>0;
             $out[]=$row;
@@ -6554,13 +6457,12 @@ final class BSM_Site_Management {
         $id=(int)($_POST['id']??0);
         $site=(int)($_POST['site_id']??0);
         $tasks=$this->prefix.'project_tasks';$subs=$this->prefix.'project_subtasks';
-        $siteSections=fn($sid)=>array_map('trim',explode(',',(string)$wpdb->get_var($wpdb->prepare("SELECT site_sections FROM {$this->prefix}sites WHERE id=%d",$sid))));
         if($type==='edit_task_full'){
             if(!$id)wp_send_json_error(['message'=>'Invalid Task']);
             $task=$wpdb->get_row($wpdb->prepare("SELECT site_id FROM $tasks WHERE id=%d",$id));
-            $section=sanitize_text_field(wp_unslash($_POST['section']??''));
+            $section='';
             $taskName=substr(trim(sanitize_text_field(wp_unslash($_POST['task_name']??''))),0,255);
-            if(!$task||!$taskName||!in_array($section,$siteSections($task->site_id),true))wp_send_json_error(['message'=>'Valid Section and Task Name are required']);
+            if(!$task||!$taskName)wp_send_json_error(['message'=>'Valid Task Name are required']);
             $existing=isset($_POST['existing_subtasks'])&&is_array($_POST['existing_subtasks'])?wp_unslash($_POST['existing_subtasks']):[];
             $new=isset($_POST['new_subtasks'])&&is_array($_POST['new_subtasks'])?wp_unslash($_POST['new_subtasks']):[];
             if(count($existing)+count($new)>100)wp_send_json_error(['message'=>'Maximum 100 Sub-tasks per Task']);
@@ -6598,9 +6500,9 @@ final class BSM_Site_Management {
             if(!$id)wp_send_json_error(['message'=>'Invalid record']);
             if($type==='edit_task'){
                 $task=$wpdb->get_row($wpdb->prepare("SELECT site_id FROM $tasks WHERE id=%d",$id));
-                $section=sanitize_text_field(wp_unslash($_POST['section']??''));
+                $section='';
                 $name=substr(trim(sanitize_text_field(wp_unslash($_POST['name']??''))),0,255);
-                if(!$task||!$name||!in_array($section,$siteSections($task->site_id),true))wp_send_json_error(['message'=>'Valid Section and Task Name are required']);
+                if(!$task||!$name)wp_send_json_error(['message'=>'Valid Task Name are required']);
                 if($wpdb->update($tasks,['section'=>$section,'task_name'=>$name],['id'=>$id],['%s','%s'],['%d'])===false)wp_send_json_error(['message'=>'Unable to update Task']);
             }elseif($type==='edit_subtask'){
                 $name=substr(trim(sanitize_text_field(wp_unslash($_POST['name']??''))),0,255);
@@ -6641,9 +6543,9 @@ final class BSM_Site_Management {
                 $names[]=$clean;
             }
             if($type==='task_with_subtasks'){
-                $section=sanitize_text_field(wp_unslash($_POST['section']??''));
+                $section='';
                 $name=substr(trim(sanitize_text_field(wp_unslash($_POST['name']??''))),0,255);
-                if(!$site||!$name||!$section||!in_array($section,$siteSections($site),true))wp_send_json_error(['message'=>'Select a valid Site, Section and Task name']);
+                if(!$site||!$name)wp_send_json_error(['message'=>'Select a valid Site and Task name']);
             }else{
                 $taskId=(int)($_POST['task_id']??0);
                 if(!$taskId||!$wpdb->get_var($wpdb->prepare("SELECT id FROM $tasks WHERE id=%d",$taskId)))wp_send_json_error(['message'=>'Task not found']);
@@ -6662,11 +6564,11 @@ final class BSM_Site_Management {
             wp_send_json_success(['message'=>'Saved','task_id'=>$taskId,'subtask_count'=>count($names)]);
         }
         if($type==='task_with_subtask'){
-            $section=sanitize_text_field(wp_unslash($_POST['section']??''));
+            $section='';
             $name=substr(sanitize_text_field(wp_unslash($_POST['name']??'')),0,255);
             $subname=substr(sanitize_text_field(wp_unslash($_POST['subtask_name']??'')),0,255);
             $raw=$_POST['completion']??0;
-            if(!$site||!$name||!$subname||!$section||!in_array($section,$siteSections($site),true)||!is_numeric($raw)||(float)$raw<0||(float)$raw>100)wp_send_json_error(['message'=>'Enter a valid Section, Task, Sub-task and Progress']);
+            if(!$site||!$name||!$subname||!is_numeric($raw)||(float)$raw<0||(float)$raw>100)wp_send_json_error(['message'=>'Enter a valid Task, Sub-task and Progress']);
             $progress=round((float)$raw,2);
             $wpdb->query('START TRANSACTION');
             $ok=$wpdb->insert($tasks,['site_id'=>$site,'section'=>$section,'task_name'=>$name,'created_at'=>current_time('mysql')],['%d','%s','%s','%s']);
@@ -6679,9 +6581,9 @@ final class BSM_Site_Management {
             wp_send_json_success(['message'=>'Saved','task_id'=>$taskId]);
         }
         if($type==='task'){
-            $section=sanitize_text_field(wp_unslash($_POST['section']??''));
+            $section='';
             $name=substr(sanitize_text_field(wp_unslash($_POST['name']??'')),0,255);
-            if(!$site||!$name||!$section||!in_array($section,$siteSections($site),true))wp_send_json_error(['message'=>'Select a valid Site, assigned Section and Task name']);
+            if(!$site||!$name)wp_send_json_error(['message'=>'Select a valid Site and Task name']);
             if($wpdb->insert($tasks,['site_id'=>$site,'section'=>$section,'task_name'=>$name,'created_at'=>current_time('mysql')],['%d','%s','%s','%s'])===false)wp_send_json_error(['message'=>'Unable to create Task']);
         } elseif($type==='subtask'){
             $task=(int)($_POST['task_id']??0);
