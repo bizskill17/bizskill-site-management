@@ -147,3 +147,6 @@ Version 0.0.080: Removed the Quick Actions section from Site Dashboard.
 
 = 0.0.092 =
 * Removed Section from Site Master, BOQs, templates, imports, PDFs, navigation and Site Tracker. Existing records and tasks are preserved; Tracker progress is calculated across tasks.
+
+= 0.0.093 =
+* Supplier Name is the only mandatory Supplier field; contact, address, State and GST Type are optional on create and edit.

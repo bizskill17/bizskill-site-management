@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.092
+ * Version: 0.0.093
  * Author: BizSkill
  */
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/notifications.php';
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
-    const VERSION = '0.0.092';
+    const VERSION = '0.0.093';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -3270,7 +3270,8 @@ final class BSM_Site_Management {
         if(in_array($key,['vendors','labour_contractors'],true)){
             $name_field=$key==='vendors'?'vendor_name':'contractor_name';
             $name_label=$key==='vendors'?'Supplier Name':'Contractor Name';
-            foreach([$name_field=>$name_label,'contact_person'=>'Contact Person','mobile'=>'Mobile','address'=>'Address','city'=>'City','state_id'=>'State'] as $f=>$label){
+            $required_fields=$key==='vendors'?[$name_field=>$name_label]:[$name_field=>$name_label,'contact_person'=>'Contact Person','mobile'=>'Mobile','address'=>'Address','city'=>'City','state_id'=>'State'];
+            foreach($required_fields as $f=>$label){
                 if(!isset($data[$f]) || trim((string)$data[$f])==='') wp_send_json_error(['message'=>$label.' is required']);
             }
         }
@@ -3278,7 +3279,7 @@ final class BSM_Site_Management {
             $this->migrate_customer_gst_type();
             $this->migrate_vendor_gst_type();
             $gst_type=sanitize_key((string)($data['gst_type']??''));
-            if(!in_array($gst_type,['intra_state','inter_state','no_gst'],true)) wp_send_json_error(['message'=>'GST Type is required','field'=>'gst_type']);
+            if($gst_type!==''&&!in_array($gst_type,['intra_state','inter_state','no_gst'],true)) wp_send_json_error(['message'=>'Invalid GST Type','field'=>'gst_type']);
             $data['gst_type']=$gst_type;
         }
         if($key==='material_inwards'){
