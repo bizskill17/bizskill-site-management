@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.095
+ * Version: 0.0.096
  * Author: BizSkill
  */
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/notifications.php';
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
-    const VERSION = '0.0.095';
+    const VERSION = '0.0.096';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -3014,6 +3014,7 @@ final class BSM_Site_Management {
         if(array_key_exists('site_id',$row)) $this->enforce_employee_site_value((int)$row['site_id']);
         if($key==='labour_contractors'){
             $row['_employees']=$this->ops_admin()?$wpdb->get_results($wpdb->prepare("SELECT * FROM {$this->prefix}contractor_employees WHERE contractor_id=%d AND status='active' ORDER BY id",$id),ARRAY_A):[];
+            $row['_inactive_employees']=$this->ops_admin()?$wpdb->get_results($wpdb->prepare("SELECT id,employee_name,mobile,status FROM {$this->prefix}contractor_employees WHERE contractor_id=%d AND status<>'active' ORDER BY employee_name,id",$id),ARRAY_A):[];
         }
         if($key==='site_consumptions'){
             $created_by=(int)($row['created_by']??0);
@@ -4493,7 +4494,14 @@ final class BSM_Site_Management {
         if($key==='contractor_bills' && (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$this->prefix}time_entries WHERE bill_id=%d",$id))) wp_send_json_error(['message'=>'A calculated Contractor Bill cannot be deleted.']);
         if($key==='sites' && $wpdb->get_var($wpdb->prepare("SELECT id FROM {$this->prefix}site_transfers WHERE from_site_id=%d OR to_site_id=%d LIMIT 1",$id,$id))) wp_send_json_error(['message'=>'This Site is linked to a Site Transfer. Mark it inactive instead.']);
         if($key==='items' && $wpdb->get_var($wpdb->prepare("SELECT id FROM {$this->prefix}site_transfer_items WHERE item_id=%d LIMIT 1",$id))) wp_send_json_error(['message'=>'This Item is linked to a Site Transfer. Mark it inactive instead.']);
-        if($key==='labour_contractors' && $wpdb->get_var($wpdb->prepare("SELECT id FROM {$this->prefix}contractor_employees WHERE contractor_id=%d LIMIT 1",$id))) wp_send_json_error(['message'=>'This Contractor has linked Employees. Mark it inactive instead.']);
+        if($key==='labour_contractors'){
+            $linked=$wpdb->get_results($wpdb->prepare("SELECT employee_name,status FROM {$this->prefix}contractor_employees WHERE contractor_id=%d ORDER BY employee_name,id LIMIT 6",$id),ARRAY_A);
+            if($linked){
+                $names=array_map(function($employee){return $employee['employee_name'].' ('.$employee['status'].')';},array_slice($linked,0,5));
+                $details=implode(', ',$names).(count($linked)>5?', and others':'');
+                wp_send_json_error(['message'=>'Cannot delete: linked Employees — '.$details.'. Open Edit to view active and inactive Employees. Inactive status stops future selection; it does not remove existing links.']);
+            }
+        }
         $deleted_salary_slip_id=0;
         if($key==='vendor_payments') $deleted_salary_slip_id=(int)$wpdb->get_var($wpdb->prepare("SELECT salary_slip_id FROM {$this->prefix}vendor_payments WHERE id=%d AND payment_type='salary'",$id));
         if($key==='company_settings') wp_send_json_error(['message'=>'Company Settings cannot be deleted.']);

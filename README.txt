@@ -156,3 +156,6 @@ Version 0.0.080: Removed the Quick Actions section from Site Dashboard.
 
 = 0.0.095 =
 * Simplified Pending Material Dispatch notifications to Site and pending item quantities only; removed dates, requisition references and submitter details.
+
+= 0.0.096 =
+* Contractor editor shows inactive linked employees separately, without reactivating them. Deletion messages identify linked employee names and status and explain why inactivation does not remove links.
