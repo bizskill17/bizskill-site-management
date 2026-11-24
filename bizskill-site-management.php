@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.093
+ * Version: 0.0.094
  * Author: BizSkill
  */
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/notifications.php';
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
-    const VERSION = '0.0.093';
+    const VERSION = '0.0.094';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -660,11 +660,12 @@ final class BSM_Site_Management {
             $quotes=[];$quote_ids=[];$selected_rate=null;
             foreach((array)($it['quotations']??[]) as $quote){
                 $qid=(int)($quote['vendor_id']??0);$raw=$quote['rate']??'';
-                if(!$qid||!is_numeric($raw)||!is_finite((float)$raw)||(float)$raw<0)wp_send_json_error(['message'=>'Enter three suppliers with valid rates.']);
+                if(!$qid&&$raw==='')continue;
+                if(!$qid||!is_numeric($raw)||!is_finite((float)$raw)||(float)$raw<0)wp_send_json_error(['message'=>'Enter a supplier and valid rate for each quotation provided.']);
                 if(!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}vendors WHERE id=%d AND status='active'",$qid)))wp_send_json_error(['message'=>'Select active suppliers.']);
                 $quote_ids[$qid]=true;$qr=round((float)$raw,2);$quotes[]=['supplier_id'=>$qid,'rate'=>$qr];if($qid===$vendor)$selected_rate=$selected_rate===null?$qr:min($selected_rate,$qr);
             }
-            if(count($quotes)!==3||$selected_rate===null)wp_send_json_error(['message'=>'Choose a supplier from three quotations.']);
+            if(count($quotes)<1||count($quotes)>3||$selected_rate===null)wp_send_json_error(['message'=>'Choose a supplier from one to three quotations.']);
             $rate=$selected_rate;
             $remain=$qty;$alloc=[];$dates=[];foreach($x['allocations'] as $al){if($remain<=0.009)break;$a=min($remain,(float)$al['qty']);if($a>0){$alloc[]=['requisition_item_id'=>(int)$al['requisition_item_id'],'qty'=>$a];$remain=round($remain-$a,2);if(!empty($al['required_date']))$dates[]=$al['required_date'];}}
             $groups[$vendor][]=['item_id'=>$iid,'unit_id'=>(int)$x['unit_id'],'approved_qty_snapshot'=>(float)$x['approved_qty'],'stock_snapshot'=>(float)$x['current_stock'],'pending_qty_snapshot'=>(float)$x['pending_po_qty'],'po_qty'=>$qty,'rate'=>$rate,'quotations'=>$quotes,'allocations'=>$alloc,'required_date'=>$dates?min($dates):null];

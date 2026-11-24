@@ -150,3 +150,6 @@ Version 0.0.080: Removed the Quick Actions section from Site Dashboard.
 
 = 0.0.093 =
 * Supplier Name is the only mandatory Supplier field; contact, address, State and GST Type are optional on create and edit.
+
+= 0.0.094 =
+* Approved Requisition Pending PO accepts one to three supplier quotations per item. Blank quotation slots are optional; incomplete quotations still require a supplier and valid rate.
