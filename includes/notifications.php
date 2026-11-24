@@ -219,6 +219,7 @@ trait BSM_Notifications {
             $states=$type==='pending_requisition'?"'pending_approval','submitted','draft'":"'approved','partially_dispatched','dispatched'";
             $heads=$wpdb->get_results($wpdb->prepare("SELECT * FROM {$p}material_requisitions WHERE site_id=%d AND status IN ($states) ORDER BY required_date,id",$site),ARRAY_A)?:[];
             foreach($heads as $h){$lines=[];foreach($this->nt_items('material_requisition_items','requisition_id',$h['id']) as $r){$qty=(float)$r['requested_qty'];if($type==='pending_dispatch'){$dispatched=(float)$wpdb->get_var($wpdb->prepare("SELECT COALESCE(SUM(d.qty),0) FROM {$p}material_dispatch_items d JOIN {$p}material_dispatches h ON h.id=d.dispatch_id WHERE d.requisition_item_id=%d AND h.status<>'cancelled'",$r['id']));$qty=max(0,$r['approved_qty']-$dispatched);}if($qty>0.009)$lines[]=$this->nt_line($r,$qty);}
+                if($type==='pending_dispatch'){if($lines)$blocks[]=implode("\n",$lines);continue;}
                 if($lines)$blocks[]=($type==='pending_requisition'?(count($blocks)+1).'.':'').$h['requisition_no'].' | '.$this->nt_date($h['requisition_date']).$this->nt_optional('Required Date',$this->nt_date($h['required_date']??''))."\n".implode("\n",$lines).$this->nt_optional('Submitted By',$this->nt_name($h['requested_by']??0));
             }
         }elseif($type==='pending_receipt'){
@@ -242,7 +243,9 @@ trait BSM_Notifications {
                 if($type==='pending_po_approval')$blocks[]=(count($blocks)+1).'.'.$text."\nAmount: ₹".number_format($amount,2).$this->nt_optional('Created By',$this->nt_name($h['created_by']??0,true));elseif($lines)$blocks[]=$text."\n".implode("\n",$lines);
             }
         }
-        if(!$blocks)return '';return '*'.$heading.'*'.($site?"\nSite: ".$this->nt_site($site):'')."\n".(in_array($type,['labour_attendance','site_timesheet','office_timesheet'],true)?'Date: ':'As On: ').$this->nt_date($date)."\n\n".implode("\n\n",$blocks);
+        if(!$blocks)return '';
+        if($type==='pending_dispatch')return '*'.$heading.'*'.($site?"\nSite: ".$this->nt_site($site):'')."\n\n".implode("\n",$blocks);
+        return '*'.$heading.'*'.($site?"\nSite: ".$this->nt_site($site):'')."\n".(in_array($type,['labour_attendance','site_timesheet','office_timesheet'],true)?'Date: ':'As On: ').$this->nt_date($date)."\n\n".implode("\n\n",$blocks);
     }
     private function nt_scheduled(){
         $s=$this->nt_settings();if(!$s['enabled'])return;$now=new DateTimeImmutable('now',new DateTimeZone('Asia/Kolkata'));if(!in_array((int)$now->format('N'),array_map('intval',$s['days']),true))return;

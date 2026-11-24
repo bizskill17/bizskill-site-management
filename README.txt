@@ -153,3 +153,6 @@ Version 0.0.080: Removed the Quick Actions section from Site Dashboard.
 
 = 0.0.094 =
 * Approved Requisition Pending PO accepts one to three supplier quotations per item. Blank quotation slots are optional; incomplete quotations still require a supplier and valid rate.
+
+= 0.0.095 =
+* Simplified Pending Material Dispatch notifications to Site and pending item quantities only; removed dates, requisition references and submitter details.
