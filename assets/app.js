@@ -1681,11 +1681,27 @@ function contractorEmployeeRow(employee={}){
   const fields=[['employee_name','Name'],['mobile','Mobile'],['address','Address'],['bank_name','Bank'],['ifsc','IFSC'],['account_number','AC No.']];
   return `<tr data-employee-id="${Number(employee.id||0)}">${fields.map(([field,label])=>`<td>${field==='address'?`<textarea data-employee-field="${field}" aria-label="${label}" rows="2">${esc(employee[field]||'')}</textarea>`:`<input type="text" data-employee-field="${field}" aria-label="${label}" value="${esc(employee[field]||'')}" ${field==='mobile'?'inputmode="numeric" maxlength="10" pattern="[0-9]{10}"':field==='account_number'?'inputmode="numeric" maxlength="60"':field==='ifsc'?'maxlength="11"':''}>`}</td>`).join('')}<td><button type="button" class="bsm-btn bsm-contractor-employee-remove" aria-label="Remove Employee">×</button></td></tr>`;
 }
-function renderContractorEmployeeTable(employees=[],inactiveEmployees=[]){
+function renderContractorEmployeeTable(employees=[],inactiveEmployees=[],contractorId=0){
   $('#bsm-line-items').html(`<div class="bsm-contractor-employees"><div class="bsm-lines-head"><h3>Employees</h3><button type="button" id="bsm-contractor-employee-add" class="bsm-btn">+ Add Employee</button></div><div class="bsm-table-wrap"><table class="bsm-table"><thead><tr><th>Name</th><th>Mobile</th><th>Address</th><th>Bank</th><th>IFSC</th><th>AC No.</th><th>Action</th></tr></thead><tbody id="bsm-contractor-employee-rows">${(employees.length?employees:[{}]).map(contractorEmployeeRow).join('')}</tbody></table></div></div>`);
-  if(inactiveEmployees.length)$('#bsm-line-items').append(`<div class="bsm-contractor-inactive-employees"><h3>Inactive Linked Employees</h3><p>These employees remain linked for historical records and prevent contractor deletion.</p><div class="bsm-table-wrap"><table class="bsm-table"><thead><tr><th>Name</th><th>Mobile</th><th>Status</th></tr></thead><tbody>${inactiveEmployees.map(employee=>`<tr><td>${esc(employee.employee_name||'')}</td><td>${esc(employee.mobile||'—')}</td><td>${esc(employee.status||'inactive')}</td></tr>`).join('')}</tbody></table></div></div>`);
+  if(inactiveEmployees.length)$('#bsm-line-items').append(`<div class="bsm-contractor-inactive-employees"><h3>Inactive Linked Employees</h3><p>Delete an unused inactive employee below. If records exist, the system will show their references.</p><div class="bsm-table-wrap"><table class="bsm-table"><thead><tr><th>Name</th><th>Mobile</th><th>Status</th><th>Action</th></tr></thead><tbody>${inactiveEmployees.map(employee=>`<tr><td>${esc(employee.employee_name||'')}</td><td>${esc(employee.mobile||'—')}</td><td>${esc(employee.status||'inactive')}</td><td><button type="button" class="bsm-btn bsm-inactive-worker-delete" data-worker="${Number(employee.id)}" data-contractor="${Number(contractorId)}" aria-label="Delete inactive employee ${esc(employee.employee_name||'')}" title="Delete unused Employee">Delete</button></td></tr>`).join('')}</tbody></table></div></div>`);
 
 }
+$(document).on('click','.bsm-inactive-worker-delete',async function(){
+  const button=$(this),id=Number(button.data('worker')),contractorId=Number(button.data('contractor'));
+  if(!confirm('Permanently delete this inactive Employee? Deletion is allowed only if no records use this employee.'))return;
+  button.prop('disabled',true);
+  try{
+    const result=await opsCall('worker_delete',{id,contractor_id:contractorId});
+    const row=button.closest('tr'),box=button.closest('.bsm-contractor-inactive-employees');
+    row.remove();if(!box.find('tbody tr').length)box.remove();
+    showToast(result.message||'Employee deleted');
+  }catch(error){
+    const box=button.closest('.bsm-contractor-inactive-employees');
+    box.find('.bsm-worker-delete-error').remove();
+    $('<p class="bsm-worker-delete-error" role="alert"></p>').text(error.message||'Unable to delete Employee').appendTo(box);
+    showToast(error.message||'Unable to delete Employee',true);
+  }finally{button.prop('disabled',false);}
+});
 $(document).on('click','#bsm-contractor-employee-add',function(){$('#bsm-contractor-employee-rows').append(contractorEmployeeRow());});
 $(document).on('click','.bsm-contractor-employee-remove',function(){$(this).closest('tr').remove();});
 
@@ -1780,7 +1796,7 @@ async function openForm(key,id=0,{showModal=true}={}){
     renderItems(cfg,attendanceRows);
     refreshLabourAttendanceRows();
   } else if(cfg.items) renderItems(cfg,row._items||[]); else $('#bsm-line-items').empty();
-  if(key==='labour_contractors')renderContractorEmployeeTable(row._employees||[],row._inactive_employees||[]);
+  if(key==='labour_contractors')renderContractorEmployeeTable(row._employees||[],row._inactive_employees||[],id);
   if(['quotations','tax_invoices'].includes(key)) setTimeout(()=>prepareSalesForm(key,row),0);
   if(key==='material_inwards'){
     const mode=String(row.inward_type||$('#bsm-form-fields select[name="inward_type"]').val()||'purchase');

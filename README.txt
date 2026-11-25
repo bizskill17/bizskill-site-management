@@ -159,3 +159,6 @@ Version 0.0.080: Removed the Quick Actions section from Site Dashboard.
 
 = 0.0.096 =
 * Contractor editor shows inactive linked employees separately, without reactivating them. Deletion messages identify linked employee names and status and explain why inactivation does not remove links.
+
+= 0.0.097 =
+* Added admin-only deletion for unused inactive Contractor Employees. Linked Time Sheets, Bills and Labour Attendance block deletion and show record references. Historical records are retained.

@@ -166,6 +166,46 @@ trait BSM_Workforce_Transfers {
         }catch(Throwable $e){$wpdb->query('ROLLBACK');throw $e;}
         finally{$wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)',$lock));}
     }
+
+    private function ops_delete_inactive_worker($id,$contractor_id) {
+        $this->ops_require_admin();global $wpdb;$p=$this->prefix;
+        if(!$id||!$contractor_id)throw new Exception('Select a valid Contractor Employee.');
+        $contractor_lock=$this->ops_lock('contractor_'.$contractor_id);$worker_lock=null;
+        try{
+            $worker_lock=$this->ops_lock('time_w'.$id);
+            $wpdb->query('START TRANSACTION');
+            $worker=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}contractor_employees WHERE id=%d AND contractor_id=%d FOR UPDATE",$id,$contractor_id),ARRAY_A);
+            if(!$worker)throw new Exception('Employee not found under this Contractor. Refresh and retry.');
+            if($worker['status']!=='inactive')throw new Exception('Only inactive Employees can be deleted here.');
+            $links=[];
+            $entries=$wpdb->get_results($wpdb->prepare("SELECT e.id,e.work_date,e.status,e.bill_id,b.bill_no FROM {$p}time_entries e LEFT JOIN {$p}contractor_bills b ON b.id=e.bill_id WHERE e.worker_id=%d ORDER BY e.work_date,e.id",$id),ARRAY_A);
+            if($wpdb->last_error)throw new Exception('Unable to check Time Sheet links. Employee was not deleted.');
+            foreach($entries as $entry){
+                $label='Time Sheet #'.$entry['id'].' ('.date('d/m/Y',strtotime($entry['work_date'])).', '.$entry['status'].')';
+                if((int)$entry['bill_id'])$label.=' — Bill '.($entry['bill_no']?:'#'.$entry['bill_id']);
+                $links[]=$label;
+            }
+            $attendance=$wpdb->get_results($wpdb->prepare("SELECT id,attendance_date,remarks FROM {$p}labour_attendance WHERE contractor_id=%d ORDER BY attendance_date,id",$contractor_id),ARRAY_A);
+            if($wpdb->last_error)throw new Exception('Unable to check Attendance links. Employee was not deleted.');
+            foreach($attendance as $row){
+                $details=json_decode((string)$row['remarks'],true);
+                foreach((array)($details['employee_hours']??[]) as $hours){
+                    if((int)($hours['worker_id']??0)===$id){
+                        $links[]='Labour Attendance #'.$row['id'].' ('.date('d/m/Y',strtotime($row['attendance_date'])).')';break;
+                    }
+                }
+            }
+            if($links)throw new Exception('Cannot delete '.$worker['employee_name'].'. Linked records: '.implode('; ',array_slice($links,0,10)).(count($links)>10?'; plus '.(count($links)-10).' more records':'').'.');
+            if($wpdb->delete($p.'contractor_employees',['id'=>$id,'contractor_id'=>$contractor_id,'status'=>'inactive'])!==1)throw new Exception('Employee was not deleted. Refresh and retry.');
+            $wpdb->query('COMMIT');
+            return ['message'=>'Unused inactive Employee deleted. You can now retry deleting the Contractor.'];
+        }catch(Throwable $e){$wpdb->query('ROLLBACK');throw $e;}
+        finally{
+            if($worker_lock)$wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)',$worker_lock));
+            $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)',$contractor_lock));
+        }
+    }
+
     private function ops_time_interval($date,$from,$to) {
         $start=strtotime($date.' '.substr($from,0,5).' UTC');
         $end=strtotime($date.' '.substr($to,0,5).' UTC');
@@ -256,6 +296,8 @@ trait BSM_Workforce_Transfers {
                 $duplicate=(int)$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}holidays WHERE holiday_date=%s AND holiday_name=%s AND id<>%d",$row['holiday_date'],$name,$id));if($duplicate)throw new Exception('This Holiday already exists.');
                 $this->ops_write($id?$wpdb->update($p.'holidays',$row,['id'=>$id]):$wpdb->insert($p.'holidays',$row));break;
             case 'holiday_delete':$this->ops_require_admin();$this->ops_write($wpdb->delete($p.'holidays',['id'=>(int)$d['id']]));break;
+            case 'worker_delete':
+                $result=$this->ops_delete_inactive_worker((int)($d['id']??0),(int)($d['contractor_id']??0));break;
             case 'worker_save':
                 $this->ops_require_admin();$id=(int)($d['id']??0);$cid=(int)($d['contractor_id']??0);$name=sanitize_text_field($d['employee_name']??'');
                 if(!$name||!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}labour_contractors WHERE id=%d",$cid)))throw new Exception('Contractor and Employee Name are required.');
