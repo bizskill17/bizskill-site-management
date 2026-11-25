@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.099
+ * Version: 0.0.100
  * Author: BizSkill
  */
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/notifications.php';
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
-    const VERSION = '0.0.099';
+    const VERSION = '0.0.100';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -3280,11 +3280,8 @@ final class BSM_Site_Management {
             }
         }
         if($key==='vendors'){
-            $this->migrate_customer_gst_type();
-            $this->migrate_vendor_gst_type();
-            $gst_type=sanitize_key((string)($data['gst_type']??''));
-            if($gst_type!==''&&!in_array($gst_type,['intra_state','inter_state','no_gst'],true)) wp_send_json_error(['message'=>'Invalid GST Type','field'=>'gst_type']);
-            $data['gst_type']=$gst_type;
+            // Supplier GST Type is no longer editable; retain existing tax settings.
+            unset($data['gst_type']);
         }
         if($key==='material_inwards'){
             $this->migrate_customer_gst_type();

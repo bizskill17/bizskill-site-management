@@ -168,3 +168,6 @@ Version 0.0.080: Removed the Quick Actions section from Site Dashboard.
 
 = 0.0.099 =
 * Removed Site Code from Site Master tables and exports. Duplicate Site Names remain blocked on create/edit regardless of case or whitespace, including Unicode surrounding spaces; failed duplicate lookups stop the save.
+
+= 0.0.100 =
+* Removed GST Type from the Supplier form, list and Excel export. Supplier edits preserve existing stored tax settings.
