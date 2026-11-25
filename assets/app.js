@@ -191,9 +191,13 @@ function restoreNavScroll(){
 const BSM_PROTECTED_VIEWS=['company_settings','view_settings','data_reset'];
 function bsmHiddenSet(){return new Set((BSM.hiddenViews||[]).filter(k=>!BSM_PROTECTED_VIEWS.includes(k)));}
 function isViewHidden(k){return bsmHiddenSet().has(k);}
+function canManageMaster(key){
+  if(BSM.currentUser?.is_admin)return true;
+  return key==='vendors'&&(BSM.currentUser?.allowed_views||[]).includes('vendors')&&!isViewHidden('vendors');
+}
 function firstVisibleView(){
   const allowed=(BSM.currentUser&&BSM.currentUser.is_admin)?null:new Set((BSM.currentUser&&BSM.currentUser.allowed_views)||[]);
-  for(const g of App.nav){if(allowed!==null&&['Masters','Settings'].includes(g.group))continue;for(const [k] of g.items){if(isViewHidden(k))continue;if(allowed===null||allowed.has(k)||k==='my_salary_slips')return k;}}
+  for(const g of App.nav){if(allowed!==null&&g.group==='Settings')continue;for(const [k] of g.items){if(isViewHidden(k)||(g.group==='Masters'&&!canManageMaster(k)))continue;if(allowed===null||allowed.has(k)||k==='my_salary_slips')return k;}}
   return '';
 }
 // ---- Settings > Clear Transaction Data (WordPress admins only) ----
@@ -225,7 +229,7 @@ function renderViewSettings(){
   let h='<div class="bsm-panel bsm-viewvis"><p class="bsm-viewvis-help">Ticked views are visible in the menu. Untick a view to hide it for all users. A menu group with no ticked views is hidden completely.</p>';
   h+='<div class="bsm-viewvis-tools"><button type="button" class="bsm-btn" id="bsm-viewvis-all">Tick All</button><button type="button" class="bsm-btn" id="bsm-viewvis-none">Untick All</button><div class="bsm-spacer"></div><button type="button" class="bsm-btn bsm-btn-primary" id="bsm-viewvis-save">Save</button></div><div class="bsm-viewvis-grid">';
   App.nav.forEach((g,gi)=>{
-    const items=g.items.filter(([k])=>!(g.group==='Payment'&&k==='payment_form'));
+    const items=g.items.filter(([k])=>(g.group!=='Masters'||canManageMaster(k))&&!(g.group==='Payment'&&k==='payment_form'));
     if(!items.length)return;
     const title=g.group==='Main'?'Dashboard':g.group;
     h+=`<div class="bsm-viewvis-group"><label class="bsm-viewvis-group-head"><input type="checkbox" class="bsm-viewvis-group-cb" data-group="${gi}"><span>${esc(title)}</span></label><div class="bsm-viewvis-items">`;
@@ -260,7 +264,7 @@ $(document).on('click','#bsm-viewvis-save',async function(){
 function visibleNavGroups(){
   const allowed=BSM.currentUser?.is_admin?null:new Set(BSM.currentUser?.allowed_views||[]);
   return App.nav.map((g,index)=>{
-    if(allowed!==null&&['Masters','Settings'].includes(g.group))return null;
+    if(allowed!==null&&g.group==='Settings')return null;
     const items=g.items.filter(([k])=>(allowed===null||allowed.has(k)||k==='my_salary_slips')&&!(g.group==='Payment'&&k==='payment_form')&&(k!=='notifications'||BSM.notificationAdmin)&&!isViewHidden(k));
     return items.length?{...g,index,items}:null;
   }).filter(Boolean);
@@ -587,7 +591,7 @@ $(document).on('click','#tracker-excel',function(){const sites=(App.trackerSites
 
 async function openView(key){
   const allowed=(BSM.currentUser&&BSM.currentUser.is_admin)?null:new Set((BSM.currentUser&&BSM.currentUser.allowed_views)||[]);
-  if(allowed!==null && key!=='my_salary_slips' && (key==='company_settings' || key==='view_settings' || !allowed.has(key))){ showToast('You do not have permission to access this view.',true); return; }
+  if(allowed!==null && key!=='my_salary_slips' && (key==='company_settings' || key==='view_settings' || ((masterModules.includes(key)||key==='bank_accounts')&&!canManageMaster(key)) || !allowed.has(key))){ showToast('You do not have permission to access this view.',true); return; }
   if(isViewHidden(key)){const fb=firstVisibleView();if(fb&&fb!==key)return openView(fb);$('#bsm-content').html('<div class="bsm-empty">This view is hidden. An administrator can turn it on in Settings → Show / Hide Views.</div>');return;}
   exitInlineFormMode();
   App.current=key;App.page=1;App.search='';buildNav();$('.bsm-sidebar').removeClass('open');
@@ -1613,7 +1617,7 @@ function fieldHtml(f,val=''){
   else if(f.type==='select_ref') {
     const nativeClass=f.name==='gst_rate'?' class="bsm-native-gst-rate"':'';
     const select=`<select${nativeClass} name="${f.name}" ${req} ${dis}><option value="">Select</option>${bsmOptionsForRef(f.ref).map(x=>`<option value="${x.id}" ${(String(x.id)===String(v)||Number(x.id)===Number(v))?'selected':''}>${esc(x.label)}</option>`).join('')}</select>`;
-    input=f.addMaster?`<div class="bsm-select-add">${select}<button type="button" class="bsm-quick-add" data-master="${esc(f.addMaster)}" data-target="${esc(f.name)}" title="Add new">+</button></div>`:select;
+    input=f.addMaster&&canManageMaster(f.addMaster)?`<div class="bsm-select-add">${select}<button type="button" class="bsm-quick-add" data-master="${esc(f.addMaster)}" data-target="${esc(f.name)}" title="Add new">+</button></div>`:select;
   } else if(f.type==='select') input=`<select name="${f.name}" ${req} ${dis}>${(f.options||[]).map(x=>`<option value="${esc(x[0])}" ${String(x[0])===String(v)?'selected':''}>${esc(x[1])}</option>`).join('')}</select>`;
   else if(f.type==='date') input=`<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" name="${f.name}" value="${esc(normalizeDateInput(v))}" ${req} ${ro}>`;
   else {
@@ -1706,6 +1710,7 @@ $(document).on('click','#bsm-contractor-employee-add',function(){$('#bsm-contrac
 $(document).on('click','.bsm-contractor-employee-remove',function(){$(this).closest('tr').remove();});
 
 async function openForm(key,id=0,{showModal=true}={}){
+  if((masterModules.includes(key)||key==='bank_accounts')&&!canManageMaster(key))return showToast('You do not have permission to manage this Master.',true);
   const cfg=App.configs[key];App.editId=id;
   $('#bsm-modal').toggleClass('bsm-site-receipt-modal',key==='site_receipts').toggleClass('bsm-purchase-edit-modal',key==='material_inwards' && !!id);
   // Set the active form module BEFORE module-specific initializers run.
@@ -2846,7 +2851,7 @@ function toggleUserSalaryFields(){
   });
 }
 function allUserViews(){
-  const out=[];App.nav.forEach(g=>{if(['Masters','Settings'].includes(g.group))return;g.items.forEach(([key,label])=>{if(!isViewHidden(key))out.push({key,label,group:g.group});})});return out;
+  const out=[];App.nav.forEach(g=>{if(g.group==='Settings')return;g.items.forEach(([key,label])=>{if((g.group!=='Masters'||key==='vendors')&&!isViewHidden(key))out.push({key,label,group:g.group});})});return out;
 }
 function parseJsonArray(v){if(Array.isArray(v))return v;try{const x=JSON.parse(v||'[]');return Array.isArray(x)?x:[]}catch(e){return []}}
 function renderUserAccess(row={}){
@@ -2890,6 +2895,7 @@ $(document).on('click',function(e){if(!$(e.target).closest('.bsm-multiselect').l
 
 let QuickMaster={master:'',target:''};
 function quickAddMaster(master,target){
+  if(!canManageMaster(master))return showToast('You do not have permission to manage this Master.',true);
   QuickMaster={master,target};
   $('#bsm-quick-msg').text('');
   if(master==='items'){
@@ -4545,6 +4551,7 @@ async function init(){
   $('#bsm-shell').show();
   try{if(window.innerWidth>760 && localStorage.getItem('bsmSidebarCollapsed')==='1') $('#bsm-shell').addClass('bsm-sidebar-collapsed');}catch(e){}
   $('#bsm-sidebar-toggle').attr('title',$('#bsm-shell').hasClass('bsm-sidebar-collapsed')?'Show Menu':'Collapse Menu').attr('aria-label',$('#bsm-shell').hasClass('bsm-sidebar-collapsed')?'Show Menu':'Collapse Menu');
+  if(!visibleNavGroups().some(group=>group.items.some(([key])=>key===App.current)))App.current=firstVisibleView();
   buildNav();$('#bsm-sidebar-user').text(BSM.currentUser?.name||'');
   openView(App.current);
 }

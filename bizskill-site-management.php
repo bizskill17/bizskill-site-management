@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.101
+ * Version: 0.0.102
  * Author: BizSkill
  */
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/notifications.php';
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
-    const VERSION = '0.0.101';
+    const VERSION = '0.0.102';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -1722,10 +1722,15 @@ final class BSM_Site_Management {
     }
 
     private function deny_employee_settings($key) {
-        if (sanitize_key($key) !== 'company_settings' || !is_user_logged_in() || current_user_can('manage_options')) return;
+        $key=sanitize_key($key);
+        $masters=['bank_accounts','users','designations','customers','sites','vendors','labour_contractors','states','item_categories','units','gst_rates','items','warehouses','expense_categories','allowance_types'];
+        if(!in_array($key,array_merge($masters,['company_settings']),true)||current_user_can('manage_options'))return;
         global $wpdb;
-        $role = $wpdb->get_var($wpdb->prepare("SELECT role FROM {$this->prefix}users WHERE wp_user_id=%d LIMIT 1", get_current_user_id()));
-        if ($role === 'bsm_employee') wp_send_json_error(['message'=>'You do not have permission to access this view.'], 403);
+        $user=$wpdb->get_row($wpdb->prepare("SELECT role,status,allowed_views FROM {$this->prefix}users WHERE wp_user_id=%d LIMIT 1",get_current_user_id()),ARRAY_A);
+        if($user&&$user['status']==='active'&&($user['role']??'')!=='bsm_employee')return;
+        $allowed=json_decode($user['allowed_views']??'[]',true);
+        if($user&&$user['status']==='active'&&$key==='vendors'&&is_array($allowed)&&in_array('vendors',$allowed,true)&&!in_array('vendors',$this->hidden_views(),true))return;
+        wp_send_json_error(['message'=>'You do not have permission to manage this Master.'],403);
     }
 
     private function modules() {
@@ -5606,7 +5611,7 @@ final class BSM_Site_Management {
     }
 
     public function ajax_user_list(){
-        $this->verify_ajax(); global $wpdb;
+        $this->verify_ajax();$this->deny_employee_settings('users'); global $wpdb;
 
         // Keep the User Master backward-compatible with databases created by
         // earlier plugin versions. dbDelta/create_tables is safe here and only
