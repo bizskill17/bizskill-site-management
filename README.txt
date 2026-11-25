@@ -171,3 +171,6 @@ Version 0.0.080: Removed the Quick Actions section from Site Dashboard.
 
 = 0.0.100 =
 * Removed GST Type from the Supplier form, list and Excel export. Supplier edits preserve existing stored tax settings.
+
+= 0.0.101 =
+* Renamed the existing Vendors WordPress page title to Suppliers during upgrade so the browser tab matches the Supplier screen.

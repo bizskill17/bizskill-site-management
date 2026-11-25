@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.100
+ * Version: 0.0.101
  * Author: BizSkill
  */
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/notifications.php';
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
-    const VERSION = '0.0.100';
+    const VERSION = '0.0.101';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -1295,6 +1295,7 @@ final class BSM_Site_Management {
                 $id = $page->ID;
                 $updates = ['ID' => $id];
                 $dirty = false;
+                if ($key === 'vendors' && $page->post_title !== $title) { $updates['post_title'] = $title; $dirty = true; }
                 if ((int)$page->post_parent !== (int)$parent_id) { $updates['post_parent'] = $parent_id; $dirty = true; }
                 if (trim((string)$page->post_content) === '') { $updates['post_content'] = '[bizskill_site_management]'; $dirty = true; }
                 if ($dirty) wp_update_post($updates);
