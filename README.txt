@@ -162,3 +162,6 @@ Version 0.0.080: Removed the Quick Actions section from Site Dashboard.
 
 = 0.0.097 =
 * Added admin-only deletion for unused inactive Contractor Employees. Linked Time Sheets, Bills and Labour Attendance block deletion and show record references. Historical records are retained.
+
+= 0.0.098 =
+* Renamed the sidebar Logout button to Log out.

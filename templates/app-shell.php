@@ -38,7 +38,7 @@ if ($bsm_company_name === '') {
             </div>
             <nav id="bsm-nav"></nav>
             <div class="bsm-sidebar-user" id="bsm-sidebar-user"></div>
-            <button id="bsm-logout" class="bsm-logout">Logout</button>
+            <button id="bsm-logout" class="bsm-logout">Log out</button>
         </aside>
         <div class="bsm-main">
             <header class="bsm-topbar">
