@@ -294,7 +294,12 @@ function buildNav(){
   const $tabs=$('#bsm-subnav');
   if(!active||active.group==='Main'){$tabs.empty().prop('hidden',true);return;}
   $tabs.prop('hidden',false).attr('aria-label',active.group+' views').html(active.items.map(([k,l])=>`<a class="bsm-nav-item bsm-subnav-tab${k===App.current?' active':''}" data-menu-group="${esc(active.group)}" data-view="${esc(k)}" href="${esc(BSM.pages?.[k]||'#')}" ${k===App.current?'aria-current="page"':''}>${esc(l)}</a>`).join(''));
-  const tab=$tabs.find('[aria-current="page"]')[0];if(tab&&typeof tab.scrollIntoView==='function')tab.scrollIntoView({block:'nearest',inline:'nearest'});
+  const tab=$tabs.find('[aria-current="page"]')[0],strip=$tabs[0];
+  if(tab&&strip){
+    const bounds=strip.getBoundingClientRect(),activeBounds=tab.getBoundingClientRect();
+    if(activeBounds.left<bounds.left)strip.scrollLeft-=bounds.left-activeBounds.left;
+    else if(activeBounds.right>bounds.right)strip.scrollLeft+=activeBounds.right-bounds.right;
+  }
 }
 
 function setTitle(t,sub=''){ $('#bsm-page-title').text(t); }

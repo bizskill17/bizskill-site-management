@@ -3027,3 +3027,18 @@ html,body{
 .bsm-app .bsm-boq-table-wrap .bsm-table th:nth-child(3){width:27%}
 .bsm-app .bsm-boq-table-wrap .bsm-table th:nth-child(4){width:12%}
 .tracker-flat-table th:nth-child(3),.tracker-flat-table td:nth-child(3){width:1%;white-space:nowrap}
+
+/* Keep the application beside the fixed sidebar; scroll wide tables locally. */
+html:has(body.bsm-blank-body),body.bsm-blank-body{max-width:100%;overflow-x:clip;}
+.bsm-app,.bsm-shell{width:100%;max-width:100%;min-width:0;}
+.bsm-main{flex:0 0 auto;min-width:0;}
+.bsm-content,.bsm-topbar,.bsm-subnav{min-width:0;max-width:100%;}
+.bsm-app .bsm-boq-form-panel,.bsm-app #bsm-boq-form{width:100%;min-width:0;max-width:100%;}
+.bsm-app .bsm-boq-table-wrap{width:100%;min-width:0;max-width:100%;overflow-x:auto!important;overscroll-behavior-x:contain;}
+@media(min-width:761px){
+  .bsm-shell:not(.bsm-sidebar-collapsed)>.bsm-main{margin-left:245px;width:calc(100% - 245px);}
+  .bsm-shell.bsm-sidebar-collapsed>.bsm-main{margin-left:0;width:100%;}
+}
+@media(max-width:760px){
+  .bsm-shell>.bsm-main{margin-left:0;width:100%;}
+}

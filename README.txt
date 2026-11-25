@@ -177,3 +177,6 @@ Version 0.0.080: Removed the Quick Actions section from Site Dashboard.
 
 = 0.0.102 =
 * Employees can be granted Suppliers independently under Masters. Only authorised Supplier navigation and tabs appear. Supplier CRUD/export require explicit permission; other Master CRUD is blocked for employees. Lookup dropdowns remain available for permitted workflows.
+
+= 0.0.103 =
+* Constrained application and BOQ layout beside the fixed sidebar. Wide BOQ tables scroll within their wrapper; active submenu tabs scroll only their own strip without shifting the page.
