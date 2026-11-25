@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.098
+ * Version: 0.0.099
  * Author: BizSkill
  */
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/notifications.php';
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
-    const VERSION = '0.0.098';
+    const VERSION = '0.0.099';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -3255,14 +3255,16 @@ final class BSM_Site_Management {
         if($key==='states' && empty(trim((string)($data['state_name']??'')))) wp_send_json_error(['message'=>'State Name is required']);
         if($key==='sites'){
             $normalize_site_name=static function($value){
-                $value=preg_replace('/\s+/u',' ',trim(sanitize_text_field((string)$value)));
+                $value=trim(preg_replace('/\s+/u',' ',sanitize_text_field((string)$value)));
                 return function_exists('mb_strtolower')?mb_strtolower($value,'UTF-8'):strtolower($value);
             };
-            $data['site_name']=preg_replace('/\s+/u',' ',trim(sanitize_text_field((string)($data['site_name']??''))));
+            $data['site_name']=trim(preg_replace('/\s+/u',' ',sanitize_text_field((string)($data['site_name']??''))));
             if($data['site_name']==='')wp_send_json_error(['message'=>'Site Name is required','field'=>'site_name']);
             try{$site_name_lock=$this->ops_lock('site_names');}catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);}
             register_shutdown_function(function()use($wpdb,$site_name_lock){$wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)',$site_name_lock));});
-            foreach($wpdb->get_results($wpdb->prepare("SELECT id,site_name FROM {$this->prefix}sites WHERE id<>%d",$id),ARRAY_A) as $existing_site){
+            $existing_sites=$wpdb->get_results($wpdb->prepare("SELECT id,site_name FROM {$this->prefix}sites WHERE id<>%d",$id),ARRAY_A);
+            if($wpdb->last_error)wp_send_json_error(['message'=>'Unable to check existing Site Names. Please retry.','field'=>'site_name']);
+            foreach((array)$existing_sites as $existing_site){
                 if($normalize_site_name($existing_site['site_name'])===$normalize_site_name($data['site_name']))wp_send_json_error(['message'=>'This Site Name already exists. Please use a different name.','field'=>'site_name']);
             }
             foreach(['site_name'=>'Site Name','site_location'=>'Site Location','site_manager_user_id'=>'Site Manager','site_supervisor_user_id'=>'Site Supervisor','start_date'=>'Start Date','expected_end_date'=>'Expected Completion Date','work_order_value'=>'Work Order Value'] as $f=>$label){
