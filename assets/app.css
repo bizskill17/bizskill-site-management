@@ -3042,3 +3042,18 @@ html:has(body.bsm-blank-body),body.bsm-blank-body{max-width:100%;overflow-x:clip
 @media(max-width:760px){
   .bsm-shell>.bsm-main{margin-left:0;width:100%;}
 }
+
+/* Site requisition PO: keep supplier and rate together in a single row. */
+.sp-po-table{min-width:1560px;table-layout:auto!important;width:100%;}
+.sp-po-table .po-inline-quote{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;min-width:205px;}
+.sp-po-table .po-inline-quote>select,.sp-po-table .po-inline-quote>.bsm-searchable-select{width:125px!important;min-width:125px;flex:1 1 125px;}
+.sp-po-table .po-inline-quote>input{width:78px!important;min-width:78px;flex:0 0 78px;}
+.sp-po-table th{white-space:nowrap;}
+#sp_items,#sp_receive_items,#sp_return_items{min-width:0;max-width:100%;}
+#sp_items input[type=number]{min-width:74px;}
+#po_direct_items.sp-po-table{width:max-content!important;min-width:100%;table-layout:auto!important;}
+#po_direct_items.sp-po-table>thead>tr>th,#po_direct_items.sp-po-table>.po-direct-row>tr>td{position:static!important;left:auto!important;box-shadow:none!important;width:auto!important;}
+#po_direct_items.sp-po-table>thead>tr>th{min-width:84px;white-space:nowrap!important;}
+#po_direct_items.sp-po-table>thead>tr>th:first-child{min-width:160px;}
+#po_direct_items.sp-po-table>thead>tr>th:nth-child(n+7):nth-child(-n+9){min-width:220px;}
+#po_direct_items.sp-po-table .po-direct-vendor{min-width:150px;}

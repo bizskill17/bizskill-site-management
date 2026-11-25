@@ -8,9 +8,9 @@ trait BSM_Notifications {
             'requisition_submitted'=>['Requisition Submitted','site','instant'],
             'requisition_approved'=>['Requisition Approved','site','instant'],
             'pending_requisition'=>['Pending Requisition Approval','site','scheduled'],
-            'pending_dispatch'=>['Pending Material Dispatch','site','scheduled'],
+            'pending_dispatch'=>['Approved Requisition Pending PO','site','scheduled'],
             'material_dispatched'=>['Material Dispatched','site','instant'],
-            'pending_receipt'=>['Pending Site Material Receipt','site','scheduled'],
+            'pending_receipt'=>['Pending PO Material Receipt','site','scheduled'],
             'site_received'=>['Site Receipt Added','site','instant'],
             'labour_attendance'=>['Site Labour Attendance','site','daily'],
             'site_timesheet'=>['Site Daily Timesheet','site','daily'],
@@ -192,7 +192,7 @@ trait BSM_Notifications {
             $message.='Received By: '.$this->nt_name($r['created_by'],true);
         }elseif($source==='purchase_orders'&&$type==='po_created'){
             $sites=[0];$reference=$r['po_no'];
-            $message="PURCHASE ORDER CREATED\n\nDate: ".$this->nt_date($r['po_date'])."\nSupplier: ".$this->nt_label('vendors','vendor_name',$r['vendor_id'])."\nDelivery To: ".$this->nt_label('warehouses','warehouse_name',$r['warehouse_id']).$this->nt_optional('Required Date',$this->nt_date($r['required_date']??''))."\n\n";
+            $message="PURCHASE ORDER CREATED\n\nDate: ".$this->nt_date($r['po_date'])."\nSupplier: ".$this->nt_label('vendors','vendor_name',$r['vendor_id'])."\nSite: ".(!empty($r['site_id'])?$this->nt_site($r['site_id']):$this->nt_label('warehouses','warehouse_name',$r['warehouse_id'])).$this->nt_optional('Required Date',$this->nt_date($r['required_date']??''))."\n\n";
             $total=0;$number=0;
             foreach($this->nt_items('purchase_order_items','purchase_order_id',$id) as $line){
                 $amount=round((float)$line['po_qty']*(float)$line['rate'],2);$total+=$amount;
@@ -201,10 +201,10 @@ trait BSM_Notifications {
             }
             $message.="\nPO Amount: ₹".rtrim(rtrim(number_format($total,2,'.',','),'0'),'.')."\nCreated By: ".$this->nt_name($r['created_by']??0,true);
         }elseif($source==='purchase_orders'){
-            $sites=[0];$reference=$r['po_no'];$message="*PURCHASE ORDER APPROVED*\nPO: $reference\nSupplier: ".$this->nt_label('vendors','vendor_name',$r['vendor_id'])."\nDelivery To: ".$this->nt_label('warehouses','warehouse_name',$r['warehouse_id'])."\nApproval Date: ".$this->nt_date($r['approved_at']??'')."\n\n";$total=0;
+            $sites=[0];$reference=$r['po_no'];$message="*PURCHASE ORDER APPROVED*\nPO: $reference\nSupplier: ".$this->nt_label('vendors','vendor_name',$r['vendor_id'])."\nSite: ".(!empty($r['site_id'])?$this->nt_site($r['site_id']):$this->nt_label('warehouses','warehouse_name',$r['warehouse_id']))."\nApproval Date: ".$this->nt_date($r['approved_at']??'')."\n\n";$total=0;
             foreach($this->nt_items('purchase_order_items','purchase_order_id',$id) as $line){$message.=$this->nt_line($line,$line['po_qty'])."\n";$total+=$line['po_qty']*$line['rate'];}$message.='PO Amount: ₹'.number_format($total,2)."\nApproved By: ".$this->nt_name($r['approved_by']??0,true);
         }elseif($source==='material_inwards'){
-            $sites=[0];$po=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}purchase_orders WHERE id=%d",$r['purchase_order_id']),ARRAY_A);if(!$po)return null;$reference=$po['po_no'];$message="*PO MATERIAL RECEIVED*\nPO: $reference\nReceipt: ".$r['inward_no']."\nSupplier: ".$this->nt_label('vendors','vendor_name',$po['vendor_id'])."\nDate: ".$this->nt_date($r['inward_date'])."\nReceived At: ".$this->nt_label('warehouses','warehouse_name',$r['warehouse_id'])."\n\nItem | Received Now | Pending\n";$remaining=0;
+            $sites=[0];$po=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}purchase_orders WHERE id=%d",$r['purchase_order_id']),ARRAY_A);if(!$po)return null;$reference=$po['po_no'];$message="*PO MATERIAL RECEIVED*\nPO: $reference\nReceipt: ".$r['inward_no']."\nSupplier: ".$this->nt_label('vendors','vendor_name',$po['vendor_id'])."\nDate: ".$this->nt_date($r['inward_date'])."\nReceived At Site: ".(!empty($r['site_id'])?$this->nt_site($r['site_id']):$this->nt_label('warehouses','warehouse_name',$r['warehouse_id']))."\n\nItem | Received Now | Pending\n";$remaining=0;
             foreach($this->nt_items('material_inward_items','inward_id',$id) as $line){if(empty($line['purchase_order_item_id']))continue;$pi=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}purchase_order_items WHERE id=%d",$line['purchase_order_item_id']),ARRAY_A);$pending=max(0,$pi['po_qty']-$this->po_item_received_qty($pi['id']));$message.='• '.$line['item_name'].' | '.$this->nt_num($line['qty']).' '.$line['unit_name'].' | '.$this->nt_num($pending).' '.$line['unit_name']."\n";}
             foreach($this->nt_items('purchase_order_items','purchase_order_id',(int)$po['id']) as $pi)$remaining+=max(0,$pi['po_qty']-$this->po_item_received_qty($pi['id']));$message.='Received By: '.$this->nt_name($r['created_by']??0,true)."\nPO Status: ".($remaining>0.009?'Partially Received':'Fully Received');
         }
@@ -215,6 +215,16 @@ trait BSM_Notifications {
     }
     private function nt_summary($type,$site,$date){
         global $wpdb;$p=$this->prefix;$site=(int)$site;$heading=strtoupper($this->nt_catalog()[$type][0]);$blocks=[];
+        if($type==='pending_dispatch'){
+            $lines=[];if($site)foreach($this->sp_requirements($site) as $x)$lines[]=$this->nt_line($x,$x['pending_po_qty']);
+            return $lines?'*'.$heading.'*'."\nSite: ".$this->nt_site($site)."\n\n".implode("\n",$lines):'';
+        }
+        if($type==='pending_receipt'){
+            $where=$site?$wpdb->prepare(' AND po.site_id=%d',$site):'';
+            $heads=$wpdb->get_results("SELECT po.*,r.requisition_no FROM {$p}purchase_orders po LEFT JOIN {$p}material_requisitions r ON r.id=po.requisition_id WHERE po.site_id>0 AND po.status IN ('approved','partly_received','partially_received') $where ORDER BY po.id",ARRAY_A)?:[];
+            foreach($heads as $h){$lines=[];foreach($this->nt_items('purchase_order_items','purchase_order_id',$h['id']) as $it){$qty=max(0,$it['po_qty']-$this->po_item_received_qty($it['id']));if($qty>0.009)$lines[]=$this->nt_line($it,$qty);}if($lines)$blocks[]=$h['po_no'].' | '.($h['requisition_no']??'')."\n".implode("\n",$lines);}
+            return $blocks?'*'.$heading.'*'."\nSite: ".$this->nt_site($site)."\n\n".implode("\n\n",$blocks):'';
+        }
         if($type==='pending_requisition'||$type==='pending_dispatch'){
             $states=$type==='pending_requisition'?"'pending_approval','submitted','draft'":"'approved','partially_dispatched','dispatched'";
             $heads=$wpdb->get_results($wpdb->prepare("SELECT * FROM {$p}material_requisitions WHERE site_id=%d AND status IN ($states) ORDER BY required_date,id",$site),ARRAY_A)?:[];
@@ -239,7 +249,7 @@ trait BSM_Notifications {
             $states=$type==='pending_po_approval'?"'pending_approval','created'":"'approved','sent','partly_received','fully_received'";
             $heads=$wpdb->get_results("SELECT * FROM {$p}purchase_orders WHERE status IN ($states) ORDER BY po_date,id",ARRAY_A)?:[];
             foreach($heads as $h){$lines=[];$amount=0;foreach($this->nt_items('purchase_order_items','purchase_order_id',$h['id']) as $r){$amount+=$r['po_qty']*$r['rate'];$pending=max(0,$r['po_qty']-$this->po_item_received_qty($r['id']));if($pending>0.009)$lines[]=$this->nt_line($r,$pending).' pending';}
-                $text=$h['po_no'].' | '.$this->nt_date($h['po_date'])."\nSupplier: ".$this->nt_label('vendors','vendor_name',$h['vendor_id'])."\nDelivery To: ".$this->nt_label('warehouses','warehouse_name',$h['warehouse_id']);
+                $text=$h['po_no'].' | '.$this->nt_date($h['po_date'])."\nSupplier: ".$this->nt_label('vendors','vendor_name',$h['vendor_id'])."\nSite: ".(!empty($h['site_id'])?$this->nt_site($h['site_id']):$this->nt_label('warehouses','warehouse_name',$h['warehouse_id']));
                 if($type==='pending_po_approval')$blocks[]=(count($blocks)+1).'.'.$text."\nAmount: ₹".number_format($amount,2).$this->nt_optional('Created By',$this->nt_name($h['created_by']??0,true));elseif($lines)$blocks[]=$text."\n".implode("\n",$lines);
             }
         }
@@ -351,6 +361,12 @@ trait BSM_Notifications {
             if($op==='retry'){
                 $id=(int)($d['id']??0);$r=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}notification_queue WHERE id=%d",$id),ARRAY_A);if(!$r||!in_array($r['status'],['failed','review_required'],true))throw new Exception('Only failed or review-required messages can be retried.');if($r['status']==='review_required'&&empty($d['confirmed']))throw new Exception('Confirm you checked provider history before retrying.');$wpdb->update($p.'notification_queue',['status'=>'queued','cycle_attempts'=>0,'next_attempt'=>$this->nt_now(),'updated_at'=>$this->nt_now(),'response'=>'Manual retry requested by Admin.'],['id'=>$id]);wp_send_json_success(['message'=>'Message queued for retry.']);
             }
+            if(in_array($op,['reject_po','approve_po'],true)){
+                $sp_lock=$this->ops_lock('site_procurement');
+                register_shutdown_function(function()use($wpdb,$sp_lock){$wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)',$sp_lock));});
+                $sp_po=$this->sp_po_head((int)($d['id']??0));
+                if($op==='approve_po' && (empty($sp_po['site_id'])||empty($sp_po['requisition_id'])))throw new Exception('Assign this historical PO to its Site and approved Requisition before approval.');
+            }
             if($op==='reject_po'){
                 $id=(int)($d['id']??0);$reason=sanitize_textarea_field($d['reason']??'');if(!$reason)throw new Exception('Enter a rejection reason.');$updated=$wpdb->query($wpdb->prepare("UPDATE {$p}purchase_orders SET status='rejected',rejection_reason=%s,updated_at=%s WHERE id=%d AND status IN ('created','pending_approval')",$reason,current_time('mysql'),$id));if(!$updated)throw new Exception('PO is not pending approval.');wp_send_json_success(['message'=>'PO rejected.']);
             }
@@ -366,3 +382,4 @@ trait BSM_Notifications {
         }catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);}
     }
 }
+

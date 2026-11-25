@@ -183,3 +183,11 @@ Version 0.0.080: Removed the Quick Actions section from Site Dashboard.
 
 = 0.0.104 =
 * Pending approved requisitions now require a Site selection. PO validation and requisition allocations stay within that Site. Existing PO commitments are honoured before shared warehouse stock is allocated by required date, preventing duplicate stock coverage across Sites.
+
+
+= 0.0.105 =
+* Replaced warehouse procurement with mandatory Site / approved Requisition POs, partial ordering and supplier splits. Server-side quantity validation, named locks, rollback and Site permissions protect the full flow.
+* Purchase receipts post directly to the PO Site; inventory, availability and BOQ balances share Site-specific movement sources. Supplier Returns reference original receipts. Existing Site transfers continue to support partial receipt.
+* Added Site / Requisition context to PO and purchase views, PDF/export data, dashboard and notifications. Retired new warehouse/dispatch operations and Item Master opening quantities; historical records remain accessible.
+* Added an administrator review screen for unambiguous historical PO assignment and explicitly reviewed historical stock allocation. No automatic stock movement or deletion of historical transactions.
+* Added lifecycle SQL, browser and updated notification regression coverage. See SITE-PROCUREMENT.md for upgrade behavior and validation limits.

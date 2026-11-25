@@ -35,8 +35,11 @@ class NotificationDB {
  function replace($t,$d){$q='INSERT OR REPLACE INTO '.$t.' ('.implode(',',array_keys($d)).') VALUES ('.implode(',',array_fill(0,count($d),'?')).')';return $this->pdo->prepare($q)->execute(array_values($d));}
  function update($t,$d,$w){return $this->pdo->prepare('UPDATE '.$t.' SET '.implode(',',array_map(fn($k)=>$k.'=?',array_keys($d))).' WHERE '.implode(' AND ',array_map(fn($k)=>$k.'=?',array_keys($w))))->execute(array_merge(array_values($d),array_values($w)));}
 }
+require_once __DIR__.'/../includes/site-procurement.php';
 class NotificationHost {
  use BSM_Notifications;
+ use BSM_Site_Procurement;
+ private function employee_site_scope(){return null;}
  private $prefix='bsm_';
  function call($method,...$args){return $this->$method(...$args);}
  private function po_item_received_qty($id){global $wpdb;return (float)$wpdb->get_var($wpdb->prepare('SELECT COALESCE(SUM(qty),0) FROM bsm_material_inward_items WHERE purchase_order_item_id=%d',$id));}
@@ -94,24 +97,27 @@ $wpdb->query("DELETE FROM bsm_notification_state WHERE record_key LIKE 'schedule
 $unicode=$host->call('nt_parts',str_repeat('क',1100));check(count($unicode)>1&&array_reduce($unicode,fn($ok,$part)=>$ok&&preg_match('//u',$part),true),'Long Unicode activities split without corrupting characters');
 
 // Exercise every material/PO builder against realistic partial-receipt fixtures.
-foreach(['site_transfers'=>['to_site_id INTEGER','transfer_date TEXT'],'material_dispatches'=>['dispatch_no TEXT','site_id INTEGER','from_site_id INTEGER','warehouse_id INTEGER','requisition_id INTEGER','dispatch_date TEXT','created_by INTEGER','vehicle_no TEXT','driver_name TEXT','driver_mobile TEXT'], 'site_receipts'=>['receipt_no TEXT','site_id INTEGER','dispatch_id INTEGER','receipt_date TEXT','received_by INTEGER','remarks TEXT'], 'purchase_orders'=>['po_no TEXT','po_date TEXT','vendor_id INTEGER','warehouse_id INTEGER','created_by INTEGER','approved_by INTEGER','approved_at TEXT'], 'material_inwards'=>['purchase_order_id INTEGER','inward_no TEXT','inward_date TEXT','warehouse_id INTEGER','created_by INTEGER']] as $table=>$columns)foreach($columns as $column)$wpdb->query('ALTER TABLE bsm_'.$table.' ADD '.$column);
+foreach(['site_transfers'=>['to_site_id INTEGER','transfer_date TEXT'],'material_dispatches'=>['dispatch_no TEXT','site_id INTEGER','from_site_id INTEGER','warehouse_id INTEGER','requisition_id INTEGER','dispatch_date TEXT','created_by INTEGER','vehicle_no TEXT','driver_name TEXT','driver_mobile TEXT'], 'site_receipts'=>['receipt_no TEXT','site_id INTEGER','dispatch_id INTEGER','receipt_date TEXT','received_by INTEGER','remarks TEXT'], 'purchase_orders'=>['site_id INTEGER','requisition_id INTEGER','po_no TEXT','po_date TEXT','vendor_id INTEGER','warehouse_id INTEGER','created_by INTEGER','approved_by INTEGER','approved_at TEXT'], 'material_inwards'=>['site_id INTEGER','purchase_order_id INTEGER','inward_no TEXT','inward_date TEXT','warehouse_id INTEGER','created_by INTEGER']] as $table=>$columns)foreach($columns as $column)$wpdb->query('ALTER TABLE bsm_'.$table.' ADD '.$column);
 $wpdb->query('CREATE TABLE bsm_material_dispatch_items(id INTEGER PRIMARY KEY,dispatch_id INTEGER,requisition_item_id INTEGER,item_id INTEGER,unit_id INTEGER,qty REAL)');
 $wpdb->query('CREATE TABLE bsm_site_receipt_items(id INTEGER PRIMARY KEY,receipt_id INTEGER,dispatch_item_id INTEGER,item_id INTEGER,unit_id INTEGER,received_qty REAL,damaged_qty REAL)');
 $wpdb->query('CREATE TABLE bsm_warehouses(id INTEGER PRIMARY KEY,warehouse_name TEXT)');$wpdb->query("INSERT INTO bsm_warehouses VALUES(1,'Main Warehouse')");
 $wpdb->query('CREATE TABLE bsm_vendors(id INTEGER PRIMARY KEY,vendor_name TEXT)');$wpdb->query("INSERT INTO bsm_vendors VALUES(1,'ABC Traders')");
-$wpdb->query('CREATE TABLE bsm_purchase_order_items(id INTEGER PRIMARY KEY,purchase_order_id INTEGER,item_id INTEGER,unit_id INTEGER,po_qty REAL,rate REAL)');
+$wpdb->query('CREATE TABLE bsm_purchase_order_items(id INTEGER PRIMARY KEY,requisition_item_id INTEGER,purchase_order_id INTEGER,item_id INTEGER,unit_id INTEGER,po_qty REAL,rate REAL)');
+$wpdb->query('CREATE TABLE bsm_purchase_order_item_allocations(id INTEGER PRIMARY KEY,purchase_order_item_id INTEGER,requisition_item_id INTEGER,allocated_qty REAL)');
 $wpdb->query('CREATE TABLE bsm_material_inward_items(id INTEGER PRIMARY KEY,inward_id INTEGER,purchase_order_item_id INTEGER,item_id INTEGER,unit_id INTEGER,qty REAL)');
 $wpdb->query("INSERT INTO bsm_material_dispatches(id,status,dispatch_no,site_id,from_site_id,warehouse_id,requisition_id,dispatch_date,created_by) VALUES(1,'dispatched','DIS-1',2,1,0,1,'2026-10-31',10)");$wpdb->query('INSERT INTO bsm_material_dispatch_items VALUES(1,1,1,1,1,20)');
 $wpdb->query("INSERT INTO bsm_site_receipts(id,status,receipt_no,site_id,dispatch_id,receipt_date,received_by,remarks) VALUES(1,'received','R-1',2,1,'2026-10-31',1,'Balance awaited')");$wpdb->query('INSERT INTO bsm_site_receipt_items VALUES(1,1,1,1,1,18,0)');
 check($host->call('nt_dispatch_pending',1)===2.0,'Partial site receipt leaves only remaining quantity');
 $dispatch=$wpdb->get_row('SELECT * FROM bsm_material_dispatches WHERE id=1');$event=$host->call('nt_event_message','material_dispatched','material_dispatches',$dispatch);check($event['sites']===[2,1]&&str_contains($event['message'],'Binding Wire — 20 Kg'),'Site-source dispatch routes both sites and formats quantities');check(!str_contains($event['message'],'Driver Mobile:'),'Blank optional driver fields omitted');
 $receipt=$wpdb->get_row('SELECT * FROM bsm_site_receipts WHERE id=1');$event=$host->call('nt_event_message','site_received','site_receipts',$receipt);check($event['sites']===[2,1]&&str_contains($event['message'],'18 Kg | 2 Kg'),'Site receipt shows received now and pending, routed both sites');check(str_contains($event['message'],"\n\n1.Item | Received Now | Pending Receipt\n* Binding Wire | 18 Kg | 2 Kg\nReceived By: "),'Site receipt matches requested item header and asterisk format');
-$pending=$host->call('nt_summary','pending_receipt',2,'2026-10-31');check(str_contains($pending,'2 Kg pending receipt'),'Pending site receipt excludes already received quantity');
-$wpdb->query("UPDATE bsm_material_requisitions SET status='approved' WHERE id=1");$pending=$host->call('nt_summary','pending_dispatch',1,'2026-10-31');check(str_contains($pending,'10 Kg'),'Pending dispatch uses approved minus dispatched quantity');$wpdb->query("UPDATE bsm_material_requisitions SET status='pending_approval' WHERE id=1");check(str_contains($host->call('nt_summary','pending_requisition',1,'2026-10-31'),'32 Kg'),'Pending approval includes requested quantities');
-$wpdb->query("INSERT INTO bsm_purchase_orders(id,status,po_no,po_date,vendor_id,warehouse_id,created_by,approved_by,approved_at) VALUES(1,'approved','PO-1','2026-10-31',1,1,10,10,'2026-10-31 10:00:00')");$wpdb->query('INSERT INTO bsm_purchase_order_items VALUES(1,1,1,1,50,100)');$wpdb->query("INSERT INTO bsm_material_inwards(id,status,purchase_order_id,inward_no,inward_date,warehouse_id,created_by) VALUES(1,'pending_approval',1,'MIN-1','2026-10-31',1,10)");$wpdb->query('INSERT INTO bsm_material_inward_items VALUES(1,1,1,1,1,40)');
+$pending=$host->call('nt_summary','pending_receipt',2,'2026-10-31');check($pending==='','Historical dispatch is excluded from pending PO receipt reminders');
+$wpdb->query("UPDATE bsm_material_requisitions SET status='approved' WHERE id=1");$pending=$host->call('nt_summary','pending_dispatch',1,'2026-10-31');check(str_contains($pending,'30 Kg'),'Pending PO uses approved quantity minus valid PO quantities');$wpdb->query("UPDATE bsm_material_requisitions SET status='pending_approval' WHERE id=1");check(str_contains($host->call('nt_summary','pending_requisition',1,'2026-10-31'),'32 Kg'),'Pending approval includes requested quantities');
+$wpdb->query("INSERT INTO bsm_purchase_orders(id,status,po_no,po_date,vendor_id,warehouse_id,created_by,approved_by,approved_at) VALUES(1,'approved','PO-1','2026-10-31',1,1,10,10,'2026-10-31 10:00:00')");$wpdb->query('INSERT INTO bsm_purchase_order_items VALUES(1,1,1,1,1,50,100)');$wpdb->query("INSERT INTO bsm_material_inwards(id,status,purchase_order_id,inward_no,inward_date,warehouse_id,created_by) VALUES(1,'pending_approval',1,'MIN-1','2026-10-31',1,10)");$wpdb->query('INSERT INTO bsm_material_inward_items VALUES(1,1,1,1,1,40)');
+$wpdb->query('UPDATE bsm_purchase_orders SET site_id=1,requisition_id=1 WHERE id=1');
 $po=$wpdb->get_row('SELECT * FROM bsm_purchase_orders WHERE id=1');$event=$host->call('nt_event_message','po_approved','purchase_orders',$po);check($event['sites']===[0]&&str_contains($event['message'],'5,000.00'),'Approved PO message routes Office with total amount');
 $inward=$wpdb->get_row('SELECT * FROM bsm_material_inwards WHERE id=1');$event=$host->call('nt_event_message','po_received','material_inwards',$inward);check(str_contains($event['message'],'40 Kg | 10 Kg')&&str_contains($event['message'],'Partially Received'),'PO receipt handles partial quantities');
 check(str_contains($host->call('nt_summary','pending_po',0,'2026-10-31'),'10 Kg pending'),'Pending PO reminder excludes received quantity');
+check(str_contains($host->call('nt_summary','pending_receipt',1,'2026-10-31'),'10 Kg'),'Site PO receipt reminder uses outstanding PO quantity');
 $wpdb->query("UPDATE bsm_purchase_orders SET status='pending_approval' WHERE id=1");check(str_contains($host->call('nt_summary','pending_po_approval',0,'2026-10-31'),'ABC Traders'),'Pending PO approval includes supplier');check($host->call('nt_summary','pending_po',0,'2026-10-31')==='','Unapproved PO excluded from pending receipt reminder');
 
 $wpdb->query('CREATE TABLE bsm_holidays(id INTEGER PRIMARY KEY,holiday_date TEXT,employee_ids TEXT)');
@@ -126,7 +132,8 @@ $host->call('nt_scheduled');check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_
 $wpdb->query('DELETE FROM bsm_notification_queue');$wpdb->query("DELETE FROM bsm_notification_state WHERE record_key LIKE 'schedule:%'");
 $options['bsm_notification_settings']['include_holidays']=false;
 $wpdb->query("UPDATE bsm_holidays SET employee_ids='[1]'");
-$host->call('nt_scheduled');check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===1,'Individual employee holidays do not stop all summaries');
+$host->call('nt_scheduled');check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===0,'All saved Holidays apply globally and suppress scheduled summaries');
+$options['bsm_notification_settings']['include_holidays']=true;
 
 
 $host->notifications_boot();$options['bsm_notifications_schema']='1';
@@ -181,8 +188,9 @@ check($event['attachment_url']==='','Dispatch without photo remains text only');
 $wpdb->query("INSERT INTO bsm_material_dispatches(id,status,dispatch_no,site_id,dispatch_date) VALUES(2,'dispatched','DIS-2',2,'2026-10-31')");
 $wpdb->query('INSERT INTO bsm_material_dispatch_items VALUES(2,2,1,1,1,25)');
 $receiptSummary=$host->call('nt_summary','pending_receipt',2,'2026-10-31');
-check(str_contains($receiptSummary,"\n\n1.DIS-1 | 31/10/2026")&&str_contains($receiptSummary,"\n\n2.DIS-2 | 31/10/2026"),'Pending receipt dispatches numbered consecutively');
-check(str_contains($receiptSummary,"\n* Binding Wire — 25 Kg pending receipt"),'Pending receipt item lines use requested asterisk format');
+check($receiptSummary==='', 'Legacy dispatches do not enter direct PO receipt reminders');
+$wpdb->query("UPDATE bsm_purchase_orders SET status='approved' WHERE id=1");
+check(str_contains($host->call('nt_summary','pending_receipt',1,'2026-10-31'),'PO-1'), 'Direct PO receipt reminders carry PO references');
 $wpdb->query('UPDATE bsm_site_receipt_items SET received_qty=20 WHERE id=1');
 $wpdb->query('INSERT INTO bsm_site_receipt_items VALUES(2,1,2,1,1,25,0)');
 check($host->call('nt_summary','pending_receipt',2,'2026-10-31')==='','Fully received dispatches produce no pending receipt message');
@@ -268,10 +276,11 @@ check((int)$wpdb->get_var('SELECT COUNT(*) FROM bsm_notification_queue')===0,'Fu
 
 $wpdb->query("UPDATE bsm_purchase_orders SET status='pending_approval' WHERE id=1");
 $wpdb->query("INSERT INTO bsm_purchase_orders(id,status,po_no,po_date,vendor_id,warehouse_id,created_by) VALUES(2,'pending_approval','PO-2','2026-11-01',1,1,10)");
-$wpdb->query('INSERT INTO bsm_purchase_order_items VALUES(2,2,1,1,20,660)');
+$wpdb->query('INSERT INTO bsm_purchase_order_items(id,purchase_order_id,item_id,unit_id,po_qty,rate) VALUES(2,2,1,1,20,660)');
 $summary=$host->call('nt_summary','pending_po_approval',0,$today);
 check(str_contains($summary,"\n\n1.PO-1 | 31/10/2026")&&str_contains($summary,"\n\n2.PO-2 | 01/11/2026"),'Pending approval POs numbered consecutively');
 check(str_contains($summary,'Amount: ₹13,200.00')&&str_contains($summary,'Created By: Rahul'),'Numbered pending approval retains PO amount and creator');
 $wpdb->query("UPDATE bsm_purchase_orders SET status='approved'");
 check($host->call('nt_summary','pending_po_approval',0,$today)==='','No pending approvals produces no reminder');
 echo "\n$count notification checks passed. No network calls made.\n";
+
