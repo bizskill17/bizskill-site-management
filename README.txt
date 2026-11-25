@@ -180,3 +180,6 @@ Version 0.0.080: Removed the Quick Actions section from Site Dashboard.
 
 = 0.0.103 =
 * Constrained application and BOQ layout beside the fixed sidebar. Wide BOQ tables scroll within their wrapper; active submenu tabs scroll only their own strip without shifting the page.
+
+= 0.0.104 =
+* Pending approved requisitions now require a Site selection. PO validation and requisition allocations stay within that Site. Existing PO commitments are honoured before shared warehouse stock is allocated by required date, preventing duplicate stock coverage across Sites.

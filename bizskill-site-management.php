@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Phase 1 site, warehouse, material, contractor, receipts & payments management system for one company with multiple sites.
- * Version: 0.0.103
+ * Version: 0.0.104
  * Author: BizSkill
  */
 
@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/notifications.php';
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
-    const VERSION = '0.0.103';
+    const VERSION = '0.0.104';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -590,7 +590,7 @@ final class BSM_Site_Management {
         $wpdb->update($p.'purchase_orders',['status'=>$new,'updated_at'=>current_time('mysql')],['id'=>$po_id]);
     }
 
-    private function pending_po_summary($warehouse) {
+    private function pending_po_summary($warehouse, $site_id = 0) {
         global $wpdb;$p=$this->prefix;$warehouse=(int)$warehouse;if(!$warehouse)$warehouse=$this->default_warehouse_id();
         $raw=$wpdb->get_results("SELECT ri.id requisition_item_id,ri.requisition_id,r.requisition_no,r.requisition_date,r.required_date,r.site_id,s.site_name,r.requested_by,r.approved_by,COALESCE(req_u.name,req_wp.name,'-') requested_by_name,COALESCE(app_u.name,app_wp.name,'-') approved_by_name,ri.item_id,i.item_name,ri.unit_id,u.unit_name,ri.approved_qty,
             COALESCE((SELECT SUM(di.qty) FROM {$p}material_dispatch_items di JOIN {$p}material_dispatches d ON d.id=di.dispatch_id WHERE di.requisition_item_id=ri.id AND LOWER(COALESCE(d.status,''))<>'cancelled'),0) dispatched_qty
@@ -605,27 +605,42 @@ final class BSM_Site_Management {
             $iid=(int)$x['item_id'];
             if(!isset($groups[$iid]))$groups[$iid]=['item_id'=>$iid,'item_name'=>$x['item_name'],'unit_id'=>(int)$x['unit_id'],'unit_name'=>$x['unit_name'],'approved_qty'=>0.0,'sites'=>[],'requirements'=>[]];
             $groups[$iid]['approved_qty']+=$remaining;$groups[$iid]['sites'][(string)$x['site_name']]=1;
-            $groups[$iid]['requirements'][]=['requisition_item_id'=>(int)$x['requisition_item_id'],'requisition_no'=>$x['requisition_no'],'site_name'=>$x['site_name'],'item_name'=>$x['item_name'],'approved_qty'=>$remaining,'approved_by_name'=>$x['approved_by_name'],'requested_by_name'=>$x['requested_by_name'],'requisition_date'=>$x['requisition_date'],'required_date'=>$x['required_date'],'remaining_qty'=>$remaining];
+            $groups[$iid]['requirements'][]=['requisition_item_id'=>(int)$x['requisition_item_id'],'requisition_no'=>$x['requisition_no'],'site_id'=>(int)$x['site_id'],'site_name'=>$x['site_name'],'item_name'=>$x['item_name'],'approved_qty'=>$remaining,'approved_by_name'=>$x['approved_by_name'],'requested_by_name'=>$x['requested_by_name'],'requisition_date'=>$x['requisition_date'],'required_date'=>$x['required_date'],'remaining_qty'=>$remaining];
         }
         $rows=[];
         foreach($groups as $iid=>$g){
             $physical=$this->warehouse_item_stock($warehouse,$iid);
             $po_items=$wpdb->get_results($wpdb->prepare("SELECT poi.id,poi.po_qty FROM {$p}purchase_order_items poi JOIN {$p}purchase_orders po ON po.id=poi.purchase_order_id WHERE po.warehouse_id=%d AND poi.item_id=%d AND LOWER(COALESCE(po.status,'')) NOT IN ('cancelled','rejected','fully_received')",$warehouse,$iid),ARRAY_A)?:[];
-            $po_progress=0.0;foreach($po_items as $pi)$po_progress+=max(0,(float)$pi['po_qty']-$this->po_item_received_qty((int)$pi['id']));
-            $planning=round($physical+$po_progress,2);$pending=max(0,round((float)$g['approved_qty']-$planning,2));if($pending<=0.009)continue;
-            $coverage=max(0,$planning);$alloc=[];$detail_ids=[];
+            // Honour existing PO allocations before sharing warehouse stock by required date.
+            $committed=[];$unallocated=0.0;
+            foreach($po_items as $pi){
+                $received=$this->po_item_received_qty((int)$pi['id']);
+                $outstanding=max(0,(float)$pi['po_qty']-$received);
+                $links=$wpdb->get_results($wpdb->prepare("SELECT requisition_item_id,allocated_qty FROM {$p}purchase_order_item_allocations WHERE purchase_order_item_id=%d ORDER BY id ASC",(int)$pi['id']),ARRAY_A)?:[];
+                foreach($links as $link){
+                    $qty=max(0,(float)$link['allocated_qty']);$used=min($received,$qty);$received-=$used;
+                    $qty=min($outstanding,max(0,$qty-$used));$outstanding-=$qty;
+                    $ri=(int)$link['requisition_item_id'];$committed[$ri]=($committed[$ri]??0)+$qty;
+                }
+                $unallocated+=$outstanding;
+            }
+            $stock_pool=max(0,$physical);$po_pool=$unallocated;
+            $alloc=[];$details=[];$approved=0.0;$stock_used=0.0;$po_used=0.0;$pending=0.0;
             foreach($g['requirements'] as $rq){
                 $need=(float)$rq['remaining_qty'];
-                $covered=min($need,$coverage);
-                $coverage-=$covered;
-                $short=max(0,round($need-$covered,2));
+                $reserved=min($need,$committed[$rq['requisition_item_id']]??0);
+                $stock=min(max(0,$need-$reserved),$stock_pool);$stock_pool-=$stock;
+                $po=min(max(0,$need-$reserved-$stock),$po_pool);$po_pool-=$po;
+                $short=max(0,round($need-$reserved-$stock-$po,2));
+                if($site_id && (int)$rq['site_id']!==(int)$site_id)continue;
+                $approved+=$need;$stock_used+=$stock;$po_used+=$reserved+$po;$pending+=$short;
                 if($short>0.009){
                     $alloc[]=['requisition_item_id'=>$rq['requisition_item_id'],'qty'=>$short,'required_date'=>$rq['required_date']];
-                    $detail_ids[(int)$rq['requisition_item_id']]=1;
+                    $details[]=$rq;
                 }
             }
-            $details=array_values(array_filter($g['requirements'],function($rq) use ($detail_ids){return !empty($detail_ids[(int)$rq['requisition_item_id']]);}));
-            $rows[]=['item_id'=>$iid,'item_name'=>$g['item_name'],'unit_id'=>$g['unit_id'],'unit_name'=>$g['unit_name'],'approved_qty'=>round($g['approved_qty'],2),'physical_stock'=>round($physical,2),'po_in_progress_qty'=>round($po_progress,2),'current_stock'=>$planning,'pending_po_qty'=>$pending,'allocations'=>$alloc,'details'=>$details];
+            if($pending<=0.009)continue;
+            $rows[]=['item_id'=>$iid,'item_name'=>$g['item_name'],'unit_id'=>$g['unit_id'],'unit_name'=>$g['unit_name'],'approved_qty'=>round($approved,2),'physical_stock'=>round($stock_used,2),'po_in_progress_qty'=>round($po_used,2),'current_stock'=>round($stock_used+$po_used,2),'pending_po_qty'=>round($pending,2),'allocations'=>$alloc,'details'=>$details];
         }
         usort($rows,function($a,$b){return strcasecmp($a['item_name'],$b['item_name']);});
         return $rows;
@@ -634,7 +649,9 @@ final class BSM_Site_Management {
     public function ajax_pending_po_items(){
         $this->verify_ajax();$this->migrate_purchase_orders();global $wpdb;$p=$this->prefix;
         $warehouse=(int)($_POST['warehouse_id']??0);if(!$warehouse)$warehouse=$this->default_warehouse_id();
-        $rows=$this->pending_po_summary($warehouse);
+        $site_id=(int)($_POST['site_id']??0);
+        if(!$site_id)wp_send_json_success(['rows'=>[],'warehouse_id'=>$warehouse]);
+        $rows=$this->pending_po_summary($warehouse,$site_id);
         $warehouse_name=$warehouse?(string)$wpdb->get_var($wpdb->prepare("SELECT warehouse_name FROM {$p}warehouses WHERE id=%d",$warehouse)):'';
         wp_send_json_success(['rows'=>$rows,'warehouse_id'=>$warehouse,'warehouse_name'=>$warehouse_name]);
     }
@@ -655,7 +672,9 @@ final class BSM_Site_Management {
     public function ajax_purchase_order_create(){
         $this->verify_ajax();$this->migrate_purchase_orders();global $wpdb;$p=$this->prefix;
         $warehouse=(int)($_POST['warehouse_id']??0);if(!$warehouse)$warehouse=$this->default_warehouse_id();$items=json_decode(stripslashes($_POST['items']??'[]'),true);if(!$warehouse||!is_array($items)||!$items)wp_send_json_error(['message'=>'Select Supplier and enter PO Qty']);
-        $summary=$this->pending_po_summary($warehouse);$by_item=[];foreach($summary as $x)$by_item[(int)$x['item_id']]=$x;$groups=[];
+        $site_id=(int)($_POST['site_id']??0);
+        if(!$site_id || !$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}sites WHERE id=%d",$site_id)))wp_send_json_error(['message'=>'Select a valid Site.']);
+        $summary=$this->pending_po_summary($warehouse,$site_id);$by_item=[];foreach($summary as $x)$by_item[(int)$x['item_id']]=$x;$groups=[];
         foreach($items as $it){$iid=(int)($it['item_id']??0);$vendor=(int)($it['vendor_id']??0);$qty=round((float)($it['po_qty']??0),2);$rate=round((float)($it['rate']??0),2);if(!$iid||!$vendor||$qty<=0)continue;if($rate<0)wp_send_json_error(['message'=>'Rate cannot be negative']);if(empty($by_item[$iid]))wp_send_json_error(['message'=>'Item is no longer pending for PO']);$x=$by_item[$iid];if($qty>(float)$x['pending_po_qty']+0.009)wp_send_json_error(['message'=>'PO Qty cannot exceed Pending PO Qty for '.$x['item_name']]);
             $quotes=[];$quote_ids=[];$selected_rate=null;
             foreach((array)($it['quotations']??[]) as $quote){
@@ -671,11 +690,6 @@ final class BSM_Site_Management {
             $groups[$vendor][]=['item_id'=>$iid,'unit_id'=>(int)$x['unit_id'],'approved_qty_snapshot'=>(float)$x['approved_qty'],'stock_snapshot'=>(float)$x['current_stock'],'pending_qty_snapshot'=>(float)$x['pending_po_qty'],'po_qty'=>$qty,'rate'=>$rate,'quotations'=>$quotes,'allocations'=>$alloc,'required_date'=>$dates?min($dates):null];
         }
         if(!$groups)wp_send_json_error(['message'=>'Select Supplier and enter PO Qty for at least one item']);
-        // DDL auto-commits; migrate the legacy unique index BEFORE starting a transaction.
-        $indexes=$wpdb->get_results("SHOW INDEX FROM `{$it}` WHERE Key_name='boq_item'",ARRAY_A);
-        if($indexes && count($indexes)===2 && ($indexes[0]['Non_unique']??0)==0) {
-            $wpdb->query("ALTER TABLE `{$it}` DROP INDEX `boq_item`, ADD KEY `boq_item` (`boq_id`,`item_id`)");
-        }
         $wpdb->query('START TRANSACTION');$created=[];foreach($groups as $vendor=>$gitems){$dates=array_values(array_filter(array_column($gitems,'required_date')));sort($dates);$quote_record=wp_json_encode(['supplier_quotations'=>array_map(function($line){return ['item_id'=>$line['item_id'],'quotations'=>$line['quotations'],'selected_rate'=>$line['rate']];},$gitems)]);$res=$this->create_purchase_order_record((int)$vendor,$warehouse,current_time('Y-m-d'),$dates[0]??null,$quote_record,$gitems);if(!empty($res['error'])){$wpdb->query('ROLLBACK');wp_send_json_error(['message'=>$res['error']]);}$created[]=$res;}$wpdb->query('COMMIT');wp_send_json_success(['created'=>$created,'message'=>count($created).' PO'.(count($created)>1?'s':'').' created successfully']);
     }
 
