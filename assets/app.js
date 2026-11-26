@@ -1844,7 +1844,7 @@ async function openForm(key,id=0,{showModal=true}={}){
 }
 
 
-// BOQ-restricted requisition items. BOQ quantity is informative; requisition
+// All Item Master items are available. BOQ quantity is informative; requisition
 // quantity is the existing requested_qty persisted by the original backend.
 let requisitionBoqItems = new Map();
 let requisitionBoqSite = '';
@@ -1854,11 +1854,7 @@ function applyRequisitionBoqRow($row){
   const $select=$row.find('select[name="item_id"]');
   if(!$select.length)return;
   const chosen=String($select.val()||'');
-  $select.find('option').each(function(){
-    const id=String(this.value||'');
-    $(this).prop('disabled',Boolean(id)&&!requisitionBoqItems.has(id));
-  });
-  if(chosen&&!requisitionBoqItems.has(chosen))$select.val('');
+  $select.find('option').prop('disabled',false);
   const selected=String($select.val()||'');
   const row=requisitionBoqItems.get(selected);
   $row.find('.bsm-display-boq_qty_display').val(row && Number.isFinite(Number(row.qty)) ? Number(row.qty).toFixed(2) : '');
@@ -1881,7 +1877,7 @@ async function refreshRequisitionBoqItems(){
   }
   if(revision!==requisitionBoqRevision)return;
   $('#bsm-lines-body .bsm-line').each(function(){applyRequisitionBoqRow($(this));});
-  if(site&&!requisitionBoqItems.size)showToast('No BOQ items found for this Site. Create a BOQ first.',true);
+
 }
 $(document).on('change','#bsm-form[data-module="material_requisitions"] #bsm-form-fields select[name="site_id"]',refreshRequisitionBoqItems);
 $(document).on('change','#bsm-form[data-module="material_requisitions"] #bsm-lines-body select[name="item_id"]',function(){applyRequisitionBoqRow($(this).closest('tr'));});
@@ -2661,8 +2657,8 @@ async function saveForm(){
   }
   if(key==='material_requisitions'){
     const site=String(data.site_id||'');
-    if(!site||site!==requisitionBoqSite){showToast('Select a Site and wait for BOQ items to load.',true);return;}
-    for(const item of (data._items||[])){if(!requisitionBoqItems.has(String(item.item_id||''))){showToast('Only items from this Site BOQ can be requisitioned.',true);return;}}
+    if(!site){showToast('Select a Site.',true);return;}
+
     const today=String(BSM.today||'');
     for(const nm of ['requisition_date','required_date']){
       const val=String(data[nm]||'');
