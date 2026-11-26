@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.168
+ * Version: 0.0.169
  * Author: BizSkill
  */
 
@@ -18,7 +18,7 @@ final class BSM_Site_Management {
     use BSM_Notifications;
     use BSM_Site_Procurement;
     use BSM_Application_Scope;
-    const VERSION = '0.0.168';
+    const VERSION = '0.0.169';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -1346,6 +1346,11 @@ final class BSM_Site_Management {
         $key = get_post_meta(get_queried_object_id(), '_bsm_view_key', true);
         $pages = $this->app_pages();
         if (!isset($pages[$key])) return $title;
+        if (!is_user_logged_in()) {
+            global $wpdb;
+            $company = trim((string)$wpdb->get_var("SELECT company_name FROM {$this->prefix}company_settings ORDER BY id DESC LIMIT 1"));
+            return 'Login – ' . ($company !== '' ? $company : get_bloginfo('name'));
+        }
         return $pages[$key][0] . ' – ' . get_bloginfo('name');
     }
 

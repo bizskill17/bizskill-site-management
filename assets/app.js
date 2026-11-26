@@ -4559,7 +4559,7 @@ async function init(){
   bsmSelectObserver.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['disabled']});
   bsmEnhanceSearchableSelects(document);
   App.current=BSM.initialView||'dashboard';
-  if(!BSM.loggedIn){$('#bsm-login').show();return;}
+  if(!BSM.loggedIn){document.title='Login – '+($('.bsm-login-company-name').text().trim()||'Company');$('#bsm-login').show();return;}
   $('#bsm-shell').show();
   try{if(window.innerWidth>760 && localStorage.getItem('bsmSidebarCollapsed')==='1') $('#bsm-shell').addClass('bsm-sidebar-collapsed');}catch(e){}
   $('#bsm-sidebar-toggle').attr('title',$('#bsm-shell').hasClass('bsm-sidebar-collapsed')?'Show Menu':'Collapse Menu').attr('aria-label',$('#bsm-shell').hasClass('bsm-sidebar-collapsed')?'Show Menu':'Collapse Menu');
