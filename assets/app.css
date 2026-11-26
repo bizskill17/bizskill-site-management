@@ -3160,3 +3160,13 @@ html:has(body.bsm-blank-body),body.bsm-blank-body{max-width:100%;overflow-x:clip
 .bsm-app .bsm-filters.report:has(#r_worker){align-items:flex-end!important}
 .bsm-app .bsm-filters.report:has(#r_worker)>#bsm-clear-report,
 .bsm-app .bsm-filters.report:has(#r_worker)>#bsm-report-export-excel{align-self:flex-end!important;margin:0!important;width:42px!important;height:42px!important;box-sizing:border-box}
+
+/* Compact sidebar keeps all primary sections within a typical desktop height. */
+.bsm-app .bsm-sidebar .bsm-sidebar-head{min-height:64px!important;height:auto!important;padding:12px 14px!important;box-sizing:border-box}
+.bsm-app #bsm-nav{padding:6px 10px!important}
+.bsm-app #bsm-nav>.bsm-nav-group{padding:0!important;margin:0 0 5px!important}
+.bsm-app #bsm-nav .bsm-module-link{min-height:34px!important;padding:6px 10px!important;font-size:13px!important;line-height:20px!important;border-radius:7px!important;box-sizing:border-box}
+.bsm-app #bsm-nav .bsm-nav-label-main{gap:8px!important}
+.bsm-app #bsm-nav .bsm-nav-section-icon{width:20px!important;height:20px!important;font-size:15px!important}
+.bsm-app .bsm-sidebar .bsm-sidebar-user{margin:6px 10px 0!important;padding:7px 10px!important;font-size:12px!important;border-radius:7px!important}
+.bsm-app .bsm-sidebar .bsm-logout{min-height:36px!important;margin:6px 10px 10px!important;padding:8px 10px!important;font-size:13px!important;border-radius:7px!important}
