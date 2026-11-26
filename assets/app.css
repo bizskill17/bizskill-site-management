@@ -3231,3 +3231,12 @@ html:has(body.bsm-blank-body),body.bsm-blank-body{max-width:100%;overflow-x:clip
 @container(max-width:420px){.bsm-app .nt-rule:not(:has(.nt-instant)){grid-template-columns:minmax(0,1fr)}}
 @media(max-width:1100px){.bsm-app .nt-rule-grid{grid-template-columns:minmax(0,1fr)}.bsm-app #nt-settings .bsm-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.bsm-app .bsm-viewvis-grid{grid-template-columns:minmax(0,1fr)}.bsm-app #bsm-company-settings-form .bsm-form-grid,.bsm-app #nt-settings .bsm-form-grid{grid-template-columns:minmax(0,1fr)}.bsm-app .bsm-company-settings-table :is(th,td):first-child{width:35%!important}.bsm-app .nt-rule-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Dashboard Site names have dedicated space, including the dropdown arrow. */
+.bsm-app .bsm-dashboard-filters{display:flex!important;flex-wrap:wrap!important;gap:12px!important;align-items:flex-end!important}
+.bsm-app .bsm-dashboard-filters>label{min-width:0!important;max-width:100%;margin:0!important;box-sizing:border-box}
+.bsm-app .bsm-dashboard-filters>.bsm-dashboard-site-field{flex:0 1 420px!important;width:420px!important;min-width:0!important}
+.bsm-app .bsm-dashboard-filters>label:has(#bsm-dashboard-date){flex:0 1 180px!important;width:180px!important}
+.bsm-app .bsm-dashboard-site-field :is(select,.bsm-searchable-select,.bsm-select-control){width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box}
+.bsm-app .bsm-dashboard-site-field .bsm-select-search{width:100%!important;min-width:0!important;padding-right:32px!important;box-sizing:border-box!important;white-space:nowrap!important;text-overflow:ellipsis!important;overflow:hidden!important}
+@media(max-width:600px){.bsm-app .bsm-dashboard-filters>.bsm-dashboard-site-field{flex:1 1 100%!important;width:100%!important}}
