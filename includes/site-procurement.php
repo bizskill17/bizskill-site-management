@@ -224,7 +224,7 @@ trait BSM_Site_Procurement {
         $this->sp_access(['return_form']);
         global $wpdb;$p=$this->prefix;$lock=$this->ops_lock('stock_dispatch');
         try{$this->sp_write($wpdb->query('START TRANSACTION'));if(!empty($d['id']))throw new Exception('Posted Supplier Returns cannot be edited.');$site=(int)($d['site_id']??0);$this->sp_site($site);$receipt=(int)($d['purchase_receipt_id']??0);
-            $head=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}material_inwards WHERE id=%d AND site_id=%d AND site_flow=1 AND status='approved'",$receipt,$site),ARRAY_A);if(!$head)throw new Exception('Select an original Purchase Receipt for this Site.');
+            $head=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}material_inwards WHERE id=%d AND site_id=%d AND site_flow=1 AND status='approved'",$receipt,$site),ARRAY_A);if(!$head)throw new Exception('Select an original Goods Receipt for this Site.');
             $date=$this->sp_date($d['return_date']??current_time('Y-m-d'));if($date<$head['inward_date'])throw new Exception('Return Date cannot precede Receipt Date.');$items=[];$seen=[];
             foreach((array)($d['_items']??[]) as $it){$item=(int)($it['item_id']??0);$qty=$this->sp_qty($it['qty']??0,'Return Qty');if($qty<=0)continue;if(!$item||isset($seen[$item]))throw new Exception('Select unique receipt items.');$seen[$item]=true;
                 $original=$wpdb->get_row($wpdb->prepare("SELECT item_id,unit_id,SUM(qty) qty,SUM(qty*rate)/NULLIF(SUM(qty),0) rate FROM {$p}material_inward_items WHERE inward_id=%d AND item_id=%d GROUP BY item_id,unit_id",$receipt,$item),ARRAY_A);if(!$original)throw new Exception('Item is not on the selected Receipt.');

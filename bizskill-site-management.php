@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.106
+ * Version: 0.0.107
  * Author: BizSkill
  */
 
@@ -11,12 +11,14 @@ if (!defined('ABSPATH')) exit;
 require_once __DIR__ . '/includes/workforce-transfers.php';
 require_once __DIR__ . '/includes/notifications.php';
 require_once __DIR__ . '/includes/site-procurement.php';
+require_once __DIR__ . '/includes/application-scope.php';
 
 final class BSM_Site_Management {
     use BSM_Workforce_Transfers;
     use BSM_Notifications;
     use BSM_Site_Procurement;
-    const VERSION = '0.0.106';
+    use BSM_Application_Scope;
+    const VERSION = '0.0.107';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -42,6 +44,8 @@ final class BSM_Site_Management {
         add_action('init', [$this, 'maybe_upgrade']);
         add_action('init', [$this, 'operations_upgrade'], 11);
         add_action('init', [$this, 'site_procurement_upgrade'], 12);
+        add_action('wp_ajax_bsm_stock_ledger', [$this, 'ajax_scope_stock_ledger']);
+        add_action('wp_ajax_bsm_historical_records', [$this, 'ajax_scope_history']);
         add_action('wp_ajax_bsm_site_purchase_receipts', [$this, 'ajax_site_purchase_receipts']);
         add_action('wp_ajax_bsm_site_procurement_review', [$this, 'ajax_site_procurement_review']);
         add_action('wp_ajax_bsm_site_procurement_allocate', [$this, 'ajax_site_procurement_allocate']);
@@ -236,7 +240,7 @@ final class BSM_Site_Management {
         ) $charset;");
     }
 
-    private function app_pages() {
+    private function legacy_app_pages() {
         return [
             'dashboard' => ['Site Dashboard', ''],
             'project_tracker' => ['Site Tracker', 'project-tracker'],
@@ -1625,7 +1629,7 @@ final class BSM_Site_Management {
                 'role' => implode(', ', wp_get_current_user()->roles),
                 'is_admin' => $is_bsm_admin,
                 'assigned_sites' => array_values(array_map('intval',$assigned_sites)),
-                'allowed_views' => array_values(array_map('sanitize_key',$allowed_views))
+                'allowed_views' => array_values(array_intersect(array_map('sanitize_key',$allowed_views),array_keys($this->app_pages())))
             ] : null,
             'today' => current_time('Y-m-d'),
             'siteUrl' => (is_front_page() && get_post_meta($post->ID, '_bsm_view_key', true) === 'dashboard') ? home_url('/') : site_url('/' . self::PAGE_SLUG . '/'),
@@ -1738,6 +1742,7 @@ final class BSM_Site_Management {
 
     private function verify_ajax($require_login = true) {
         check_ajax_referer('bsm_nonce', 'nonce');
+        $this->scope_guard_request();
         if ($require_login && !is_user_logged_in()) wp_send_json_error(['message' => 'Please login.'], 401);
     }
 
@@ -2368,6 +2373,7 @@ final class BSM_Site_Management {
             wp_send_json_success(['rows'=>$rows,'total'=>$total,'page'=>$page,'pages'=>$export_all?1:max(1,ceil($total/20))]);
         }
         $where='1=1'; $args=[];
+        if(in_array($key,['material_inwards','material_returns'],true))$where.=' AND site_flow=1';
         if($key==='site_fund_allocations') $where.=" AND COALESCE(purpose,'')='Opening Petty Cash'";
         $site_scope=$this->employee_site_scope();
         if($site_scope!==null && $site_scope){
@@ -2480,7 +2486,7 @@ final class BSM_Site_Management {
         $vendor_id=(int)($_POST['vendor_id']??0);
         $category_id=(int)($_POST['category_id']??0);
         $item_id=(int)($_POST['item_id']??0);
-        $where="LOWER(TRIM(COALESCE(mi.inward_type,'')))='purchase'";
+        $where="LOWER(TRIM(COALESCE(mi.inward_type,'')))='purchase' AND mi.site_flow=1";
         $args=[];
         if($date_from!==''){$where.=' AND mi.inward_date>=%s';$args[]=$date_from;}
         if($date_to!==''){$where.=' AND mi.inward_date<=%s';$args[]=$date_to;}
@@ -2978,7 +2984,7 @@ final class BSM_Site_Management {
         $export_all=!empty($_POST['export_all']);
         $offset=($page-1)*20;
         $search=sanitize_text_field($_POST['search']??'');
-        $where="LOWER(TRIM(COALESCE(mi.inward_type,'')))='purchase'";
+        $where="LOWER(TRIM(COALESCE(mi.inward_type,'')))='purchase' AND mi.site_flow=1";
         $args=[];
 
         // A purchase is pending only when there is no actual Supplier Invoice file uploaded.
@@ -3317,7 +3323,7 @@ final class BSM_Site_Management {
             foreach((array)$existing_sites as $existing_site){
                 if($normalize_site_name($existing_site['site_name'])===$normalize_site_name($data['site_name']))wp_send_json_error(['message'=>'This Site Name already exists. Please use a different name.','field'=>'site_name']);
             }
-            foreach(['site_name'=>'Site Name','site_location'=>'Site Location','site_manager_user_id'=>'Site Manager','site_supervisor_user_id'=>'Site Supervisor','start_date'=>'Start Date','expected_end_date'=>'Expected Completion Date','work_order_value'=>'Work Order Value'] as $f=>$label){
+            foreach(['site_name'=>'Site Name','site_location'=>'Site Location','site_manager_user_id'=>'Site Manager','site_supervisor_user_id'=>'Site Supervisor','start_date'=>'Start Date','expected_end_date'=>'Expected Completion Date'] as $f=>$label){
                 if(!isset($data[$f]) || $data[$f]==='') wp_send_json_error(['message'=>$label.' is required']);
             }
         }
@@ -5176,7 +5182,7 @@ final class BSM_Site_Management {
         return $url;
     }
 
-    public function ajax_dashboard(){
+    public function legacy_ajax_dashboard(){
         $this->verify_ajax();
         global $wpdb;
         $p=$this->prefix;
@@ -5801,7 +5807,7 @@ final class BSM_Site_Management {
         $allowed=['administrator','bsm_employee'];
         if(!in_array($role,$allowed,true)) $role='bsm_employee';
         $assigned_sites=array_values(array_unique(array_filter(array_map('intval',(array)($d['assigned_sites']??[])))));
-        $allowed_views=array_values(array_unique(array_filter(array_map('sanitize_key',(array)($d['allowed_views']??[])))));
+        $allowed_views=array_values(array_intersect(array_unique(array_filter(array_map('sanitize_key',(array)($d['allowed_views']??[])))),array_keys($this->app_pages())));
         if($role==='administrator'){ $assigned_sites=[]; $allowed_views=[]; }
         if($role==='bsm_employee' && !$allowed_views) wp_send_json_error(['message'=>'Please allow at least one View for Employee.','field'=>'allowed_views']);
         if($raw_name==='') wp_send_json_error(['message'=>'Name is required','field'=>'name']);
