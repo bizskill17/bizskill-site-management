@@ -8,7 +8,7 @@ trait BSM_Application_Scope {
         $pages=array_intersect_key($this->legacy_app_pages(),array_flip($keep));
         $pages['purchase_order_form']=['Create PO','purchase-order-form'];
         $pages['stock_ledger']=['Stock Ledger','stock-ledger'];$pages['historical_records']=['Historical Records','historical-records'];
-        foreach(['dashboard'=>'Dashboard','users'=>'Employees / Users','purchase_form'=>'Goods Receipt Form','purchase_register'=>'Goods Receipt Master','purchase_items_register'=>'Goods Receipt Items','purchase_order_pending_receipt'=>'Pending Goods Receipts','office_daily_attendance'=>'Daily Office Attendance','office_attendance_master'=>'Office Attendance Master','view_settings'=>'View Permissions'] as $key=>$label)$pages[$key][0]=$label;
+        foreach(['dashboard'=>'Dashboard','users'=>'Users','purchase_form'=>'Goods Receipt Form','purchase_register'=>'Goods Receipt Master','purchase_items_register'=>'Goods Receipt Items','purchase_order_pending_receipt'=>'Pending Goods Receipts','office_daily_attendance'=>'Daily Office Attendance','office_attendance_master'=>'Office Attendance Master','view_settings'=>'View Permissions'] as $key=>$label)$pages[$key][0]=$label;
         return $pages;
     }
     private function scope_removed_modules() {
