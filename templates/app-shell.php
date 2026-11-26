@@ -15,6 +15,7 @@ if ($bsm_company_name === '') {
                 <img class="bsm-login-logo" src="<?php echo esc_attr($bsm_company_logo); ?>" alt="<?php echo esc_attr($bsm_company_name); ?> Logo">
             </div>
         <?php endif; ?>
+        <h2 class="bsm-login-company-name"><?php echo esc_html($bsm_company_name); ?></h2>
         <form id="bsm-login-form">
             <label>User ID<input type="text" name="user_id" autocomplete="username" required></label>
             <label>Password

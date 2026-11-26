@@ -3251,3 +3251,6 @@ html:has(body.bsm-blank-body),body.bsm-blank-body{max-width:100%;overflow-x:clip
 /* Daily Expense Summary actions align with the filter inputs. */
 .bsm-app .bsm-filters:has(#expense_summary_search){align-items:flex-end!important}
 .bsm-app .bsm-filters #expense_summary_export{align-self:flex-end!important;margin:0!important;width:42px!important;min-width:42px!important;height:42px!important;min-height:42px!important;padding:9px!important;box-sizing:border-box!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
+
+/* Company identity remains visible above the login fields, with or without a logo. */
+.bsm-app .bsm-login-card .bsm-login-company-name{margin:0 0 20px!important;text-align:center!important;font-size:22px!important;font-weight:600!important;line-height:1.35!important;color:#173d68!important;overflow-wrap:anywhere}
