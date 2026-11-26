@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.120
+ * Version: 0.0.121
  * Author: BizSkill
  */
 
@@ -18,7 +18,7 @@ final class BSM_Site_Management {
     use BSM_Notifications;
     use BSM_Site_Procurement;
     use BSM_Application_Scope;
-    const VERSION = '0.0.120';
+    const VERSION = '0.0.121';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -2473,6 +2473,7 @@ final class BSM_Site_Management {
         $countSql="SELECT COUNT(*) FROM $table WHERE $where"; $dataSql="SELECT * FROM $table WHERE $where ORDER BY id DESC"; if(!$export_all) $dataSql.=" LIMIT 20 OFFSET $offset";
         if($args){$countSql=$wpdb->prepare($countSql,$args);$dataSql=$wpdb->prepare($dataSql,$args);} 
         $total=(int)$wpdb->get_var($countSql); $rows=$wpdb->get_results($dataSql,ARRAY_A);
+        if($key==='material_requisitions'){foreach($rows as &$req_row){$req_row['approved_by_name']=$this->nt_name($req_row['approved_by']??0,true);}unset($req_row);}
         if($key==='labour_attendance'){
             $updater_names=[];
             foreach($rows as &$attendance){
