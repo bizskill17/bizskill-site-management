@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.149
+ * Version: 0.0.150
  * Author: BizSkill
  */
 
@@ -18,7 +18,7 @@ final class BSM_Site_Management {
     use BSM_Notifications;
     use BSM_Site_Procurement;
     use BSM_Application_Scope;
-    const VERSION = '0.0.149';
+    const VERSION = '0.0.150';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -304,7 +304,7 @@ final class BSM_Site_Management {
             'holiday_list' => ['Holiday List', 'holiday-list'],
             'time_sheet' => ['Time Sheet', 'time-sheet'],
             'time_sheet_master' => ['Time Sheet Master', 'time-sheet-master'],
-            'contractor_employees' => ['Contractor Employees', 'contractor-employees'],
+            'contractor_employees' => ['Contractor Employee', 'contractor-employees'],
             'contractor_calculated_bill' => ['Employee / Time Based Bill', 'contractor-calculated-bill'],
             'site_transfer_form' => ['Site-to-Site Transfer Form', 'site-transfer-form'],
             'site_transfer_master' => ['Site-to-Site Transfer Master', 'site-transfer-master'],
@@ -3760,7 +3760,7 @@ final class BSM_Site_Management {
                     if(!$worker_id||isset($worker_seen[$worker_id])||!is_numeric($raw)||(float)$raw<0||(float)$raw>24)wp_send_json_error(['message'=>'Enter valid Working Hours between 0 and 24 for each employee.']);
                     $worker=$wpdb->get_row($wpdb->prepare("SELECT id,employee_name,status FROM {$this->prefix}contractor_employees WHERE id=%d AND contractor_id=%d",$worker_id,$contractor_id),ARRAY_A);
                     if(!$worker)wp_send_json_error(['message'=>'Employee does not belong to the selected Labour Contractor.']);
-                    if($worker['status']!=='active'&&!$id)wp_send_json_error(['message'=>'Select active Contractor Employees.']);
+                    if($worker['status']!=='active'&&!$id)wp_send_json_error(['message'=>'Select active Contractor Employee.']);
                     $worker_seen[$worker_id]=true;$value=round((float)$raw,2);if($value>0)$attend++;
                     $employee_hours[]=['worker_id'=>$worker_id,'employee_name'=>$worker['employee_name'],'working_hours'=>$value];
                 }
@@ -4615,7 +4615,7 @@ final class BSM_Site_Management {
             if($linked){
                 $names=array_map(function($employee){return $employee['employee_name'].' ('.$employee['status'].')';},array_slice($linked,0,5));
                 $details=implode(', ',$names).(count($linked)>5?', and others':'');
-                wp_send_json_error(['message'=>'Cannot delete: linked Employees — '.$details.'. Open Edit to view active and inactive Employees. Inactive status stops future selection; it does not remove existing links.']);
+                wp_send_json_error(['message'=>'Cannot delete: linked Employee — '.$details.'. Open Edit to view active and inactive Employee. Inactive status stops future selection; it does not remove existing links.']);
             }
         }
         $deleted_salary_slip_id=0;

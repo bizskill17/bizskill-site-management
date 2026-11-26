@@ -176,7 +176,7 @@ trait BSM_Workforce_Transfers {
             $wpdb->query('START TRANSACTION');
             $worker=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$p}contractor_employees WHERE id=%d AND contractor_id=%d FOR UPDATE",$id,$contractor_id),ARRAY_A);
             if(!$worker)throw new Exception('Employee not found under this Contractor. Refresh and retry.');
-            if($worker['status']!=='inactive')throw new Exception('Only inactive Employees can be deleted here.');
+            if($worker['status']!=='inactive')throw new Exception('Only inactive Employee can be deleted here.');
             $links=[];
             $entries=$wpdb->get_results($wpdb->prepare("SELECT e.id,e.work_date,e.status,e.bill_id,b.bill_no FROM {$p}time_entries e LEFT JOIN {$p}contractor_bills b ON b.id=e.bill_id WHERE e.worker_id=%d ORDER BY e.work_date,e.id",$id),ARRAY_A);
             if($wpdb->last_error)throw new Exception('Unable to check Time Sheet links. Employee was not deleted.');
