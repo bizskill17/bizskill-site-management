@@ -3146,3 +3146,12 @@ html:has(body.bsm-blank-body),body.bsm-blank-body{max-width:100%;overflow-x:clip
 .bsm-app .bsm-panel.sp-po-panel{overflow:visible!important}
 .sp-po-panel>.bsm-form-grid{position:relative;z-index:2}
 #bsm-content:has(>.sp-po-panel){overflow:visible!important}
+
+/* Compact inventory filters with placeholder-only controls. */
+.bsm-app .bsm-stock-filters{display:grid!important;grid-template-columns:minmax(150px,1fr) repeat(3,minmax(150px,1fr)) 42px 42px!important;gap:10px!important;align-items:center!important}
+.bsm-app .bsm-stock-filters>#inv_search,.bsm-app .bsm-stock-filters>.bsm-searchable-select{width:100%!important;min-width:0!important;margin:0!important;box-sizing:border-box!important}
+.bsm-app .bsm-stock-filters>#inv_search{height:42px!important;font-size:13px!important;padding:9px 10px!important}
+.bsm-app .bsm-stock-filters .bsm-select-control{min-height:42px!important}
+.bsm-app .bsm-stock-filters>.bsm-icon-btn{width:42px!important;height:42px!important;margin:0!important}
+@media(max-width:900px){.bsm-app .bsm-stock-filters{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:480px){.bsm-app .bsm-stock-filters>#inv_search{grid-column:1/-1}}
