@@ -3132,3 +3132,12 @@ html:has(body.bsm-blank-body),body.bsm-blank-body{max-width:100%;overflow-x:clip
 /* Preserve the wrapped control height while its search field is open. */
 #po_direct_items .po-wrap-supplier.open .po-supplier-label{display:block;visibility:hidden}
 #po_direct_items .po-wrap-supplier.open .bsm-select-search{position:absolute!important;inset:0!important;height:100%!important;min-height:36px!important}
+
+/* Compact PO Items Master filters. */
+.bsm-app .po-items-filter-bar{display:grid!important;grid-template-columns:minmax(220px,1fr) minmax(150px,210px) minmax(180px,250px) 40px;gap:12px;align-items:end;padding:14px!important}
+.bsm-app .po-items-filter-bar label{display:flex;flex-direction:column;gap:5px;min-width:0;margin:0;font-size:12px!important;line-height:1.3;font-weight:500}
+.bsm-app .po-items-filter-bar .bsm-search{min-width:0!important;width:100%!important;margin:0!important;box-sizing:border-box}
+.bsm-app .po-items-filter-bar .bsm-searchable-select{width:100%!important;min-width:0!important}
+.bsm-app .po-items-filter-bar input,.bsm-app .po-items-filter-bar .bsm-select-control{height:38px!important;min-height:38px!important;box-sizing:border-box}
+.bsm-app .po-items-filter-bar .bsm-icon-btn{width:38px;height:38px;align-self:end;margin:0}
+@media(max-width:760px){.bsm-app .po-items-filter-bar{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}.bsm-app .po-items-filter-bar .po-items-search-field{grid-column:1/-1}.bsm-app .po-items-filter-bar .bsm-icon-btn{grid-column:2;justify-self:end}}
