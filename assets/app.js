@@ -3008,7 +3008,7 @@ function requisitionItemsSyncCategoryFromItem(){
   if(item&&item.category_id){$('#requisition_items_category').val(String(item.category_id));bsmRefreshSearchableSelect($('#requisition_items_category')[0]);}
 }
 async function renderMaterialRequisitionItem(){
-  setTitle('Requisition Item Master');
+  setTitle('Requisition Items Master');
   const filters=`<div id="bsm-requisition-items-filters" class="bsm-filters" style="display:none">
     <label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="requisition_items_date_from"></label>
     <label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="requisition_items_date_to"></label>
@@ -3017,7 +3017,7 @@ async function renderMaterialRequisitionItem(){
     ${selectHtml('requisition_items_item','Item','items','')}
     <button class="bsm-icon-btn bsm-purchase-clear-btn" id="requisition_items_clear_filters" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button>
   </div>`;
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-requisition-items-search" class="bsm-search" aria-label="Search Requisition Item Master" placeholder="Search"><button id="bsm-requisition-items-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-requisition-items-export')}</div>${filters}<div id="bsm-requisition-items-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-requisition-items-search" class="bsm-search" aria-label="Search Requisition Items Master" placeholder="Search"><button id="bsm-requisition-items-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button><div class="bsm-spacer"></div>${excelButton('bsm-requisition-items-export')}</div>${filters}<div id="bsm-requisition-items-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`);
   requisitionItemsFilterItemOptions();await loadMaterialRequisitionItem();
 }
 async function loadMaterialRequisitionItem(exportAll=false){
@@ -3026,7 +3026,7 @@ async function loadMaterialRequisitionItem(exportAll=false){
     date_from:dateSql($('#requisition_items_date_from').val()||''),date_to:dateSql($('#requisition_items_date_to').val()||''),
     site_id:$('#requisition_items_site').val()||'',category_id:$('#requisition_items_category').val()||'',item_id:$('#requisition_items_item').val()||''
   });
-  if(!r.success){if(!exportAll)$('#bsm-requisition-items-list').html('<div class="bsm-empty">Unable to load Requisition Item Master.</div>');return null;}
+  if(!r.success){if(!exportAll)$('#bsm-requisition-items-list').html('<div class="bsm-empty">Unable to load Requisition Items Master.</div>');return null;}
   if(exportAll)return r.data.rows||[];
   const rows=r.data.rows||[],num=v=>Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:2});
   let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>Requisition</th><th>Creation Date</th><th>Approved Date</th><th>Required Date</th><th>Site</th><th>Requested By</th><th>Approved By</th><th>Item Category</th><th>Item</th><th class="num">Requested Qty</th><th class="num">Approved Qty</th><th class="num">Rejected Qty</th><th>Unit</th><th>Status</th><th>Remarks</th></tr></thead><tbody>';
@@ -3040,7 +3040,7 @@ async function exportMaterialRequisitionItem(){
   const rows=await loadMaterialRequisitionItem(true);if(!rows)return;
   const headers=['Sl','Requisition','Creation Date','Approved Date','Required Date','Site','Requested By','Approved By','Item Category','Item','Requested Qty','Approved Qty','Rejected Qty','Unit','Status','Remarks'];
   const data=rows.map((x,i)=>[i+1,x.requisition_no||'',[dateFmt(x.requisition_date),x.created_time].filter(Boolean).join(' '),x.approved_date||'',dateFmt(x.required_date),x.site_name||'',x.requested_by_name||'',x.approved_by_name||'',x.category_name||'',x.item_name||'',x.requested_qty||0,x.approved_qty||0,x.rejected_qty||0,x.unit_name||'',String(x.status||'').replaceAll('_',' '),x.remarks||'']);
-  downloadExcelFile('Requisition Item Master',headers,data);
+  downloadExcelFile('Requisition Items Master',headers,data);
 }
 
 function drawPendingApproval(){const rows=filterVisibleRows(App.pendingApprovalRows||[],['requisition_no',x=>dateFmt(x.requisition_date),'site_name',x=>dateFmt(x.required_date),'requested_by_name','item_count'],App.specialSearch||'');let h='<div class="bsm-table-wrap"><table id="bsm-pending-approval-table"><thead><tr><th>Sl</th><th>Req. No.</th><th>Date</th><th>Site</th><th>Required Date</th><th>Requested By</th><th>Items</th><th>Action</th></tr></thead><tbody>';rows.forEach((x,i)=>h+=`<tr class="bsm-pending-approval-row" data-id="${x.id}" tabindex="0" aria-expanded="false" title="Click to view requisition items"><td>${i+1}</td><td>${esc(x.requisition_no)}</td><td>${dateFmt(x.requisition_date)}</td><td>${esc(x.site_name)}</td><td>${dateFmt(x.required_date)}</td><td>${esc(x.requested_by_name)}</td><td>${esc(x.item_count)}</td><td><button class="bsm-btn bsm-btn-small bsm-btn-success bsm-review-req" data-id="${x.id}">Approve</button></td></tr>`);if(!rows.length)h+='<tr><td colspan="9" class="bsm-empty">No requisitions pending approval.</td></tr>';h+='</tbody></table></div>';$('#bsm-pending-approval').html(h);}
