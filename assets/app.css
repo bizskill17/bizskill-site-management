@@ -3178,3 +3178,56 @@ html:has(body.bsm-blank-body),body.bsm-blank-body{max-width:100%;overflow-x:clip
 
 /* Give the centered company name a clearer visual hierarchy. */
 .bsm-app .bsm-sidebar .bsm-sidebar-head strong{font-size:18px!important;font-weight:500!important;line-height:1.35!important}
+
+/* Compact Settings layouts: intrinsic sizing and wrapping prevent collisions. */
+.bsm-app :is(.bsm-settings-panel,.bsm-viewvis,.bsm-reset){padding:14px!important;min-width:0;box-sizing:border-box}
+.bsm-app :is(.bsm-settings-panel,.bsm-viewvis,.bsm-reset,.nt-card) :is(p,label,small){font-size:13px!important;line-height:1.45!important}
+.bsm-app :is(.bsm-settings-panel,.bsm-viewvis,.bsm-reset,.nt-card) p{margin:0 0 10px!important;overflow-wrap:anywhere}
+.bsm-app .bsm-settings-view-head{margin:0 0 8px!important}
+.bsm-app .bsm-company-settings-table{table-layout:fixed;min-width:0!important}
+.bsm-app .bsm-company-settings-table :is(th,td){padding:5px 10px!important;line-height:1.35!important;overflow-wrap:anywhere;white-space:normal!important}
+.bsm-app .bsm-company-settings-table :is(th,td):first-child{width:190px!important}
+.bsm-app .bsm-company-settings-logo-view{max-width:120px;max-height:65px;object-fit:contain}
+.bsm-app #bsm-company-settings-form .bsm-form-grid{padding:0!important;gap:10px 12px!important;grid-template-columns:repeat(3,minmax(0,1fr))}
+.bsm-app #bsm-company-settings-form label{min-width:0}
+.bsm-app .bsm-company-logo-upload{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.bsm-app .bsm-company-logo-upload input{min-width:0;max-width:100%;flex:1 1 200px}
+.bsm-app .bsm-viewvis-tools{gap:8px;margin:0 0 10px!important}
+.bsm-app .bsm-viewvis-grid{grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px!important;align-items:start}
+.bsm-app .bsm-viewvis-group{min-width:0}
+.bsm-app .bsm-viewvis-group-head{display:flex!important;flex-direction:row!important;gap:8px!important;padding:8px 10px!important;margin:0!important;color:#fff!important;font-size:14px!important;line-height:1.4!important}
+.bsm-app .bsm-viewvis-group-head span{color:inherit!important;font-size:14px!important;font-weight:600!important;min-width:0;overflow-wrap:anywhere}
+.bsm-app .bsm-viewvis-items{padding:3px 10px 6px!important}
+.bsm-app .bsm-viewvis-item{display:flex!important;flex-direction:row!important;gap:8px!important;padding:5px 0!important;margin:0!important;min-width:0}
+.bsm-app .bsm-viewvis-item span{min-width:0;overflow-wrap:anywhere}
+.bsm-app .bsm-viewvis input[type=checkbox]{display:inline-block!important;width:16px!important;height:16px!important;min-height:16px!important;padding:0!important;margin:0!important;flex:0 0 16px!important}
+.bsm-app .bsm-reset{font-size:13px!important;line-height:1.5!important}
+.bsm-app .bsm-reset>label{display:block;margin-top:12px}
+.bsm-app .bsm-reset #bsm-reset-confirm{height:36px!important;min-height:36px!important;font-size:13px!important}
+.bsm-app .nt-card{padding:14px!important;margin-bottom:12px!important;min-width:0;container-type:inline-size}
+.bsm-app .nt-card h3{font-size:16px!important;line-height:1.4!important;margin:0 0 8px!important;overflow-wrap:anywhere}
+.bsm-app .nt-heading{gap:10px!important;flex-wrap:wrap;margin-bottom:10px!important;min-width:0}
+.bsm-app .nt-heading>div{min-width:0;flex:1 1 260px}
+.bsm-app #nt-settings .bsm-form-grid{padding:0!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px!important}
+.bsm-app #nt-settings .bsm-form-grid label{min-width:0}
+.bsm-app #nt-settings .bsm-form-grid input{height:36px!important;min-height:36px!important;font-size:13px!important;box-sizing:border-box}
+.bsm-app :is(.nt-master,.nt-days label){display:flex!important;flex-direction:row!important;gap:6px!important;margin:0!important;align-items:center}
+.bsm-app .nt-days{gap:8px 12px!important;padding-top:12px!important}
+.bsm-app .nt-rule-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px!important}
+.bsm-app .nt-rule{display:grid!important;grid-template-columns:minmax(0,1fr) 210px;gap:10px!important;padding:9px 0!important;align-items:center}
+.bsm-app .nt-rule:has(.nt-instant){grid-template-columns:minmax(0,1fr) auto}
+.bsm-app .nt-rule>label:first-child{display:flex!important;flex-direction:row!important;align-items:center!important;gap:8px!important;margin:0!important;min-width:0}
+.bsm-app .nt-rule>label span{min-width:0;overflow-wrap:anywhere}
+.bsm-app .nt-rule small{margin-top:2px!important}
+.bsm-app .nt-rule .nt-time-label{width:100%!important;min-width:0!important;max-width:none!important;gap:4px!important}
+.bsm-app .nt-schedule{min-width:0}
+.bsm-app .nt-time-row{display:flex!important;flex-wrap:wrap;gap:4px!important;margin-bottom:4px!important;align-items:center}
+.bsm-app .nt-time-row select{height:30px!important;min-height:30px!important;flex:0 0 46px;width:46px!important;font-size:12px!important}
+.bsm-app .nt-time-row select.nt-period{flex-basis:52px;width:52px!important}
+.bsm-app .nt-remove-time{flex:0 0 24px;padding:0!important}
+.bsm-app .nt-card input[type=checkbox]{display:inline-block!important;margin:0!important;padding:0!important;width:16px!important;height:16px!important;min-height:16px!important;flex:0 0 16px!important}
+.bsm-app .nt-log-message,.bsm-app .nt-log-response{min-width:0!important;max-width:400px}
+.bsm-app :is(.bsm-settings-panel,.bsm-viewvis,.bsm-reset,#nt-settings) .bsm-btn{min-height:34px!important;padding:7px 11px!important;font-size:13px!important;line-height:1.35!important;white-space:normal}
+@container(max-width:420px){.bsm-app .nt-rule:not(:has(.nt-instant)){grid-template-columns:minmax(0,1fr)}}
+@media(max-width:1100px){.bsm-app .nt-rule-grid{grid-template-columns:minmax(0,1fr)}.bsm-app #nt-settings .bsm-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.bsm-app .bsm-viewvis-grid{grid-template-columns:minmax(0,1fr)}.bsm-app #bsm-company-settings-form .bsm-form-grid,.bsm-app #nt-settings .bsm-form-grid{grid-template-columns:minmax(0,1fr)}.bsm-app .bsm-company-settings-table :is(th,td):first-child{width:35%!important}.bsm-app .nt-rule-grid{grid-template-columns:minmax(0,1fr)}}
