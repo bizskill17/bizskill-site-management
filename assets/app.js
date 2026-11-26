@@ -3847,7 +3847,7 @@ function bsmOpenSearchable($wrap){
     const below=vh-rect.bottom-8;
     const above=rect.top-8;
     const dropUp=below<150 && above>below;
-    const height=Math.max(80,Math.min(250,(dropUp?above:below)-8));
+    const height=Math.max(36,Math.min(250,$menu[0].scrollHeight+2,(dropUp?above:below)-8));
     const top=dropUp?Math.max(8,rect.top-height-4):rect.bottom+4;
     $wrap.addClass('bsm-po-vendor-dropdown-open').toggleClass('drop-up',dropUp);
     // Override legacy Pending PO !important widths, which otherwise push the menu off-screen.
@@ -3913,10 +3913,11 @@ document.addEventListener('scroll',function(e){
 $(document).on('scroll', '#po_pending_list .po-pending-table-wrap', function(){
   $('.bsm-po-vendor-dropdown-open').each(function(){bsmCloseSearchable($(this));});
 });
+document.addEventListener('scroll',function(e){if(e.target instanceof Element&&e.target.matches('.bsm-table-wrap'))$('.bsm-po-vendor-dropdown-open').each(function(){bsmCloseSearchable($(this));});},true);
 $(window).on('resize scroll', function(){
   $('.bsm-po-vendor-dropdown-open').each(function(){bsmCloseSearchable($(this));});
 });
-$(document).on('click','.po-supplier-label',function(e){const $wrap=$(this).closest('.bsm-searchable-select');bsmOpenSearchable($wrap);$wrap.find('.bsm-select-search').trigger('focus');e.stopPropagation();});
+$(document).on('click','.po-supplier-label',function(e){const $wrap=$(this).closest('.bsm-searchable-select');bsmOpenSearchable($wrap);$wrap.find('.bsm-select-search')[0]?.focus({preventScroll:true});e.stopPropagation();});
 $(document).on('click','.bsm-select-arrow',function(e){
   const $wrap=$(this).closest('.bsm-searchable-select');
   if($wrap.hasClass('open')) bsmCloseSearchable($wrap); else {bsmOpenSearchable($wrap);$wrap.find('.bsm-select-search').trigger('focus');}

@@ -3125,3 +3125,10 @@ html:has(body.bsm-blank-body),body.bsm-blank-body{max-width:100%;overflow-x:clip
 #po_direct_items .po-wrap-supplier .bsm-select-arrow{position:absolute;right:8px;top:50%;transform:translateY(-50%)}
 #po_direct_items .po-inline-quote{align-items:center}
 #po_direct_items .po-wrap-supplier .bsm-select-option{white-space:normal!important;overflow-wrap:anywhere;line-height:1.35}
+
+/* Keep Chosen Rate as compact as quotation rate inputs. */
+#po_direct_items.sp-po-table>thead>tr>th:nth-child(11),#po_direct_items.sp-po-table>.po-direct-row>tr:first-child>td:nth-child(11){width:96px!important;min-width:96px!important;max-width:96px!important;box-sizing:border-box!important}
+#po_direct_items.sp-po-table .po-direct-rate{width:78px!important;min-width:0!important;max-width:78px!important;box-sizing:border-box!important;padding:6px!important;text-align:right}
+/* Preserve the wrapped control height while its search field is open. */
+#po_direct_items .po-wrap-supplier.open .po-supplier-label{display:block;visibility:hidden}
+#po_direct_items .po-wrap-supplier.open .bsm-select-search{position:absolute!important;inset:0!important;height:100%!important;min-height:36px!important}
