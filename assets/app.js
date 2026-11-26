@@ -2922,6 +2922,11 @@ function quickAddMaster(master,target){
       $('#bsm-quick-body select[name="unit_id"]').html('<option value="">Select</option>'+u.map(x=>`<option value="${x.id}">${esc(x.label)}</option>`).join(''));
       $('#bsm-quick-body select[name="gst_rate"]').html('<option value="">Select</option>'+g.map(x=>`<option value="${x.id}">${esc(x.label)}</option>`).join(''));
     });
+  }else if(master==='vendors'){
+    $('#bsm-quick-title').text('Add Supplier');
+    $('#bsm-quick-body').html('<div class="bsm-form-grid">'+App.configs.vendors.fields.filter(f=>f.name!=='status').map(f=>fieldHtml(Object.assign({},f,{addMaster:null}),'')).join('')+'</div><div id="bsm-quick-msg" class="bsm-form-msg"></div>');
+    const $state=$('#bsm-quick-body select[name="state_id"]');
+    ensureOptions(['states'],true).then(()=>$state.html('<option value="">Select</option>'+(App.options.states||[]).map(x=>`<option value="${esc(x.id)}">${esc(x.label)}</option>`).join('')));
   }else if(master==='gst_rates'){
     $('#bsm-quick-title').text('Add GST Rate');
     $('#bsm-quick-body').html(`<label><span>GST Rate % <span class="bsm-required-star">*</span></span><input type="number" step="0.01" min="0" id="bsm-quick-gst-rate" autocomplete="off"></label><div id="bsm-quick-msg" class="bsm-form-msg"></div>`);
@@ -2941,6 +2946,13 @@ async function saveQuickMaster(){
     $('#bsm-quick-body').find('input,select,textarea').each(function(){data[this.name]=$(this).val();});
     if(!String(data.item_name||'').trim()){ $('#bsm-quick-msg').text('Item Name is required'); return; }
     data.status='active';
+  }else if(master==='vendors'){
+    label='Supplier';type='vendors';
+    $('#bsm-quick-body').find('input,select,textarea').each(function(){if(this.name)data[this.name]=$(this).val();});
+    if(!String(data.vendor_name||'').trim()){$('#bsm-quick-msg').text('Supplier Name is required');return;}
+    const invalid=$('#bsm-quick-body input').toArray().find(el=>!el.checkValidity());
+    if(invalid){invalid.reportValidity();return;}
+    data.status='active';
   }else if(master==='gst_rates'){
     label='GST Rate';type='gst_rates';
     const rate=String($('#bsm-quick-gst-rate').val()||'').trim();if(rate===''||Number(rate)<0){$('#bsm-quick-msg').text('GST Rate is required');return;}
@@ -2953,6 +2965,17 @@ async function saveQuickMaster(){
   $('#bsm-quick-save').prop('disabled',true);const r=await ajax('bsm_save',{module:master,data:JSON.stringify(data)});$('#bsm-quick-save').prop('disabled',false);
   if(!r.success){$('#bsm-quick-msg').text(r.data?.message||`Unable to add ${label}`);return;}
   delete App.options[type];await ensureOptions([type],true);
+  if(master==='vendors'&&target.jquery){
+    const rows=App.options.vendors||[];
+    $('select.po-row-vendor,select.po-quote-supplier,select.po-direct-vendor,select.po-direct-quote-supplier').each(function(){
+      const $select=$(this),value=$select.val();
+      // Chosen Supplier lists are derived from the quotations; update them through the existing change handler.
+      if($select.is('.po-direct-vendor'))return;
+      $select.html('<option value="">Select Supplier</option>'+rows.map(x=>`<option value="${esc(x.id)}">${esc(x.label)}</option>`).join('')).val(value);
+    });
+    target.val(String(r.data.id)).trigger('change');
+    $('#bsm-quick-modal').hide();showToast('Supplier added');return;
+  }
   const $sel=$(`#bsm-modal select[name="${target}"]`).last(); const rows=App.options[type]||[];
   $sel.html('<option value="">Select</option>'+rows.map(x=>`<option value="${x.id}">${esc(x.label)}</option>`).join(''));
   if(master==='gst_rates')$sel.val(String(data.gst_rate)).trigger('change');else if(r.data?.id)$sel.val(String(r.data.id)).trigger('change');
@@ -3795,9 +3818,16 @@ function bsmRenderSearchableOptions($select,$wrap,query='',filter=true){
   const rows=filter && q ? opts.filter(o=>o.label.toLowerCase().includes(q)) : opts;
   const current=String($select.val() ?? '');
   const $menu=$wrap.find('.bsm-select-menu');
-  if(!rows.length){$menu.html('<div class="bsm-select-empty">No matching records found</div>');return;}
-  $menu.html(rows.map(o=>`<button type="button" class="bsm-select-option ${o.value===current?'selected':''}" data-value="${esc(o.value)}">${esc(o.label)}</button>`).join(''));
+  const addSupplier=$select.is('.po-row-vendor,.po-quote-supplier,.po-direct-quote-supplier')&&canManageMaster('vendors')?'<button type="button" class="bsm-select-add-supplier" style="display:block;width:100%;padding:10px 12px;text-align:left;border:0;border-top:1px solid #dbe5f0;background:#f0f6ff;color:#165dd8;font-weight:600">+ Add Supplier</button>':'';
+  $menu.html((rows.length?rows.map(o=>`<button type="button" class="bsm-select-option ${o.value===current?'selected':''}" data-value="${esc(o.value)}">${esc(o.label)}</button>`).join(''):'<div class="bsm-select-empty">No matching records found</div>')+addSupplier);
 }
+$(document).on('click','.bsm-select-add-supplier',function(e){
+  e.preventDefault();e.stopPropagation();
+  const $wrap=$(this).closest('.bsm-searchable-select'),$select=$wrap.prev('select'),name=$wrap.find('.bsm-select-search').val();
+  bsmCloseSearchable($wrap);
+  quickAddMaster('vendors',$select);
+  $('#bsm-quick-body input[name="vendor_name"]').val(name||'');
+});
 function bsmCloseSearchable($wrap,restore=true){
   if(!$wrap || !$wrap.length) return;
   $wrap.removeClass('open drop-up invoice-item-open bsm-item-dropdown-open bsm-po-vendor-dropdown-open');
