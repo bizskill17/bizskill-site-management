@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.161
+ * Version: 0.0.162
  * Author: BizSkill
  */
 
@@ -18,7 +18,7 @@ final class BSM_Site_Management {
     use BSM_Notifications;
     use BSM_Site_Procurement;
     use BSM_Application_Scope;
-    const VERSION = '0.0.161';
+    const VERSION = '0.0.162';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -2942,10 +2942,10 @@ final class BSM_Site_Management {
         $category_id=(int)($_POST['category_id']??0);
         $vendor_id=(int)($_POST['vendor_id']??0);
         $search=sanitize_text_field($_POST['search']??'');
-        if($from==='') $from=current_time('Y-m-d');
-        if($to==='') $to=$from;
-        $where="LOWER(COALESCE(e.status,''))<>'cancelled' AND e.expense_date>=%s AND e.expense_date<=%s";
-        $args=[$from,$to];
+        $where="LOWER(COALESCE(e.status,''))<>'cancelled'";
+        $args=[];
+        if($from!==''){$where.=' AND e.expense_date>=%s';$args[]=$from;}
+        if($to!==''){$where.=' AND e.expense_date<=%s';$args[]=$to;}
         if($site_id){$where.=' AND e.site_id=%d';$args[]=$site_id;}
         if($category_id){$where.=' AND e.category_id=%d';$args[]=$category_id;}
         if($vendor_id){$where.=' AND e.vendor_id=%d';$args[]=$vendor_id;}
@@ -2963,7 +2963,7 @@ final class BSM_Site_Management {
               LEFT JOIN {$p}vendors v ON v.id=e.vendor_id
               WHERE $where
               ORDER BY s.site_name ASC,e.expense_date ASC,e.id ASC";
-        $sql=$wpdb->prepare($sql,$args);
+        if($args)$sql=$wpdb->prepare($sql,$args);
         wp_send_json_success(['rows'=>$wpdb->get_results($sql,ARRAY_A),'date_from'=>$from,'date_to'=>$to]);
     }
 
