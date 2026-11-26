@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.151
+ * Version: 0.0.152
  * Author: BizSkill
  */
 
@@ -18,7 +18,7 @@ final class BSM_Site_Management {
     use BSM_Notifications;
     use BSM_Site_Procurement;
     use BSM_Application_Scope;
-    const VERSION = '0.0.151';
+    const VERSION = '0.0.152';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -249,7 +249,6 @@ final class BSM_Site_Management {
             'boq_form' => ['BOQ Form', 'boq-form'],
             'boq_master' => ['BOQ Master', 'boq-master'],
             'boq_items' => ['BOQ Items Master', 'boq-items-master'],
-            'boq_monitoring' => ['BOQ Monitoring', 'boq-monitoring'],
             'users' => ['Users', 'users'],
             'designations' => ['Designations', 'designations'],
             'bank_accounts' => ['Bank Master', 'bank-master'],
@@ -2071,7 +2070,7 @@ final class BSM_Site_Management {
         $user=$wpdb->get_row($wpdb->prepare("SELECT role,assigned_sites,allowed_views FROM {$this->prefix}users WHERE wp_user_id=%d LIMIT 1",get_current_user_id()),ARRAY_A);
         if(!$user) wp_send_json_error(['message'=>'Permission denied'],403);
         $allowed=json_decode($user['allowed_views']??'[]',true);
-        if(is_array($allowed) && count($allowed) && !array_intersect(['boq_form','boq_master','boq_items','boq_monitoring'],$allowed)) wp_send_json_error(['message'=>'BOQ permission denied'],403);
+        if(is_array($allowed) && count($allowed) && !array_intersect(['boq_form','boq_master','boq_items'],$allowed)) wp_send_json_error(['message'=>'BOQ permission denied'],403);
         $sites=json_decode($user['assigned_sites']??'[]',true);
         if($site_id && is_array($sites) && count($sites) && !in_array((string)$site_id,array_map('strval',$sites),true)) wp_send_json_error(['message'=>'Site permission denied'],403);
     }
