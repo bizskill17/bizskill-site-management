@@ -4,10 +4,10 @@ if (!defined('ABSPATH')) exit;
 /** The active application surface. Historical tables are never removed here. */
 trait BSM_Application_Scope {
     private function app_pages() {
-        $keep=['dashboard','sites','items','item_categories','units','vendors','labour_contractors','contractor_employees','users','designations','gst_rates','states','holiday_list','boq_form','boq_master','boq_items','boq_monitoring','requisition_form','pending_requisition_approval','material_requisitions','material_requisition_item','pending_po_items','purchase_order_form','pending_po_approval','purchase_order_master','purchase_order_items_master','purchase_order_pending_receipt','purchase_form','purchase_register','purchase_items_register','pending_invoice_copy','site_inventory','site_opening_stock','labour_attendance','report_labour','office_daily_attendance','office_attendance_master','time_sheet','time_sheet_master','company_settings','notifications','view_settings','procurement_review','data_reset'];
+        $keep=['dashboard','sites','items','item_categories','units','vendors','labour_contractors','contractor_employees','users','designations','gst_rates','states','holiday_list','boq_form','boq_master','boq_items','boq_monitoring','requisition_form','pending_requisition_approval','material_requisitions','material_requisition_item','pending_po_items','purchase_order_form','pending_po_approval','purchase_order_master','purchase_order_items_master','purchase_order_pending_receipt','purchase_form','purchase_register','purchase_items_register','pending_invoice_copy','site_inventory','site_opening_stock','labour_attendance','report_labour','office_daily_attendance','office_attendance_master','time_sheet','time_sheet_master','company_settings','notifications','view_settings','data_reset'];
         $pages=array_intersect_key($this->legacy_app_pages(),array_flip($keep));
         $pages['purchase_order_form']=['Create PO','purchase-order-form'];
-        $pages['stock_ledger']=['Stock Ledger','stock-ledger'];$pages['historical_records']=['Historical Records','historical-records'];
+        $pages['stock_ledger']=['Stock Ledger','stock-ledger'];
         foreach(['dashboard'=>'Dashboard','users'=>'Users','purchase_form'=>'Goods Receipt Form','purchase_register'=>'Goods Receipt Master','purchase_items_register'=>'Goods Receipt Items','purchase_order_pending_receipt'=>'Pending Goods Receipts','office_daily_attendance'=>'Daily Office Attendance','office_attendance_master'=>'Office Attendance Master','view_settings'=>'View Permissions'] as $key=>$label)$pages[$key][0]=$label;
         return $pages;
     }
@@ -16,7 +16,7 @@ trait BSM_Application_Scope {
     }
     private function scope_guard_request() {
         $action=sanitize_key($_POST['action']??$_GET['action']??'');
-        if($action==='bsm_historical_records')return; // This endpoint separately requires Admin and is read-only.
+        if(in_array($action,['bsm_historical_records','bsm_site_procurement_review','bsm_site_procurement_allocate','bsm_site_procurement_assign_po'],true))wp_send_json_error(['message'=>'This section is no longer available.'],403);
         $module=sanitize_key($_POST['module']??'');
         if(in_array($module,['material_inwards','material_returns'],true)){
             $data=json_decode(wp_unslash($_POST['data']??'{}'),true);
