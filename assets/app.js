@@ -3842,7 +3842,7 @@ function bsmOpenSearchable($wrap){
     $menu.css({position:'fixed',left:left+'px',right:'auto',top:top+'px',bottom:'auto',width:width+'px',maxHeight:height+'px'});
     return;
   }
-  if((poVendorSelect || $select.closest('#ops-time-form,.bsm-time-filters').length) && rect && $menu.length){
+  if(rect && $menu.length){
     const vw=document.documentElement.clientWidth||window.innerWidth;
     const vh=document.documentElement.clientHeight||window.innerHeight;
     const width=Math.min(Math.max(300,rect.width),Math.max(160,vw-16));
