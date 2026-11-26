@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.128
+ * Version: 0.0.129
  * Author: BizSkill
  */
 
@@ -18,7 +18,7 @@ final class BSM_Site_Management {
     use BSM_Notifications;
     use BSM_Site_Procurement;
     use BSM_Application_Scope;
-    const VERSION = '0.0.128';
+    const VERSION = '0.0.129';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -5398,7 +5398,7 @@ final class BSM_Site_Management {
         $rows=[];
         if(in_array($report,['material_stock','stock'],true)){
             $this->sp_access(['site_inventory','report_stock','material_stock','consumption_form','return_form','site_transfer_form']);
-            $rows=$this->sp_inventory_rows($site,$item,$category,$from,$to);
+            try{$rows=$this->sp_inventory_rows($site,$item,$category,$from,$to);}catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);return;}
             if($report==='stock')foreach($rows as &$x)$x['stock']=$x['balance'];
             wp_send_json_success(['rows'=>$rows]);return;
         }

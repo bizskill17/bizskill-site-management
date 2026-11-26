@@ -277,8 +277,10 @@ trait BSM_Site_Procurement {
           SUM(CASE WHEN kind='return_qty' THEN qty ELSE 0 END) return_qty,
           SUM(CASE WHEN kind='site_transfer' THEN qty ELSE 0 END) site_transfer,
           SUM(CASE WHEN kind IN ('opening','receipt') THEN qty ELSE -qty END) balance
-          FROM ($union) m JOIN {$p}sites s ON s.id=m.site_id JOIN {$p}items i ON i.id=m.item_id LEFT JOIN {$p}units u ON u.id=m.unit_id LEFT JOIN {$p}item_categories c ON c.id=i.category_id WHERE $where GROUP BY m.site_id,m.item_id,m.unit_id ORDER BY s.site_name,i.item_name";
-        return $wpdb->get_results($args?$wpdb->prepare($sql,$args):$sql,ARRAY_A)?:[];
+          FROM ($union) m JOIN {$p}sites s ON s.id=m.site_id JOIN {$p}items i ON i.id=m.item_id LEFT JOIN {$p}units u ON u.id=m.unit_id LEFT JOIN {$p}item_categories c ON c.id=i.category_id WHERE $where GROUP BY m.site_id,s.site_name,m.item_id,i.item_name,m.unit_id,u.unit_name,i.category_id,c.category_name ORDER BY s.site_name,i.item_name";
+        $rows=$wpdb->get_results($args?$wpdb->prepare($sql,$args):$sql,ARRAY_A);
+        if(!empty($wpdb->last_error)){error_log('BSM site inventory: '.$wpdb->last_error);throw new Exception('Unable to load site inventory. Please check the server error log.');}
+        return $rows?:[];
     }
     public function ajax_site_stock_items() {
         $this->sp_access(['consumption_form','site_consumptions','return_form','material_returns','site_transfer_form','site_transfer_master','site_inventory','boq_form','boq_items','pending_requisition_approval','requisition_form']);
