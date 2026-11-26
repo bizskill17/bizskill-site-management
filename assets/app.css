@@ -3098,3 +3098,12 @@ html:has(body.bsm-blank-body),body.bsm-blank-body{max-width:100%;overflow-x:clip
 @media(max-width:720px){.bsm-app .frontier-boq-editor .bsm-boq-header-row{grid-template-columns:1fr!important;gap:12px!important}.bsm-app .frontier-boq-editor .boq-items-toolbar{align-items:flex-start}.bsm-app .frontier-boq-editor .boq-items-toolbar .bsm-btn{padding:7px;font-size:12px}}
 .bsm-app .frontier-boq-editor #bsm-boq-add{background:#ca6604;color:white;border-color:#ca6604}
 .bsm-app .frontier-boq-editor .bsm-boq-table-wrap .bsm-boq-unit{display:block!important;position:static!important;opacity:1!important;width:100%!important;height:35px!important;pointer-events:none}
+
+/* BOQ row actions: serial numbers remain plain. */
+.bsm-app .frontier-boq-editor .bsm-boq-table-wrap th:nth-child(1){width:6%!important}
+.bsm-app .frontier-boq-editor .bsm-boq-table-wrap th:nth-child(2){width:35%!important}
+.bsm-app .frontier-boq-editor .bsm-boq-table-wrap th:nth-child(5){width:26%!important}
+.bsm-app .frontier-boq-editor .bsm-boq-table-wrap th:nth-child(6){width:11%!important}
+.bsm-app .frontier-boq-editor .boq-row-actions{display:flex;gap:6px;align-items:center;justify-content:center;white-space:nowrap}
+.bsm-app .frontier-boq-editor .boq-row-actions .bsm-icon-btn{flex:0 0 32px;width:32px;min-width:32px;padding:4px;height:32px}
+.bsm-app .frontier-boq-editor .boq-add-row{color:#1760df;font-size:22px;font-weight:600}
