@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.166
+ * Version: 0.0.167
  * Author: BizSkill
  */
 
@@ -18,7 +18,7 @@ final class BSM_Site_Management {
     use BSM_Notifications;
     use BSM_Site_Procurement;
     use BSM_Application_Scope;
-    const VERSION = '0.0.166';
+    const VERSION = '0.0.167';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -41,6 +41,7 @@ final class BSM_Site_Management {
         add_shortcode('bizskill_site_management', [$this, 'shortcode']);
         add_filter('theme_page_templates', [$this, 'register_blank_page_template']);
         add_filter('template_include', [$this, 'blank_template']);
+        add_filter('pre_get_document_title', [$this, 'app_document_title'], 99);
         add_action('init', [$this, 'maybe_upgrade']);
         add_action('init', [$this, 'operations_upgrade'], 11);
         add_action('init', [$this, 'site_procurement_upgrade'], 12);
@@ -1319,7 +1320,7 @@ final class BSM_Site_Management {
                 $id = $page->ID;
                 $updates = ['ID' => $id];
                 $dirty = false;
-                if ($key === 'vendors' && $page->post_title !== $title) { $updates['post_title'] = $title; $dirty = true; }
+                if ($page->post_title !== $title) { $updates['post_title'] = $title; $dirty = true; }
                 if ((int)$page->post_parent !== (int)$parent_id) { $updates['post_parent'] = $parent_id; $dirty = true; }
                 if (trim((string)$page->post_content) === '') { $updates['post_content'] = '[bizskill_site_management]'; $dirty = true; }
                 if ($dirty) wp_update_post($updates);
@@ -1338,6 +1339,14 @@ final class BSM_Site_Management {
             $page = get_page_by_path(self::PAGE_SLUG . '/' . $slug);
             if ($page && get_post_meta($page->ID, '_bsm_app_page', true) === '1') wp_trash_post($page->ID);
         }
+    }
+
+    public function app_document_title($title) {
+        if (!is_singular('page')) return $title;
+        $key = get_post_meta(get_queried_object_id(), '_bsm_view_key', true);
+        $pages = $this->app_pages();
+        if (!isset($pages[$key])) return $title;
+        return $pages[$key][0] . ' – ' . get_bloginfo('name');
     }
 
     public function register_blank_page_template($templates) {

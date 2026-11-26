@@ -278,7 +278,7 @@ function buildNav(){
   }
 }
 
-function setTitle(t,sub=''){ $('#bsm-page-title').text(t); }
+function setTitle(t,sub=''){ $('#bsm-page-title').text(t); const suffix=document.title.includes(' – ')?' – '+document.title.split(' – ').slice(1).join(' – '):'';document.title=t+suffix; }
 function showToast(msg,err=false){ const el=$(`<div class="bsm-toast ${err?'error':''}">${esc(msg)}</div>`).appendTo('body'); setTimeout(()=>el.fadeOut(250,()=>el.remove()),2600); }
 
 const directFormViews=new Set(['purchase_form','requisition_form','consumption_form','return_form','contractor_form','contractor_advance','quotation_form','invoice_form']);
