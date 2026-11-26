@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.107
+ * Version: 0.0.108
  * Author: BizSkill
  */
 
@@ -18,7 +18,7 @@ final class BSM_Site_Management {
     use BSM_Notifications;
     use BSM_Site_Procurement;
     use BSM_Application_Scope;
-    const VERSION = '0.0.107';
+    const VERSION = '0.0.108';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -44,6 +44,7 @@ final class BSM_Site_Management {
         add_action('init', [$this, 'maybe_upgrade']);
         add_action('init', [$this, 'operations_upgrade'], 11);
         add_action('init', [$this, 'site_procurement_upgrade'], 12);
+        add_action('init', [$this, 'boq_editor_upgrade'], 13);
         add_action('wp_ajax_bsm_stock_ledger', [$this, 'ajax_scope_stock_ledger']);
         add_action('wp_ajax_bsm_historical_records', [$this, 'ajax_scope_history']);
         add_action('wp_ajax_bsm_site_purchase_receipts', [$this, 'ajax_site_purchase_receipts']);
@@ -2072,6 +2073,16 @@ final class BSM_Site_Management {
         if($site_id && is_array($sites) && count($sites) && !in_array((string)$site_id,array_map('strval',$sites),true)) wp_send_json_error(['message'=>'Site permission denied'],403);
     }
 
+    public function boq_editor_upgrade() {
+        global $wpdb;$table=$this->prefix.'boqs';
+        if(get_option('bsm_boq_editor_schema')==='1')return;
+        if(!$wpdb->get_var("SHOW COLUMNS FROM $table LIKE 'prepared_by'"))$wpdb->query("ALTER TABLE $table ADD prepared_by BIGINT UNSIGNED NULL");
+        if($wpdb->get_var("SHOW COLUMNS FROM $table LIKE 'prepared_by'"))update_option('bsm_boq_editor_schema','1',false);
+    }
+    private function boq_used_items($site) {
+        global $wpdb;return array_map('intval',$wpdb->get_col($wpdb->prepare("SELECT DISTINCT d.item_id FROM {$this->prefix}material_requisition_items d JOIN {$this->prefix}material_requisitions h ON h.id=d.requisition_id WHERE h.site_id=%d AND h.status<>'cancelled'",$site))?:[]);
+    }
+    private function boq_name_key($name) {return mb_strtolower(preg_replace('/\s+/u',' ',trim((string)$name)));}
     private function boq_xlsx_xml_escape($v) { return htmlspecialchars((string)$v,ENT_XML1|ENT_QUOTES,'UTF-8'); }
     public function ajax_boq_template() {
         $this->boq_access(); global $wpdb;
@@ -2086,7 +2097,7 @@ final class BSM_Site_Management {
         $zip->addFromString('_rels/.rels',$xmlHeader.'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
         $zip->addFromString('xl/_rels/workbook.xml.rels',$xmlHeader.'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/></Relationships>');
         $zip->addFromString('xl/workbook.xml',$xmlHeader.'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="BOQ Upload" sheetId="1" r:id="rId1"/><sheet name="Item List" sheetId="2" state="hidden" r:id="rId2"/></sheets><definedNames><definedName name="BOQItemNames">&apos;Item List&apos;!$A$2:$A$'.max(2,count($items)+1).'</definedName></definedNames></workbook>');
-        $sheet=$xmlHeader.'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="45" customWidth="1"/><col min="2" max="2" width="20" customWidth="1"/></cols><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Item</t></is></c><c r="B1" t="inlineStr"><is><t>BOQ Qty</t></is></c></row></sheetData><dataValidations count="2"><dataValidation type="list" allowBlank="1" showErrorMessage="1" error="Select an item from the list" sqref="A2:A1001"><formula1>BOQItemNames</formula1></dataValidation><dataValidation type="decimal" operator="greaterThanOrEqual" allowBlank="1" showErrorMessage="1" error="Quantity must be zero or more" sqref="B2:B1001"><formula1>0</formula1></dataValidation></dataValidations></worksheet>';
+        $sheet=$xmlHeader.'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="45" customWidth="1"/><col min="2" max="2" width="20" customWidth="1"/></cols><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Item</t></is></c><c r="B1" t="inlineStr"><is><t>BOQ Qty</t></is></c></row></sheetData><dataValidations count="2"><dataValidation type="list" allowBlank="1" showErrorMessage="0" error="Select an item from the list" sqref="A2:A1001"><formula1>BOQItemNames</formula1></dataValidation><dataValidation type="decimal" operator="greaterThan" allowBlank="1" showErrorMessage="1" error="Quantity must be greater than zero" sqref="B2:B1001"><formula1>0</formula1></dataValidation></dataValidations></worksheet>';
         $zip->addFromString('xl/worksheets/sheet1.xml',$sheet);
         $list=$xmlHeader.'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Item</t></is></c></row>';
         foreach($items as $i=>$item){$row=$i+2;$name=$this->boq_xlsx_xml_escape($item['item_name']);$list.='<row r="'.$row.'"><c r="A'.$row.'" t="inlineStr"><is><t>'.$name.'</t></is></c></row>';}
@@ -2103,31 +2114,37 @@ final class BSM_Site_Management {
         if(!class_exists('ZipArchive'))wp_send_json_error(['message'=>'ZIP extension required']);
         $zip=new ZipArchive();if($zip->open($file['tmp_name'])!==true)wp_send_json_error(['message'=>'Invalid Excel workbook']);
         $raw=$zip->getFromName('xl/worksheets/sheet1.xml');$shared=$zip->getFromName('xl/sharedStrings.xml');$zip->close();
-        if($raw===false||strlen($raw)>2500000)wp_send_json_error(['message'=>'Invalid or oversized worksheet']);
-        libxml_use_internal_errors(true);$xml=simplexml_load_string($raw);if(!$xml)wp_send_json_error(['message'=>'Could not read worksheet']);
+        try{$out=$this->boq_import_rows($raw,$shared);}catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);}
+        wp_send_json_success(['items'=>$out]);
+    }
+    private function boq_import_rows($raw,$shared=false) {
+        global $wpdb;
+        if($raw===false||strlen($raw)>2500000)throw new Exception('Invalid or oversized worksheet');
+        libxml_use_internal_errors(true);$xml=simplexml_load_string($raw);if(!$xml)throw new Exception('Could not read worksheet');
         $ss=[];if($shared){$sx=simplexml_load_string($shared);if($sx){foreach($sx->si as $si){$v=(string)$si->t;foreach($si->r as $r)$v.=(string)$r->t;$ss[]=$v;}}}
         $lookup=[];$masters=$wpdb->get_results("SELECT id,item_name FROM {$this->prefix}items",ARRAY_A);
-        foreach($masters as $m)$lookup[mb_strtolower(trim($m['item_name']))][]=$m;
+        foreach($masters as $m)$lookup[$this->boq_name_key($m['item_name'])][]=$m;
         $out=[];$errors=[];$used=[];
         foreach($xml->sheetData->row as $row){$n=(int)$row['r'];if($n===1)continue;if($n>1001){$errors[]='Maximum 1000 items allowed';break;}$values=['A'=>'','B'=>''];
             foreach($row->c as $c){$col=preg_replace('/[0-9]/','',(string)$c['r']);if(!isset($values[$col]))continue;$v=(string)$c->v;if((string)$c['t']==='s')$v=$ss[(int)$v]??'';elseif((string)$c['t']==='inlineStr'){$v=(string)$c->is->t;foreach($c->is->r as $rr)$v.=(string)$rr->t;}$values[$col]=trim($v);}
             if($values['A']===''&&$values['B']==='')continue;
-            $matches=$lookup[mb_strtolower($values['A'])]??[];
-            if(count($matches)!==1){$errors[]='Row '.$n.': Item is missing, invalid or ambiguous';continue;}
-            if($values['B']===''||!is_numeric($values['B'])||(float)$values['B']<0){$errors[]='Row '.$n.': Invalid BOQ Qty';continue;}
-            $id=(int)$matches[0]['id'];$key=$id;if(isset($used[$key])){$errors[]='Row '.$n.': Duplicate Item';continue;}$used[$key]=true;
-            $out[]=['item_id'=>$id,'boq_qty'=>(float)$values['B']];
+            $matches=$lookup[$this->boq_name_key($values['A'])]??[];
+            if($values['A']===''){$errors[]='Row '.$n.': Enter Item Name';continue;}
+            if($values['B']===''||!is_numeric($values['B'])||(!is_finite((float)$values['B'])||(float)$values['B']<=0)){$errors[]='Row '.$n.': Invalid BOQ Qty';continue;}
+            $id=count($matches)===1?(int)$matches[0]['id']:0;
+            $out[]=['item_id'=>$id,'item_name'=>$values['A'],'boq_qty'=>(float)$values['B']];
         }
-        if($errors)wp_send_json_error(['message'=>implode('; ',array_slice($errors,0,8))]);
-        if(!$out)wp_send_json_error(['message'=>'No filled item rows found']);wp_send_json_success(['items'=>$out]);
+        if($errors)throw new Exception(implode('; ',array_slice($errors,0,8)));
+        if(!$out)throw new Exception('No filled item rows found');return $out;
     }
 
 
     public function ajax_boq_save() {
-        global $wpdb; $site=(int)($_POST['site_id']??0); $this->boq_access($site);
+        global $wpdb; $site=(int)($_POST['site_id']??0); $this->boq_access($site);$this->boq_editor_upgrade();
+        $prepared=(int)($_POST['prepared_by']??0);if(!$prepared||!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$this->prefix}users WHERE id=%d AND status='active'",$prepared)))wp_send_json_error(['message'=>'Select an active employee in Prepared By.']);
         $id=(int)($_POST['id']??0);$date=sanitize_text_field($_POST['boq_date']??'');
         $items=json_decode(wp_unslash($_POST['items']??'[]'),true);
-        if(!$site||!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$this->prefix}sites WHERE id=%d",$site))||!preg_match('/^\d{4}-\d{2}-\d{2}$/',$date)||!is_array($items)||!count($items)) wp_send_json_error(['message'=>'Site, date and at least one item are required']);
+        if(!$site||!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$this->prefix}sites WHERE id=%d",$site))||!preg_match('/^\d{4}-\d{2}-\d{2}$/',$date)||!is_array($items)||!count($items)||count($items)>1000) wp_send_json_error(['message'=>'Site, date and at least one item are required']);
         if (!$this->ensure_boq_item_section_column()) wp_send_json_error(['message'=>'BOQ item database update failed']);
         $clean=[];
         foreach($items as $item){
@@ -2135,7 +2152,7 @@ final class BSM_Site_Management {
             $section='';
             $q=isset($item['boq_qty'])&&is_numeric($item['boq_qty'])?(float)$item['boq_qty']:-1;
             $key=$iid;
-            if(!$iid||!is_finite($q)||$q<0||isset($clean[$key])) wp_send_json_error(['message'=>'Invalid quantity or duplicate Item']);
+            if(!$iid||!is_finite($q)||$q<=0||isset($clean[$key])) wp_send_json_error(['message'=>'Invalid quantity or duplicate Item']);
             $unit=$wpdb->get_var($wpdb->prepare("SELECT unit_id FROM {$this->prefix}items WHERE id=%d",$iid));
             if($unit===null) wp_send_json_error(['message'=>'Invalid Item Master selection']);
             $clean[$key]=['item_id'=>$iid,'section'=>$section,'unit_id'=>(int)$unit,'boq_qty'=>$q];
@@ -2146,6 +2163,11 @@ final class BSM_Site_Management {
             $old=$wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id=%d",$id),ARRAY_A);
             if(!$old)wp_send_json_error(['message'=>'BOQ not found']);
             $this->boq_access((int)$old['site_id']);
+            $used=$this->boq_used_items((int)$old['site_id']);
+            $existing=$wpdb->get_results($wpdb->prepare("SELECT item_id,SUM(boq_qty) qty FROM $it WHERE boq_id=%d GROUP BY item_id",$id),ARRAY_A)?:[];
+            foreach($existing as $line)if(in_array((int)$line['item_id'],$used,true)){
+                if($site!==(int)$old['site_id']||!isset($clean[$line['item_id']])||abs($clean[$line['item_id']]['boq_qty']-(float)$line['qty'])>0.001)wp_send_json_error(['message'=>'Items already used in a requisition and their Site cannot be changed or removed.']);
+            }
         }
         // Old two-column UNIQUE index prevents repeated items in different Sections.
         $indexes=$wpdb->get_results("SHOW INDEX FROM `{$it}` WHERE Key_name='boq_item'",ARRAY_A);
@@ -2159,7 +2181,7 @@ final class BSM_Site_Management {
         foreach($groups as $section=>$rows){
             // On edit, retain the original BOQ number for the first Section only.
             $reuse=$id && $index===0;
-            $data=['boq_date'=>$date,'site_id'=>$site,'section'=>$section,'remarks'=>'','updated_at'=>current_time('mysql')];
+            $data=['boq_date'=>$date,'site_id'=>$site,'prepared_by'=>$prepared,'section'=>$section,'remarks'=>'','updated_at'=>current_time('mysql')];
             if($reuse){
                 $target=$id;$data['boq_name']=$old['boq_no'].' ('.$site_name.')';
                 $ok=$wpdb->update($table,$data,['id'=>$target]);
@@ -2187,12 +2209,13 @@ final class BSM_Site_Management {
     }
 
     public function ajax_boq_delete() {
-        global $wpdb;$id=(int)($_POST['id']??0);$b=$wpdb->get_row($wpdb->prepare("SELECT site_id FROM {$this->prefix}boqs WHERE id=%d",$id));if(!$b)wp_send_json_error(['message'=>'BOQ not found']);$this->boq_access((int)$b->site_id);
+        global $wpdb;$id=(int)($_POST['id']??0);$b=$wpdb->get_row($wpdb->prepare("SELECT site_id FROM {$this->prefix}boqs WHERE id=%d",$id),ARRAY_A);if(!$b)wp_send_json_error(['message'=>'BOQ not found']);$this->boq_access((int)$b['site_id']);
+        $used=$this->boq_used_items((int)$b['site_id']);$items=$wpdb->get_col($wpdb->prepare("SELECT item_id FROM {$this->prefix}boq_items WHERE boq_id=%d",$id));if(array_intersect($used,array_map('intval',$items?:[])))wp_send_json_error(['message'=>'This BOQ contains items used in requisitions and cannot be deleted.']);
         $wpdb->delete($this->prefix.'boq_items',['boq_id'=>$id]);$wpdb->delete($this->prefix.'boqs',['id'=>$id]);wp_send_json_success();
     }
     public function ajax_boq_get() {
         global $wpdb;$id=(int)($_POST['id']??0);$b=$wpdb->get_row($wpdb->prepare("SELECT * FROM {$this->prefix}boqs WHERE id=%d",$id),ARRAY_A);if(!$b)wp_send_json_error(['message'=>'BOQ not found']);$this->boq_access((int)$b['site_id']);
-        $this->ensure_boq_item_section_column();$b['items']=$wpdb->get_results($wpdb->prepare("SELECT item_id,section,boq_qty FROM {$this->prefix}boq_items WHERE boq_id=%d ORDER BY id",$id),ARRAY_A);wp_send_json_success($b);
+        $this->boq_editor_upgrade();$b['used_items']=$this->boq_used_items((int)$b['site_id']);$this->ensure_boq_item_section_column();$b['items']=$wpdb->get_results($wpdb->prepare("SELECT item_id,section,boq_qty FROM {$this->prefix}boq_items WHERE boq_id=%d ORDER BY id",$id),ARRAY_A);wp_send_json_success($b);
     }
     public function ajax_requisition_boq_items() {
         $this->verify_ajax();
@@ -2223,7 +2246,7 @@ final class BSM_Site_Management {
         $id=(int)($_POST['id']??0);
         if(!$id) wp_send_json_error(['message'=>'Invalid BOQ']);
         $p=$this->prefix;
-        $boq=$wpdb->get_row($wpdb->prepare("SELECT b.*,s.site_name FROM {$p}boqs b LEFT JOIN {$p}sites s ON s.id=b.site_id WHERE b.id=%d",$id),ARRAY_A);
+        $boq=$wpdb->get_row($wpdb->prepare("SELECT b.*,s.site_name,u.name prepared_by_name FROM {$p}boqs b LEFT JOIN {$p}sites s ON s.id=b.site_id LEFT JOIN {$p}users u ON u.id=b.prepared_by WHERE b.id=%d",$id),ARRAY_A);
         if(!$boq) wp_send_json_error(['message'=>'BOQ not found']);
         $this->boq_access((int)$boq['site_id']);
         $items=$wpdb->get_results($wpdb->prepare("SELECT bi.boq_qty,bi.section,i.item_name,u.unit_name FROM {$p}boq_items bi LEFT JOIN {$p}items i ON i.id=bi.item_id LEFT JOIN {$p}units u ON u.id=bi.unit_id WHERE bi.boq_id=%d ORDER BY bi.id",$id),ARRAY_A)?:[];
@@ -2237,6 +2260,7 @@ final class BSM_Site_Management {
             $text($c,36,724,'BOQ No.: '.($boq['boq_no']??''),9,true);
             $text($c,335,724,'Date: '.(!empty($boq['boq_date'])?date('d/m/Y',strtotime($boq['boq_date'])):'-'),9);
             $text($c,36,702,'Site: '.($boq['site_name']??'-'),9);
+            $text($c,36,688,'Prepared By: '.($boq['prepared_by_name']??'-'),9);
             
             $c.="0.06 0.29 0.56 rg\n36 665 523 26 re f\n1 1 1 rg\n";
             foreach([[43,'Sl.'],[75,'Item'],[390,'Unit'],[474,'BOQ Qty']] as $h)$text($c,$h[0],674,$h[1],9,true);
@@ -4178,7 +4202,7 @@ final class BSM_Site_Management {
         if(!in_array($status,['pending_approval','submitted','draft'],true)) wp_send_json_error(['message'=>'Requisition is no longer pending approval']);
 
         $items=json_decode(stripslashes($_POST['items']??'[]'),true);
-        if(!is_array($items)||!count($items)) wp_send_json_error(['message'=>'No items found']);
+        if(!is_array($items)||!count($items)||count($items)>1000) wp_send_json_error(['message'=>'No items found']);
 
         $total_approved=0.0;
         foreach($items as $it){

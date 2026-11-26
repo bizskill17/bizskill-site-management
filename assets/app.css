@@ -3057,3 +3057,44 @@ html:has(body.bsm-blank-body),body.bsm-blank-body{max-width:100%;overflow-x:clip
 #po_direct_items.sp-po-table>thead>tr>th:first-child{min-width:160px;}
 #po_direct_items.sp-po-table>thead>tr>th:nth-child(n+7):nth-child(-n+9){min-width:220px;}
 #po_direct_items.sp-po-table .po-direct-vendor{min-width:150px;}
+
+/* Frontier-style BOQ editor */
+.bsm-app .frontier-boq-editor .bsm-boq-header-row{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:20px!important;padding:18px 16px 26px!important}
+.bsm-app .frontier-boq-editor .bsm-boq-header-row label{min-width:0!important;width:auto!important;font-weight:600}
+.bsm-app .frontier-boq-editor .boq-items-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#edf5ff;padding:12px 16px}
+.bsm-app .frontier-boq-editor .boq-items-toolbar h3{margin:0;color:#123d75;font-size:19px}
+.bsm-app .frontier-boq-editor .boq-items-toolbar>div{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bsm-app .frontier-boq-editor .boq-items-toolbar svg{width:18px;height:18px;vertical-align:middle;margin-right:4px}
+.bsm-app .frontier-boq-editor .bsm-boq-table-wrap{padding:12px!important;box-sizing:border-box}
+.bsm-app .frontier-boq-editor .bsm-boq-table-wrap table{table-layout:fixed!important;min-width:850px!important;width:100%!important}
+.bsm-app .frontier-boq-editor .bsm-boq-table-wrap th:nth-child(1){width:12%!important}
+.bsm-app .frontier-boq-editor .bsm-boq-table-wrap th:nth-child(2){width:32%!important}
+.bsm-app .frontier-boq-editor .bsm-boq-table-wrap th:nth-child(3){width:12%!important}
+.bsm-app .frontier-boq-editor .bsm-boq-table-wrap th:nth-child(4){width:10%!important}
+.bsm-app .frontier-boq-editor .bsm-boq-table-wrap th:nth-child(5){width:27%!important}
+.bsm-app .frontier-boq-editor .bsm-boq-table-wrap th:nth-child(6){width:7%!important}
+.bsm-app .frontier-boq-editor td{padding:9px 7px;vertical-align:middle}
+.bsm-app .frontier-boq-editor input,.bsm-app .frontier-boq-editor select{width:100%;min-width:0;box-sizing:border-box}
+.bsm-app .frontier-boq-editor select:disabled{opacity:1;background:#f5f8fc;color:#27394d}
+.bsm-app .frontier-boq-editor input[readonly]{background:#f5f8fc}
+.bsm-app .frontier-boq-editor .boq-order{white-space:nowrap}
+.bsm-app .frontier-boq-editor .boq-order button{border:0;background:transparent;color:#476282;padding:2px;cursor:pointer;font-size:13px}
+.bsm-app .frontier-boq-editor .boq-drag{cursor:grab!important;font-size:20px!important}
+.bsm-app .frontier-boq-editor .boq-number{padding:0 3px}
+.bsm-app .frontier-boq-editor .boq-status{display:inline-block;font-size:12px;padding:5px 8px;border-radius:7px;white-space:normal;font-weight:600}
+.bsm-app .frontier-boq-editor .boq-matched{background:#dcf5e4;color:#16643a}
+.bsm-app .frontier-boq-editor .boq-unresolved{background:#ffedc9;color:#995815}
+.bsm-app .frontier-boq-editor .boq-used{background:#e7eef7;color:#45617d}
+.bsm-app .frontier-boq-editor .boq-unmatched,.bsm-app .frontier-boq-editor .boq-duplicate{background:#fffbef}
+.bsm-app .frontier-boq-editor .boq-add-master{font-size:11px;padding:5px 8px;margin:4px 0}
+.bsm-app .frontier-boq-editor .bsm-boq-remove{color:#ed3030}
+.bsm-app .frontier-boq-editor .bsm-boq-remove svg{width:18px;height:18px}
+.bsm-app .frontier-boq-editor .boq-editor-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px 16px}
+.bsm-app .frontier-boq-editor .boq-editor-footer>div{display:flex;gap:8px}
+#boq-item-dialog{width:min(420px,90vw);border:1px solid #8db7ff;border-radius:12px;padding:22px;color:#1d314e}
+#boq-item-dialog::backdrop{background:#09224570}
+#boq-item-dialog label{display:block;margin:12px 0;font-size:13px}
+#boq-item-dialog input,#boq-item-dialog select{display:block;width:100%;box-sizing:border-box;padding:10px;border:1px solid #8db7ff;border-radius:7px;margin-top:6px}
+@media(max-width:720px){.bsm-app .frontier-boq-editor .bsm-boq-header-row{grid-template-columns:1fr!important;gap:12px!important}.bsm-app .frontier-boq-editor .boq-items-toolbar{align-items:flex-start}.bsm-app .frontier-boq-editor .boq-items-toolbar .bsm-btn{padding:7px;font-size:12px}}
+.bsm-app .frontier-boq-editor #bsm-boq-add{background:#ca6604;color:white;border-color:#ca6604}
+.bsm-app .frontier-boq-editor .bsm-boq-table-wrap .bsm-boq-unit{display:block!important;position:static!important;opacity:1!important;width:100%!important;height:35px!important;pointer-events:none}
