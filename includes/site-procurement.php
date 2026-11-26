@@ -55,8 +55,8 @@ trait BSM_Site_Procurement {
         if($value===null)throw new Exception('Unable to calculate ordered quantities.');return round((float)$value,2);
     }
     private function sp_requirements($site,$req=0,$exclude=0) {
-        global $wpdb;$p=$this->prefix;$this->sp_site($site);
-        $where=$wpdb->prepare('r.site_id=%d',$site);if($req)$where.=$wpdb->prepare(' AND r.id=%d',$req);
+        global $wpdb;$p=$this->prefix;if($site)$this->sp_site($site);
+        $where=$site?$wpdb->prepare('r.site_id=%d',$site):'r.site_id>0'.$this->sp_scope('r');if($req)$where.=$wpdb->prepare(' AND r.id=%d',$req);
         $raw=$wpdb->get_results("SELECT ri.*,ri.id requisition_item_id,r.requisition_no,r.requisition_date,r.required_date,r.site_id,s.site_name,i.item_name,u.unit_name
             FROM {$p}material_requisition_items ri JOIN {$p}material_requisitions r ON r.id=ri.requisition_id JOIN {$p}sites s ON s.id=r.site_id LEFT JOIN {$p}items i ON i.id=ri.item_id LEFT JOIN {$p}units u ON u.id=ri.unit_id
             WHERE $where AND r.status IN ('approved','partially_dispatched','partially dispatched','fully_dispatched','fully dispatched') AND ri.approved_qty>0 ORDER BY r.required_date,r.id,ri.id",ARRAY_A);
@@ -68,11 +68,12 @@ trait BSM_Site_Procurement {
     public function ajax_pending_po_items() {
         $this->sp_access(['pending_po_items','purchase_order_form']);
         $this->verify_ajax();$this->site_procurement_upgrade();
-        try{$site=(int)($_POST['site_id']??0);$req=(int)($_POST['requisition_id']??0);if(!$site){wp_send_json_success(['rows'=>[],'requisitions'=>[]]);return;}
-            $all=$this->sp_requirements($site);$heads=[];foreach($all as $x){$id=(int)$x['requisition_id'];if(!isset($heads[$id]))$heads[$id]=['id'=>$id,'requisition_no'=>$x['requisition_no'],'requisition_date'=>$x['requisition_date'],'required_date'=>$x['required_date'],'site_name'=>$x['site_name'],'pending_items'=>0];$heads[$id]['pending_items']++;}
+        try{$site=(int)($_POST['site_id']??0);$req=(int)($_POST['requisition_id']??0);
+            $all=$this->sp_requirements($site);$heads=[];foreach($all as $x){$id=(int)$x['requisition_id'];if(!isset($heads[$id]))$heads[$id]=['id'=>$id,'site_id'=>(int)$x['site_id'],'requisition_no'=>$x['requisition_no'],'requisition_date'=>$x['requisition_date'],'required_date'=>$x['required_date'],'site_name'=>$x['site_name'],'pending_items'=>0];$heads[$id]['pending_items']++;}
             $rows=$req?array_values(array_filter($all,fn($x)=>(int)$x['requisition_id']===$req)):[];
-            wp_send_json_success(['rows'=>$rows,'requisitions'=>array_values($heads),'site_id'=>$site,'requisition_id'=>$req]);
+            $result=['rows'=>$rows,'requisitions'=>array_values($heads),'site_id'=>$site,'requisition_id'=>$req];
         }catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);}
+        wp_send_json_success($result);
     }
     private function sp_po_create($d,$input) {
         global $wpdb;$p=$this->prefix;$site=(int)($d['site_id']??0);$req=(int)($d['requisition_id']??0);$this->sp_site($site);

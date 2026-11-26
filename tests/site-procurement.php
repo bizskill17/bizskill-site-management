@@ -106,3 +106,7 @@ $again=$s->create($retryHeader,[$retryLine]);eq($again['created'],$first['create
 $id=$first['created'][0]['id'];eq((float)$wpdb->get_var("SELECT rate FROM bsm_purchase_order_items WHERE purchase_order_id=$id"),8,'Repeated supplier uses lowest quoted rate');
 rejects(fn()=>$s->create($retryHeader,[array_merge($retryLine,['po_qty'=>2])]),'Same request cannot change payload');
 echo "Site procurement lifecycle passed: partial POs, one quotation, supplier split, site isolation, receipt limits, supplier return, consumption, transfers, inventory reconciliation and rollback.\n";
+$allPending=endpoint($s,'ajax_pending_po_items',[]);eq($allPending->ok,true,'All-Site pending list loads');$listed=array_unique(array_map('intval',array_column($allPending->data['requisitions'],'site_id')));sort($listed);eq($listed,[1,2],'All permitted Sites represented');
+$s->scope=[2];$scoped=endpoint($s,'ajax_pending_po_items',[]);eq(array_values(array_unique(array_map('intval',array_column($scoped->data['requisitions'],'site_id')))),[2],'All-Site list still respects Site access');$s->scope=null;
+$filtered=endpoint($s,'ajax_pending_po_items',['site_id'=>1]);foreach($filtered->data['requisitions'] as $row)eq($row['site_id'],1,'Site filter retained');
+echo "Pending PO list passed: all Sites by default, optional filtering and Site isolation.\n";
