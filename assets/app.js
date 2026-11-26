@@ -983,7 +983,7 @@ function purchaseItemsFilterItemOptions(){
   const items=(App.options.items||[]).filter(x=>!categoryId || String(x.category_id||'')===categoryId);
   const $sel=$('#purchase_items_item');
   if(!$sel.length)return;
-  $sel.html('<option value="">Select</option>'+items.map(x=>`<option value="${esc(x.id)}">${esc(x.label)}</option>`).join(''));
+  $sel.html('<option value="">Select Item</option>'+items.map(x=>`<option value="${esc(x.id)}">${esc(x.label)}</option>`).join(''));
   if(items.some(x=>String(x.id)===current))$sel.val(current);else $sel.val('');
   bsmRefreshSearchableSelect($sel[0]);
 }
@@ -3546,8 +3546,9 @@ function inventorySyncCategoryFromItem(){
 }
 async function renderInventoryView(scope){
   const isHo=scope==='ho';setTitle(isHo?'HO Inventory':'Site Inventory');
-  const filters=`<div class="bsm-filters report bsm-stock-filters"><label>Search<input type="text" id="inv_search" aria-label="Search" placeholder=""></label>${isHo?selectHtml('inv_warehouse','Warehouse','warehouses',''):selectHtml('inv_site','Site','sites','')}${selectHtml('inv_category','Item Category','categories','')}${selectHtml('inv_item','Item','items','')}<button id="inv_clear" class="bsm-icon-btn bsm-purchase-clear-btn" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button>${excelButton('inv_export')}</div>`;
+  const filters=`<div class="bsm-filters report bsm-stock-filters"><input type="text" id="inv_search" aria-label="Search" placeholder="Search">${isHo?selectHtml('inv_warehouse','Warehouse','warehouses',''):selectHtml('inv_site','Site','sites','')}${selectHtml('inv_category','Item Category','categories','')}${selectHtml('inv_item','Item','items','')}<button id="inv_clear" class="bsm-icon-btn bsm-purchase-clear-btn" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button>${excelButton('inv_export')}</div>`;
   $('#bsm-content').html(filters+'<div id="bsm-inventory-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>');
+  for(const [id,text] of [['inv_site','Select Site'],['inv_warehouse','Select Warehouse'],['inv_category','Select Item Category'],['inv_item','Select Item']]){const $s=$('#'+id);$s.attr({'aria-label':text,'data-placeholder':text}).find('option:first').text(text);$s.parent('label').replaceWith($s);}
   App.inventoryScope=scope;inventoryFilterItemOptions();await loadInventoryView();
 }
 async function loadInventoryView(){
