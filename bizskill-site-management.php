@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.108
+ * Version: 0.0.109
  * Author: BizSkill
  */
 
@@ -18,7 +18,7 @@ final class BSM_Site_Management {
     use BSM_Notifications;
     use BSM_Site_Procurement;
     use BSM_Application_Scope;
-    const VERSION = '0.0.108';
+    const VERSION = '0.0.109';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -1610,7 +1610,9 @@ final class BSM_Site_Management {
         $css_version = self::VERSION . '-' . (file_exists($asset_path . 'app.css') ? substr(hash_file('sha256', $asset_path . 'app.css'), 0, 16) : '0');
         $js_version = self::VERSION . '-' . (file_exists($asset_path . 'app.js') ? substr(hash_file('sha256', $asset_path . 'app.js'), 0, 16) : '0');
         wp_enqueue_style('bsm-app', $asset_url . 'app.css', [], $css_version);
-        wp_enqueue_script('bsm-app', $asset_url . 'app.js', ['jquery'], $js_version, true);
+        wp_enqueue_script('bsm-jszip', $asset_url . 'vendor/jszip.min.js', [], '3.10.1', true);
+        wp_enqueue_script('bsm-boq-excel', $asset_url . 'boq-excel.js', ['bsm-jszip'], self::VERSION, true);
+        wp_enqueue_script('bsm-app', $asset_url . 'app.js', ['jquery','bsm-boq-excel'], $js_version, true);
         global $wpdb;
         $plugin_user = is_user_logged_in() ? $wpdb->get_row($wpdb->prepare("SELECT id,role,assigned_sites,allowed_views FROM {$this->prefix}users WHERE wp_user_id=%d LIMIT 1", get_current_user_id()), ARRAY_A) : null;
         $plugin_user_id = $plugin_user ? (int)$plugin_user['id'] : 0;
@@ -2082,7 +2084,7 @@ final class BSM_Site_Management {
     private function boq_used_items($site) {
         global $wpdb;return array_map('intval',$wpdb->get_col($wpdb->prepare("SELECT DISTINCT d.item_id FROM {$this->prefix}material_requisition_items d JOIN {$this->prefix}material_requisitions h ON h.id=d.requisition_id WHERE h.site_id=%d AND h.status<>'cancelled'",$site))?:[]);
     }
-    private function boq_name_key($name) {return mb_strtolower(preg_replace('/\s+/u',' ',trim((string)$name)));}
+    private function boq_name_key($name) {$name=preg_replace('/\s+/u',' ',trim((string)$name));return function_exists('mb_strtolower')?mb_strtolower($name):strtolower($name);}
     private function boq_xlsx_xml_escape($v) { return htmlspecialchars((string)$v,ENT_XML1|ENT_QUOTES,'UTF-8'); }
     public function ajax_boq_template() {
         $this->boq_access(); global $wpdb;
@@ -2108,6 +2110,11 @@ final class BSM_Site_Management {
     public function ajax_boq_import() {
         $this->boq_access();global $wpdb;
         $site=(int)($_POST['site_id']??0);if(!$site)wp_send_json_error(['message'=>'Select Site first']);$this->boq_access($site);
+        if(isset($_POST['rows'])){
+            $raw=wp_unslash($_POST['rows']);if(!is_string($raw)||strlen($raw)>500000)wp_send_json_error(['message'=>'Invalid or oversized BOQ upload.']);
+            try{$out=$this->boq_validate_import_data(json_decode($raw,true));}catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);}
+            wp_send_json_success(['items'=>$out]);return;
+        }
         if(empty($_FILES['file']['tmp_name'])||!is_uploaded_file($_FILES['file']['tmp_name']))wp_send_json_error(['message'=>'Choose an Excel template']);
         $file=$_FILES['file'];if(($file['size']??0)>2*1024*1024)wp_send_json_error(['message'=>'File exceeds 2 MB']);
         if(strtolower(pathinfo($file['name'],PATHINFO_EXTENSION))!=='xlsx')wp_send_json_error(['message'=>'Upload the .xlsx template']);
@@ -2116,6 +2123,17 @@ final class BSM_Site_Management {
         $raw=$zip->getFromName('xl/worksheets/sheet1.xml');$shared=$zip->getFromName('xl/sharedStrings.xml');$zip->close();
         try{$out=$this->boq_import_rows($raw,$shared);}catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);}
         wp_send_json_success(['items'=>$out]);
+    }
+    private function boq_validate_import_data($rows) {
+        global $wpdb;if(!is_array($rows)||!count($rows)||count($rows)>1000)throw new Exception('Enter between 1 and 1000 BOQ items.');
+        $lookup=[];foreach($wpdb->get_results("SELECT id,item_name FROM {$this->prefix}items WHERE status='active'",ARRAY_A)?:[] as $m)$lookup[$this->boq_name_key($m['item_name'])][]=$m;
+        $out=[];foreach($rows as $i=>$row){
+            if(!is_array($row)||!is_scalar($row['item_name']??null)||!is_scalar($row['boq_qty']??null))throw new Exception('Row '.($i+2).': Invalid item or quantity.');
+            $name=sanitize_text_field($row['item_name']);$qty=trim((string)$row['boq_qty']);
+            if($name==='')throw new Exception('Row '.($i+2).': Enter Item Name.');
+            if($qty===''||!is_numeric($qty)||!is_finite((float)$qty)||(float)$qty<=0)throw new Exception('Row '.($i+2).': Enter a quantity greater than zero.');
+            $matches=$lookup[$this->boq_name_key($name)]??[];$out[]=['item_id'=>count($matches)===1?(int)$matches[0]['id']:0,'item_name'=>$name,'boq_qty'=>(float)$qty];
+        }return $out;
     }
     private function boq_import_rows($raw,$shared=false) {
         global $wpdb;

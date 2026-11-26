@@ -376,7 +376,7 @@ function boqItemRow(item={}){
  const master=(App.options.items||[]).find(x=>String(x.id)===String(item.item_id)),name=item.item_name??master?.label??'',locked=(App.boqUsedItems||[]).map(String).includes(String(item.item_id));
  return `<tr class="bsm-boq-row" data-item="${esc(item.item_id||'')}" data-locked="${locked?1:0}"><td class="boq-order"><button type="button" class="boq-drag" draggable="true" aria-label="Drag to reorder row" title="Drag to reorder">⠿</button><span class="boq-number"></span><button type="button" class="boq-up" title="Move up" aria-label="Move row up">↑</button><button type="button" class="boq-down" title="Move down" aria-label="Move row down">↓</button></td><td><input class="bsm-boq-name" list="bsm-boq-item-list" value="${esc(name)}" required ${locked?'readonly':''} aria-label="Item Name" autocomplete="off"></td><td><input class="bsm-boq-qty num" type="number" min="0.01" step="0.01" required value="${esc(item.boq_qty??'')}" ${locked?'readonly':''} aria-label="Quantity"></td><td><select class="bsm-boq-unit" disabled aria-label="Unit"><option value="${esc(master?.unit_id||'')}">${esc(labelFor('units',master?.unit_id)||'—')}</option></select></td><td class="boq-check"></td><td><button type="button" class="bsm-icon-btn bsm-boq-remove" title="Delete row" aria-label="Delete row" ${locked?'disabled':''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/></svg></button></td></tr>`;
 }
-function bsmBoqSiteUI(){const has=!!$('#bsm-boq-site').val();$('#bsm-boq-template').prop('disabled',!has);$('#bsm-boq-upload').prop('disabled',!has||App.boqSiteLocked);}
+function bsmBoqSiteUI(){const has=!!$('#bsm-boq-site').val();$('#bsm-boq-template').prop('disabled',false);$('#bsm-boq-upload').prop('disabled',!!App.boqSiteLocked);}
 function syncBoqRows(){
  const rows=$('#bsm-boq-rows .bsm-boq-row'),counts=new Map();let valid=!!rows.length;
  rows.each(function(){const key=boqNameKey($(this).find('.bsm-boq-name').val());if(key)counts.set(key,(counts.get(key)||0)+1);});
@@ -452,13 +452,15 @@ $(document).on('click','.bsm-boq-pdf',async function(){
   }catch(e){showToast(e.message||'Unable to download BOQ PDF',true);}finally{$btn.prop('disabled',false);}
 });
 $(document).on('click','#bsm-boq-template',async function(){
-  const fd=new FormData();fd.append('action','bsm_boq_template');fd.append('nonce',BSM.nonce);fd.append('site_id',$('#bsm-boq-site').val());
-  try{const response=await fetch(BSM.ajax,{method:'POST',body:fd,credentials:'same-origin'});const blob=await response.blob();if(!response.ok||blob.size<500)throw Error('Template could not be downloaded');const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;a.download='BOQ-Upload-Template.xlsx';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1000);}catch(e){showToast(e.message,true);}
+ const $button=$(this).prop('disabled',true);try{if(!window.BSMExcel)throw Error('Excel tools could not load. Refresh this page and try again.');await ensureOptions(['items'],true);const blob=await BSMExcel.template(App.options.items||[]);const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='BOQ-Upload-Template.xlsx';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){showToast(e.message||'Unable to download the template.',true);}finally{$button.prop('disabled',false);}
 });
-$(document).on('click','#bsm-boq-upload',()=>$('#bsm-boq-upload-file').trigger('click'));
+$(document).on('click','#bsm-boq-upload',function(){if(!$('#bsm-boq-site').val())return showToast('Select a Site before uploading BOQ items.',true);$('#bsm-boq-upload-file').trigger('click');});
 $(document).on('change','#bsm-boq-upload-file',async function(){
-  const file=this.files?.[0];if(!file)return;const fd=new FormData();fd.append('action','bsm_boq_import');fd.append('nonce',BSM.nonce);fd.append('site_id',$('#bsm-boq-site').val());fd.append('file',file);
-  try{const r=await $.ajax({url:BSM.ajax,method:'POST',data:fd,processData:false,contentType:false});if(!r.success)throw Error(r.data?.message||'Upload failed');const items=r.data.items||[];if(App.boqSiteLocked)throw Error('Excel replacement is unavailable for a BOQ already used in requisitions. Add new rows instead.');$('#bsm-boq-rows').html(items.map(boqItemRow).join(''));syncBoqRows();showToast(items.length+' BOQ items loaded. Click Save BOQ to save.');}catch(e){showToast(e.message||'Upload failed',true);}this.value='';
+ const file=this.files?.[0];if(!file)return;const $button=$('#bsm-boq-upload').prop('disabled',true),$save=$('#boq-save').prop('disabled',true);try{
+  if(App.boqSiteLocked)throw Error('This BOQ is already used in requisitions. Add new rows instead.');if(!$('#bsm-boq-site').val())throw Error('Select Site first.');if(!window.BSMExcel)throw Error('Excel tools could not load. Refresh this page and try again.');
+  const rows=await BSMExcel.read(file),r=await ajax('bsm_boq_import',{site_id:$('#bsm-boq-site').val(),rows:JSON.stringify(rows)});if(!r.success)throw Error(r.data?.message||'Upload failed');
+  const items=r.data.items||[];$('#bsm-boq-rows').html(items.map(boqItemRow).join(''));syncBoqRows();showToast(items.length+' BOQ items loaded. Review them and click Save BOQ.');
+ }catch(e){showToast(e.message||'Unable to upload the workbook.',true);}finally{this.value='';$button.prop('disabled',!!App.boqSiteLocked);syncBoqRows();}
 });
 $(document).on('click','#bsm-boq-add',()=>{$('#bsm-boq-rows').append(boqItemRow());syncBoqRows();});
 $(document).on('click','.bsm-boq-remove',function(){if($(this).closest('tr').attr('data-locked')==='1')return;$(this).closest('tr').remove();syncBoqRows();});
