@@ -428,7 +428,7 @@ function bsmBoqMonitoringSummary(rows){
 }
 async function renderBoqListing(key){
   const names={boq_master:'BOQ Master',boq_items:'BOQ Items Master',boq_monitoring:'BOQ Monitoring'};setTitle(names[key]);
-  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-boq-search" class="bsm-search" aria-label="Search" placeholder=""><select id="bsm-boq-filter-site">${boqOptions('sites').replace('Select Site','All Sites')}</select><div class="bsm-spacer"></div><button id="bsm-boq-export" class="bsm-btn">Excel Download</button><button id="bsm-boq-new" class="bsm-btn bsm-btn-primary"><span class="bsm-add-icon" aria-hidden="true">+</span><span>Add</span></button></div><div id="bsm-boq-list" class="bsm-panel"></div>`);
+  $('#bsm-content').html(`<div class="bsm-toolbar"><input id="bsm-boq-search" class="bsm-search" aria-label="Search" placeholder=""><select id="bsm-boq-filter-site">${boqOptions('sites').replace('Select Site','All Sites')}</select><div class="bsm-spacer"></div>${excelButton('bsm-boq-export')}<button id="bsm-boq-new" class="bsm-btn bsm-btn-primary"><span class="bsm-add-icon" aria-hidden="true">+</span><span>Add</span></button></div><div id="bsm-boq-list" class="bsm-panel"></div>`);
   if(key==='boq_monitoring')$('#bsm-boq-new').remove();
   await loadBoqRows(key);
 }
