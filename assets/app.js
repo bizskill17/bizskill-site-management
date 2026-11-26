@@ -4564,7 +4564,7 @@ async function init(){
   try{if(window.innerWidth>760 && localStorage.getItem('bsmSidebarCollapsed')==='1') $('#bsm-shell').addClass('bsm-sidebar-collapsed');}catch(e){}
   $('#bsm-sidebar-toggle').attr('title',$('#bsm-shell').hasClass('bsm-sidebar-collapsed')?'Show Menu':'Collapse Menu').attr('aria-label',$('#bsm-shell').hasClass('bsm-sidebar-collapsed')?'Show Menu':'Collapse Menu');
   if(!visibleNavGroups().some(group=>group.items.some(([key])=>key===App.current)))App.current=firstVisibleView();
-  buildNav();$('#bsm-sidebar-user').text(BSM.currentUser?.name||'');
+  buildNav();$('#bsm-sidebar-user').text(BSM.currentUser?.name ? BSM.currentUser.name+' · '+(BSM.currentUser.is_admin?'Admin':'Employee') : '');
   openView(App.current);
 }
 $(init);
