@@ -29,3 +29,9 @@ $xml='<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/s
 $import=$parser->invoke($app,$xml);eq(count($import),3,'Import retains all review rows');eq($import[1]['item_id'],0,'Unknown imported item stays unresolved');eq($import[1]['item_name'],'New Uploaded Pipe','Unknown item name retained');eq($import[0]['item_id'],$import[2]['item_id'],'Duplicate import retained for correction');
 rejects(fn()=>$parser->invoke($app,str_replace('<v>25</v>','<v>-1</v>',$xml)),'Invalid spreadsheet quantity');
 echo "BOQ spreadsheet parser passed: known, unknown and duplicate rows, and invalid quantities.\n";
+$wpdb->query("ALTER TABLE bsm_sites ADD status TEXT DEFAULT 'active'");
+$newSites=endpoint($app,'ajax_boq_sites',[]);eq(array_map('intval',array_column($newSites->data['rows'],'id')),[2],'Occupied Site hidden on new BOQ');
+$editSites=endpoint($app,'ajax_boq_sites',['id'=>$id]);eq(in_array(1,array_map('intval',array_column($editSites->data['rows'],'id'))),true,'Current Site kept while editing');
+$duplicate=endpoint($app,'ajax_boq_save',$payload);eq($duplicate->ok,false,'Server blocks second BOQ for Site');eq(strpos($duplicate->data['message'],'already exists')!==false,true,'Duplicate gives existing BOQ guidance');
+eq(endpoint($app,'ajax_boq_save',array_merge($payload,['id'=>$id]))->ok,true,'Existing BOQ still editable');
+echo "BOQ Site selection passed: occupied Sites excluded, edit Site retained, duplicate creation blocked.\n";

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.110
+ * Version: 0.0.111
  * Author: BizSkill
  */
 
@@ -18,7 +18,7 @@ final class BSM_Site_Management {
     use BSM_Notifications;
     use BSM_Site_Procurement;
     use BSM_Application_Scope;
-    const VERSION = '0.0.110';
+    const VERSION = '0.0.111';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -61,6 +61,7 @@ final class BSM_Site_Management {
         add_action('wp_ajax_bsm_boq_list', [$this, 'ajax_boq_list']);
         add_action('wp_ajax_bsm_boq_pdf', [$this, 'ajax_boq_pdf']);
         add_action('wp_ajax_bsm_requisition_boq_items', [$this, 'ajax_requisition_boq_items']);
+        add_action('wp_ajax_bsm_boq_sites', [$this, 'ajax_boq_sites']);
         add_action('wp_ajax_bsm_boq_get', [$this, 'ajax_boq_get']);
         add_action('wp_ajax_bsm_boq_save', [$this, 'ajax_boq_save']);
         add_action('wp_ajax_bsm_boq_template', [$this, 'ajax_boq_template']);
@@ -2075,6 +2076,12 @@ final class BSM_Site_Management {
         if($site_id && is_array($sites) && count($sites) && !in_array((string)$site_id,array_map('strval',$sites),true)) wp_send_json_error(['message'=>'Site permission denied'],403);
     }
 
+    public function ajax_boq_sites() {
+        $this->boq_access();global $wpdb;$p=$this->prefix;$id=(int)($_POST['id']??0);$current=0;
+        if($id){$current=(int)$wpdb->get_var($wpdb->prepare("SELECT site_id FROM {$p}boqs WHERE id=%d",$id));if(!$current)wp_send_json_error(['message'=>'BOQ not found.']);$this->boq_access($current);}
+        $sql=$wpdb->prepare("SELECT s.id,s.site_name label FROM {$p}sites s WHERE (s.status='active' OR s.id=%d) AND (s.id=%d OR NOT EXISTS(SELECT 1 FROM {$p}boqs b WHERE b.site_id=s.id))",$current,$current).$this->sp_scope('s')." ORDER BY s.site_name";
+        wp_send_json_success(['rows'=>$wpdb->get_results($sql,ARRAY_A)?:[]]);
+    }
     public function boq_editor_upgrade() {
         global $wpdb;$table=$this->prefix.'boqs';
         if(get_option('bsm_boq_editor_schema')==='1')return;
@@ -2177,6 +2184,8 @@ final class BSM_Site_Management {
         }
         $table=$this->prefix.'boqs';$it=$this->prefix.'boq_items';
         if (!$this->ensure_boq_section_column()) wp_send_json_error(['message'=>'BOQ database update failed']);
+        try{$site_lock=$this->ops_lock('boq_site_'.$site);}catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);}
+        register_shutdown_function(function()use($wpdb,$site_lock){$wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)',$site_lock));});
         if($id){
             $old=$wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id=%d",$id),ARRAY_A);
             if(!$old)wp_send_json_error(['message'=>'BOQ not found']);
@@ -2187,6 +2196,7 @@ final class BSM_Site_Management {
                 if($site!==(int)$old['site_id']||!isset($clean[$line['item_id']])||abs($clean[$line['item_id']]['boq_qty']-(float)$line['qty'])>0.001)wp_send_json_error(['message'=>'Items already used in a requisition and their Site cannot be changed or removed.']);
             }
         }
+        if((!$id||(int)$old['site_id']!==$site)&&$wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE site_id=%d AND id<>%d LIMIT 1",$site,$id)))wp_send_json_error(['message'=>'A BOQ already exists for this Site. Edit it from BOQ Master.']);
         // Old two-column UNIQUE index prevents repeated items in different Sections.
         $indexes=$wpdb->get_results("SHOW INDEX FROM `{$it}` WHERE Key_name='boq_item'",ARRAY_A);
         if($indexes && count($indexes)===2 && (int)($indexes[0]['Non_unique']??1)===0)
