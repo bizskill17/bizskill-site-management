@@ -3240,3 +3240,7 @@ html:has(body.bsm-blank-body),body.bsm-blank-body{max-width:100%;overflow-x:clip
 .bsm-app .bsm-dashboard-site-field :is(select,.bsm-searchable-select,.bsm-select-control){width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box}
 .bsm-app .bsm-dashboard-site-field .bsm-select-search{width:100%!important;min-width:0!important;padding-right:32px!important;box-sizing:border-box!important;white-space:nowrap!important;text-overflow:ellipsis!important;overflow:hidden!important}
 @media(max-width:600px){.bsm-app .bsm-dashboard-filters>.bsm-dashboard-site-field{flex:1 1 100%!important;width:100%!important}}
+
+/* Consistent compact red cross for shared filter reset actions. */
+.bsm-app .bsm-filters :is(.bsm-filter-clear-icon,.bsm-payment-clear,.bsm-purchase-clear-btn,.bsm-clear-report-btn){display:inline-flex!important;align-items:center!important;justify-content:center!important;align-self:flex-end!important;flex:0 0 42px!important;width:42px!important;min-width:42px!important;height:42px!important;min-height:42px!important;padding:9px!important;margin:0!important;box-sizing:border-box!important;color:#dc2626!important;border:1px solid #fecaca!important;background:#fff!important;font-size:22px!important;line-height:1!important}
+.bsm-app .bsm-filters .bsm-filter-clear-icon svg{width:20px!important;height:20px!important;flex-shrink:0}

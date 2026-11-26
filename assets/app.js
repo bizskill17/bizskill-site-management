@@ -1560,7 +1560,7 @@ async function renderModule(key){
   const cfg=App.configs[key]; setTitle(cfg.title);
   const isMaster=masterModules.includes(key);
   let toolbar=`<div class="bsm-toolbar"><input id="bsm-search" class="bsm-search" aria-label="Search" placeholder="Search" value="${esc(App.search)}">${isMaster?'':`<button id="bsm-filter-toggle" class="bsm-icon-btn" title="Filters">☷</button>`}<div class="bsm-spacer"></div>${excelButton()}${key==='material_requisitions'?'':'<button id="bsm-add" class="bsm-btn bsm-btn-primary">+</button>'}</div>`;
-  let filters=isMaster?'':`<div id="bsm-filters" class="bsm-filters ${key==='vendor_payments'?'bsm-payment-filters':''}" style="display:none">${commonFilters(key)}<button class="bsm-btn bsm-clear ${key==='vendor_payments'?'bsm-payment-clear':''}">Clear</button></div>`;
+  let filters=isMaster?'':`<div id="bsm-filters" class="bsm-filters ${key==='vendor_payments'?'bsm-payment-filters':''}" style="display:none">${commonFilters(key)}<button class="bsm-icon-btn bsm-clear bsm-filter-clear-icon ${key==='vendor_payments'?'bsm-payment-clear':''}" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button></div>`;
   $('#bsm-content').html(toolbar+filters+'<div id="bsm-list" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>'); await loadList(key);
 }
 function commonFilters(key){
@@ -3635,7 +3635,7 @@ async function loadMaterialStock(){
 }
 async function renderMaterialStock(){
   setTitle('Stock');
-  const f=`<div class="bsm-filters report bsm-stock-filters"><label>Search<input type="text" id="ms_search" aria-label="Search" placeholder="Search"></label>${selectHtml('ms_site','Site','sites','')}${selectHtml('ms_warehouse','Warehouse','warehouses','')}${selectHtml('ms_item','Item','items','')}<label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="ms_date_from"></label><label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="ms_date_to"></label><button id="ms_clear" class="bsm-btn bsm-clear">Clear</button>${excelButton('ms_export')}</div><div id="bsm-material-stock" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`;
+  const f=`<div class="bsm-filters report bsm-stock-filters"><label>Search<input type="text" id="ms_search" aria-label="Search" placeholder="Search"></label>${selectHtml('ms_site','Site','sites','')}${selectHtml('ms_warehouse','Warehouse','warehouses','')}${selectHtml('ms_item','Item','items','')}<label>Date From<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="ms_date_from"></label><label>Date To<input type="date" lang="en-GB" class="bsm-date-input bsm-native-date" id="ms_date_to"></label><button id="ms_clear" class="bsm-icon-btn bsm-clear bsm-filter-clear-icon" title="Clear Filters" aria-label="Clear Filters">${clearIcon()}</button>${excelButton('ms_export')}</div><div id="bsm-material-stock" class="bsm-panel"><div class="bsm-loading">Loading…</div></div>`;
   $('#bsm-content').html(f);await loadMaterialStock();
 }
 function exportMaterialStock(){
