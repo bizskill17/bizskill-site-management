@@ -3155,3 +3155,8 @@ html:has(body.bsm-blank-body),body.bsm-blank-body{max-width:100%;overflow-x:clip
 .bsm-app .bsm-stock-filters>.bsm-icon-btn{width:42px!important;height:42px!important;margin:0!important}
 @media(max-width:900px){.bsm-app .bsm-stock-filters{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:480px){.bsm-app .bsm-stock-filters>#inv_search{grid-column:1/-1}}
+
+/* Align Labour Report action buttons with the filter inputs. */
+.bsm-app .bsm-filters.report:has(#r_worker){align-items:flex-end!important}
+.bsm-app .bsm-filters.report:has(#r_worker)>#bsm-clear-report,
+.bsm-app .bsm-filters.report:has(#r_worker)>#bsm-report-export-excel{align-self:flex-end!important;margin:0!important;width:42px!important;height:42px!important;box-sizing:border-box}
