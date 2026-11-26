@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.164
+ * Version: 0.0.165
  * Author: BizSkill
  */
 
@@ -18,7 +18,7 @@ final class BSM_Site_Management {
     use BSM_Notifications;
     use BSM_Site_Procurement;
     use BSM_Application_Scope;
-    const VERSION = '0.0.164';
+    const VERSION = '0.0.165';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -274,7 +274,7 @@ final class BSM_Site_Management {
             'purchase_order_master' => ['PO Master', 'purchase-order-master'],
             'purchase_order_items_master' => ['PO Items Master', 'purchase-order-items-master'],
             'requisition_form' => ['Requisition Form', 'requisition-form'],
-            'material_requisitions' => ['Requisitions Master', 'material-requisitions'],
+            'material_requisitions' => ['Requisition Master', 'material-requisitions'],
             'material_requisition_item' => ['Requisition Item Master', 'material-requisition-item'],
             'pending_requisition_approval' => ['Pending Approval', 'pending-requisition-approval'],
             'pending_material_receipt' => ['Pending Site Return Approval', 'pending-site-return-approval'],
