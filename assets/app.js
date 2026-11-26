@@ -3773,6 +3773,11 @@ function bsmRefreshSearchableSelect(select){
   const opts=bsmSelectOptions($select);
   const selected=opts.find(o=>o.value===String($select.val() ?? ''));
   const $input=$wrap.find('.bsm-select-search');
+  if($select.is('.po-direct-quote-supplier,.po-direct-vendor')){
+    $wrap.addClass('po-wrap-supplier');let $label=$wrap.find('.po-supplier-label');
+    if(!$label.length)$label=$('<button type="button" class="po-supplier-label" tabindex="-1"></button>').appendTo($wrap.find('.bsm-select-control'));
+    $label.text(selected&&selected.value!==''?selected.label:'Select').attr('title',selected?.label||'Select Supplier');
+  }
   if(!$wrap.hasClass('open')) $input.val(selected && selected.value!=='' ? selected.label : '');
   const isSalesUnit=$select.attr('name')==='unit_id' && $select.closest('#bsm-form.bsm-quotation-style').length>0;
   $input.attr('placeholder',isSalesUnit?'':'Select');
@@ -3798,6 +3803,7 @@ function bsmCloseSearchable($wrap,restore=true){
     const $select=$wrap.prev('select');
     const selected=$select.find('option:selected');
     $wrap.find('.bsm-select-search').val($select.val() ? selected.text() : '');
+    $wrap.find('.po-supplier-label').text($select.val()?selected.text():'Select');
   }
 }
 function bsmOpenSearchable($wrap){
@@ -3910,6 +3916,7 @@ $(document).on('scroll', '#po_pending_list .po-pending-table-wrap', function(){
 $(window).on('resize scroll', function(){
   $('.bsm-po-vendor-dropdown-open').each(function(){bsmCloseSearchable($(this));});
 });
+$(document).on('click','.po-supplier-label',function(e){const $wrap=$(this).closest('.bsm-searchable-select');bsmOpenSearchable($wrap);$wrap.find('.bsm-select-search').trigger('focus');e.stopPropagation();});
 $(document).on('click','.bsm-select-arrow',function(e){
   const $wrap=$(this).closest('.bsm-searchable-select');
   if($wrap.hasClass('open')) bsmCloseSearchable($wrap); else {bsmOpenSearchable($wrap);$wrap.find('.bsm-select-search').trigger('focus');}

@@ -3107,3 +3107,21 @@ html:has(body.bsm-blank-body),body.bsm-blank-body{max-width:100%;overflow-x:clip
 .bsm-app .frontier-boq-editor .boq-row-actions{display:flex;gap:6px;align-items:center;justify-content:center;white-space:nowrap}
 .bsm-app .frontier-boq-editor .boq-row-actions .bsm-icon-btn{flex:0 0 32px;width:32px;min-width:32px;padding:4px;height:32px}
 .bsm-app .frontier-boq-editor .boq-add-row{color:#1760df;font-size:22px;font-weight:600}
+
+/* Four supplier comparison groups; the chosen supplier and rate share purple. */
+#po_direct_items>thead>tr>th:nth-child(7){background:#245a8c!important}
+#po_direct_items>thead>tr>th:nth-child(8){background:#246147!important}
+#po_direct_items>thead>tr>th:nth-child(9){background:#875d17!important}
+#po_direct_items>thead>tr>th:nth-child(10),#po_direct_items>thead>tr>th:nth-child(11){background:#5b418a!important}
+#po_direct_items>.po-direct-row>tr:first-child>td:nth-child(7){background:#eaf4ff!important}
+#po_direct_items>.po-direct-row>tr:first-child>td:nth-child(8){background:#edfaf2!important}
+#po_direct_items>.po-direct-row>tr:first-child>td:nth-child(9){background:#fff6e2!important}
+#po_direct_items>.po-direct-row>tr:first-child>td:nth-child(10),#po_direct_items>.po-direct-row>tr:first-child>td:nth-child(11){background:#f3edff!important}
+#po_direct_items .po-wrap-supplier .bsm-select-control{position:relative!important;height:auto!important;min-height:36px!important;overflow:visible!important}
+#po_direct_items .po-wrap-supplier:not(.open) .bsm-select-search{position:absolute!important;opacity:0!important;pointer-events:none!important;width:100%!important;height:100%!important;inset:0!important}
+#po_direct_items .po-wrap-supplier .po-supplier-label{display:block;width:100%;min-height:36px;height:auto;margin:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;padding:8px 24px 8px 10px;white-space:normal!important;overflow-wrap:anywhere;line-height:1.35;cursor:pointer;box-sizing:border-box}
+#po_direct_items .po-wrap-supplier.open .po-supplier-label{display:none}
+#po_direct_items .po-wrap-supplier.open .bsm-select-search{position:static!important;opacity:1!important;pointer-events:auto!important;height:36px!important}
+#po_direct_items .po-wrap-supplier .bsm-select-arrow{position:absolute;right:8px;top:50%;transform:translateY(-50%)}
+#po_direct_items .po-inline-quote{align-items:center}
+#po_direct_items .po-wrap-supplier .bsm-select-option{white-space:normal!important;overflow-wrap:anywhere;line-height:1.35}

@@ -14,11 +14,16 @@ const {chromium}=require(process.env.BSM_PLAYWRIGHT||'playwright');
  if(d.action==='bsm_purchase_order_master')return {success:true,data:{rows:[{id:5,po_no:'PO-5',po_date:'2026-11-25',site_name:'Site A',requisition_no:'REQ-10',vendor_name:'Supplier A',po_qty:40,status:'pending_approval'}]}};
  return {success:true,data:{rows:[]}};};});
  let src=fs.readFileSync(path.join(__dirname,'../assets/app.js'),'utf8').replace('$(init);','');const end=src.lastIndexOf('})(jQuery)');assert(end>0);src=src.slice(0,end)+"window.__sp={App,buildNav,visibleNavGroups,renderDashboard,renderStockLedger,renderHistoricalRecords,openView,renderPurchaseOrderForm,renderPendingPoItems,loadPendingPoItems,renderSitePurchaseForm,renderPurchaseOrderMaster,renderPurchaseOrderPendingReceipt,renderPurchaseOrderItemsMaster};\n"+src.slice(end);await page.addScriptTag({content:src});
- await page.evaluate(async()=>{__sp.App.options={sites:[{id:1,label:'Site A'},{id:2,label:'Site B'}],vendors:[{id:1,label:'Supplier A'}],items:[{id:1,label:'Cement',unit_id:1}],units:[{id:1,label:'Bag'}]};await __sp.renderPurchaseOrderForm();});
+ await page.evaluate(async()=>{__sp.App.options={sites:[{id:1,label:'Site A'},{id:2,label:'Site B'}],vendors:[{id:1,label:'AMRITA BHANDAR CONSTRUCTION MATERIAL SUPPLIERS'}],items:[{id:1,label:'Cement',unit_id:1}],units:[{id:1,label:'Bag'}]};await __sp.renderPurchaseOrderForm();});
  assert.equal(await page.locator('#po_direct_warehouse').count(),0);assert.equal(await page.locator('#po_direct_items').count(),0);
  await page.evaluate(async()=>{$('#sp_site').val('1').trigger('change');});await page.waitForFunction(()=>document.querySelector('#sp_req option[value="10"]'));
  await page.evaluate(()=>$('#sp_req').val('10').trigger('change'));await page.waitForSelector('#po_direct_items');assert.equal(await page.locator('.po-direct-qty').inputValue(),'60');assert.equal(await page.locator('.po-direct-item').getAttribute('type'),'hidden');assert.equal(await page.locator('.po-direct-add').count(),0);
  await page.evaluate(()=>{$('.po-direct-quote-supplier[data-slot="1"]').val('1').trigger('change');$('.po-direct-quote-rate[data-slot="1"]').val('10').trigger('input');$('.po-direct-vendor').val('1').trigger('change');});assert.equal(await page.locator('.po-direct-rate').inputValue(),'10');
+ assert((await page.locator('.po-direct-quote-supplier + .bsm-searchable-select .po-supplier-label').first().textContent()).includes('CONSTRUCTION MATERIAL'));
+ const labelBox=await page.locator('.po-direct-quote-supplier + .bsm-searchable-select .po-supplier-label').first().boundingBox();assert(labelBox.height>40,'Long supplier names wrap');
+ await page.locator('.po-direct-quote-supplier + .bsm-searchable-select .po-supplier-label').first().click();await page.locator('.po-direct-quote-supplier + .bsm-searchable-select .bsm-select-option').first().click();
+ const colors=await page.evaluate(()=>[7,8,9,10,11].map(n=>getComputedStyle(document.querySelector('#po_direct_items .po-direct-row tr:first-child td:nth-child('+n+')')).backgroundColor));assert.equal(new Set(colors.slice(0,4)).size,4,'Four distinct comparison colors');assert.equal(colors[3],colors[4],'Chosen supplier and rate share color');
+
  await page.evaluate(()=>{$('.po-direct-quote-supplier[data-slot="2"]').val('1').trigger('change');$('.po-direct-quote-rate[data-slot="2"]').val('8').trigger('input');});
  assert.equal(await page.locator('.po-direct-rate').inputValue(),'8','Repeated supplier uses lowest rate');
 
