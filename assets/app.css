@@ -3258,3 +3258,16 @@ html:has(body.bsm-blank-body),body.bsm-blank-body{max-width:100%;overflow-x:clip
 /* Match the BOQ template button in the Holiday toolbar. */
 .bsm-app #holiday-template{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
 .bsm-app #holiday-template svg{width:18px;height:18px;flex:0 0 18px;vertical-align:middle;margin-right:4px}
+
+/* Supplier quick-add stays within the viewport with visible actions. */
+#bsm-quick-modal.bsm-supplier-quick-modal{box-sizing:border-box;padding:16px}
+#bsm-quick-modal.bsm-supplier-quick-modal .bsm-quick-panel{width:min(900px,100%);max-height:calc(100dvh - 32px);display:flex;flex-direction:column;min-height:0}
+#bsm-quick-modal.bsm-supplier-quick-modal .bsm-quick-head{flex:0 0 auto;padding:14px 18px}
+#bsm-quick-modal.bsm-supplier-quick-modal #bsm-quick-form{display:flex;flex-direction:column;min-height:0;overflow:hidden;margin:0}
+#bsm-quick-modal.bsm-supplier-quick-modal .bsm-quick-body{overflow-y:auto;min-height:0;padding:16px 18px}
+#bsm-quick-modal.bsm-supplier-quick-modal .bsm-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+#bsm-quick-modal.bsm-supplier-quick-modal .bsm-form-grid label{min-width:0}
+#bsm-quick-modal.bsm-supplier-quick-modal .bsm-form-grid .wide{grid-column:1/-1}
+#bsm-quick-modal.bsm-supplier-quick-modal .bsm-quick-actions{flex:0 0 auto;display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid #7eb6ff;background:#fff}
+@media(max-width:640px){#bsm-quick-modal.bsm-supplier-quick-modal .bsm-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){#bsm-quick-modal.bsm-supplier-quick-modal .bsm-form-grid{grid-template-columns:minmax(0,1fr)}}

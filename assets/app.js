@@ -2902,6 +2902,7 @@ let QuickMaster={master:'',target:''};
 function quickAddMaster(master,target){
   if(!canManageMaster(master))return showToast('You do not have permission to manage this Master.',true);
   QuickMaster={master,target};
+  $('#bsm-quick-modal').toggleClass('bsm-supplier-quick-modal',master==='vendors');
   $('#bsm-quick-msg').text('');
   if(master==='items'){
     $('#bsm-quick-title').text('Add Item');
