@@ -3175,3 +3175,6 @@ html:has(body.bsm-blank-body),body.bsm-blank-body{max-width:100%;overflow-x:clip
 .bsm-app .bsm-sidebar .bsm-sidebar-head{position:relative;justify-content:center!important;text-align:center!important}
 .bsm-app .bsm-sidebar .bsm-sidebar-head>div{width:100%;text-align:center!important}
 .bsm-app .bsm-sidebar .bsm-sidebar-head #bsm-menu-close{position:absolute;right:14px;top:50%;transform:translateY(-50%);margin:0}
+
+/* Give the centered company name a clearer visual hierarchy. */
+.bsm-app .bsm-sidebar .bsm-sidebar-head strong{font-size:18px!important;font-weight:500!important;line-height:1.35!important}
