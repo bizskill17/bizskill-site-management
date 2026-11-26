@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.162
+ * Version: 0.0.163
  * Author: BizSkill
  */
 
@@ -18,7 +18,7 @@ final class BSM_Site_Management {
     use BSM_Notifications;
     use BSM_Site_Procurement;
     use BSM_Application_Scope;
-    const VERSION = '0.0.162';
+    const VERSION = '0.0.163';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -2368,6 +2368,7 @@ final class BSM_Site_Management {
         wp_send_json_success(['rows'=>$rows]);
     }
 
+    private function requisition_approved_date($value){if(!$value||substr($value,0,4)==='0000')return '';try{return (new DateTimeImmutable($value,wp_timezone()))->setTimezone(new DateTimeZone('Asia/Kolkata'))->format('d/m/Y H:i');}catch(Exception $e){return '';}}
     private function requisition_created_time($value){if(!$value||substr($value,0,4)==='0000')return '';try{return (new DateTimeImmutable($value,wp_timezone()))->setTimezone(new DateTimeZone('Asia/Kolkata'))->format('H:i');}catch(Exception $e){return '';}}
     public function ajax_list() {
         $this->verify_ajax(); global $wpdb;
@@ -2473,7 +2474,7 @@ final class BSM_Site_Management {
         $countSql="SELECT COUNT(*) FROM $table WHERE $where"; $dataSql="SELECT * FROM $table WHERE $where ORDER BY id DESC"; if(!$export_all) $dataSql.=" LIMIT 20 OFFSET $offset";
         if($args){$countSql=$wpdb->prepare($countSql,$args);$dataSql=$wpdb->prepare($dataSql,$args);} 
         $total=(int)$wpdb->get_var($countSql); $rows=$wpdb->get_results($dataSql,ARRAY_A);
-        if($key==='material_requisitions'){foreach($rows as &$req_row){$req_row['created_time']=$this->requisition_created_time($req_row['created_at']??'');$req_row['approved_by_name']=$this->nt_name($req_row['approved_by']??0,true);}unset($req_row);}
+        if($key==='material_requisitions'){foreach($rows as &$req_row){$req_row['created_time']=$this->requisition_created_time($req_row['created_at']??'');$req_row['approved_date']=$this->requisition_approved_date($req_row['approved_at']??'');$req_row['approved_by_name']=$this->nt_name($req_row['approved_by']??0,true);}unset($req_row);}
         if($key==='labour_attendance'){
             $updater_names=[];
             foreach($rows as &$attendance){
@@ -2611,11 +2612,11 @@ final class BSM_Site_Management {
             LEFT JOIN {$p}units u ON u.id=ri.unit_id
             WHERE $where";
         $countSql="SELECT COUNT(*) $from";
-        $dataSql="SELECT ri.id,r.id requisition_id,r.requisition_no,r.created_at,r.requisition_date,r.required_date,r.site_id,s.site_name,r.requested_by,ru.name requested_by_name,r.approved_by,COALESCE(au.name,auwp.name,'') approved_by_name,r.status,i.category_id,c.category_name,ri.item_id,i.item_name,ri.requested_qty,ri.approved_qty,ri.rejected_qty,ri.unit_id,u.unit_name,ri.remarks $from ORDER BY r.requisition_date DESC,r.id DESC,ri.id ASC";
+        $dataSql="SELECT ri.id,r.id requisition_id,r.requisition_no,r.created_at,r.approved_at,r.requisition_date,r.required_date,r.site_id,s.site_name,r.requested_by,ru.name requested_by_name,r.approved_by,COALESCE(au.name,auwp.name,'') approved_by_name,r.status,i.category_id,c.category_name,ri.item_id,i.item_name,ri.requested_qty,ri.approved_qty,ri.rejected_qty,ri.unit_id,u.unit_name,ri.remarks $from ORDER BY r.requisition_date DESC,r.id DESC,ri.id ASC";
         if(!$export_all)$dataSql.=$wpdb->prepare(' LIMIT %d OFFSET %d',$per,$offset);
         if($args){$countSql=$wpdb->prepare($countSql,$args);$dataSql=$wpdb->prepare($dataSql,$args);}
         $total=(int)$wpdb->get_var($countSql);$rows=$wpdb->get_results($dataSql,ARRAY_A);
-        foreach($rows as &$row){$row['created_time']=$this->requisition_created_time($row['created_at']??'');}unset($row);
+        foreach($rows as &$row){$row['created_time']=$this->requisition_created_time($row['created_at']??'');$row['approved_date']=$this->requisition_approved_date($row['approved_at']??'');}unset($row);
         wp_send_json_success(['rows'=>$rows,'total'=>$total,'page'=>$page,'pages'=>$export_all?1:max(1,(int)ceil($total/20))]);
     }
 
