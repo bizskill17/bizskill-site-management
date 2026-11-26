@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.147
+ * Version: 0.0.148
  * Author: BizSkill
  */
 
@@ -18,7 +18,7 @@ final class BSM_Site_Management {
     use BSM_Notifications;
     use BSM_Site_Procurement;
     use BSM_Application_Scope;
-    const VERSION = '0.0.147';
+    const VERSION = '0.0.148';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;

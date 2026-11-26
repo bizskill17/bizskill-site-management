@@ -1471,7 +1471,7 @@ async function renderCompanySettings(){
   h+=`<tr><td>Company Logo</td><td>${row.logo_url?`<img class="bsm-company-settings-logo-view" src="${esc(row.logo_url)}" alt="Company Logo">`:'-'}</td></tr>`;
   h+=`<tr><td>UPI QR</td><td>${row.upi_qr_url?`<img class="bsm-company-settings-logo-view" src="${esc(row.upi_qr_url)}" alt="UPI QR">`:'-'}</td></tr>`;
   h+=`<tr><td>Bank Details</td><td>${[row.bank_account_holder&&`Account Holder: ${row.bank_account_holder}`,row.bank_name&&`Bank: ${row.bank_name}`,row.bank_branch&&`Branch: ${row.bank_branch}`,row.bank_ifsc&&`IFSC: ${row.bank_ifsc}`,row.bank_account_no&&`Account No.: ${row.bank_account_no}`].filter(Boolean).map(esc).join('<br>')||'-'}</td></tr>`;
-  h+=`<tr><td>PDF Theme Color</td><td>${row.pdf_theme_color?`<span style="display:inline-block;width:18px;height:18px;border-radius:4px;vertical-align:middle;background:${esc(row.pdf_theme_color)};border:1px solid #bbb;margin-right:8px"></span>${esc(row.pdf_theme_color)}`:'Auto from Company Logo'}</td></tr>`;
+  h+=`<tr><td>PDF Theme Color</td><td>${row.pdf_theme_color?`<span style="display:inline-block;width:18px;height:18px;border-radius:4px;vertical-align:middle;background:${esc(row.pdf_theme_color)};border:1px solid #bbb;margin-right:8px"></span>${['#000000','#000','black'].includes(String(row.pdf_theme_color).trim().toLowerCase())?'Black':esc(row.pdf_theme_color)}`:'Auto from Company Logo'}</td></tr>`;
 
   h+='</tbody></table></div>';
   $('.bsm-settings-panel').html(h);
