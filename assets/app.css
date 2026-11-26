@@ -3254,3 +3254,7 @@ html:has(body.bsm-blank-body),body.bsm-blank-body{max-width:100%;overflow-x:clip
 
 /* Company identity remains visible above the login fields, with or without a logo. */
 .bsm-app .bsm-login-card .bsm-login-company-name{margin:0 0 20px!important;text-align:center!important;font-size:22px!important;font-weight:600!important;line-height:1.35!important;color:#173d68!important;overflow-wrap:anywhere}
+
+/* Match the BOQ template button in the Holiday toolbar. */
+.bsm-app #holiday-template{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+.bsm-app #holiday-template svg{width:18px;height:18px;flex:0 0 18px;vertical-align:middle;margin-right:4px}
