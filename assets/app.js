@@ -264,7 +264,7 @@ function buildNav(){
     }
     let last='';try{last=sessionStorage.getItem('bsm-menu-last:'+g.group)||'';}catch(e){}
     const target=(g.group===active?.group?g.items.find(([k])=>k===App.current):null)||g.items.find(([k])=>k===last)||g.items[0];
-    h+=`<div class="bsm-nav-group${g.group===active?.group?' bsm-module-active':''}" data-group="${g.index}"><a class="bsm-nav-label bsm-module-link" data-menu-group="${esc(g.group)}" data-view="${esc(target[0])}" href="${esc(BSM.pages?.[target[0]]||'#')}" ${g.group===active?.group?'aria-current="true"':''}><span class="bsm-nav-label-main"><span class="bsm-nav-section-icon">${groupIcons[g.group]||itemIcons[target[0]]||'•'}</span><span>${esc(g.group)}</span></span></a></div>`;
+    h+=`<div class="bsm-nav-group${g.group===active?.group?' bsm-module-active':''}" data-group="${g.index}"><a class="bsm-nav-label bsm-module-link" data-menu-group="${esc(g.group)}" data-view="${esc(target[0])}" href="${esc(BSM.pages?.[target[0]]||'#')}" ${g.group===active?.group?'aria-current="true"':''}><span class="bsm-nav-label-main"><span class="bsm-nav-section-icon">${groupIcons[g.group]||itemIcons[target[0]]||'•'}</span><span>${esc(({Master:'Masters','Goods Receipts':'Goods Receipt'})[g.group]||g.group)}</span></span></a></div>`;
   });
   $('#bsm-nav').html(h);restoreNavScroll();
   const $tabs=$('#bsm-subnav');
