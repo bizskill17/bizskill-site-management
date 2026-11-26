@@ -4200,6 +4200,7 @@ $(document).on('click','.bsm-contractor-payment-delete',async function(e){
 });
 
 $(document).on('click','.bsm-action-edit',function(){
+  if($(this).is('[data-ops]'))return;
   if($(this).hasClass('bsm-contractor-payment-edit')) return;
   const allowed=String($(this).attr('data-allowed')??'1')!=='0';
   if(!allowed) return showToast($(this).attr('data-message')||'This record cannot be edited.',true);
@@ -4215,6 +4216,7 @@ $(document).on('click','.bsm-user-delete',async function(e){
 });
 
 $(document).on('click','.bsm-action-delete',async function(){
+  if($(this).is('[data-ops]'))return;
   if($(this).hasClass('bsm-user-delete')||$(this).hasClass('bsm-contractor-payment-delete')) return;
   const allowed=String($(this).attr('data-allowed')??'1')!=='0';
   if(!allowed) return showToast($(this).attr('data-message')||'This record cannot be deleted.',true);
@@ -4627,7 +4629,7 @@ async function renderOperations(key){
 }
 async function opsHolidays(){
   setTitle('Holiday List');opsRows=(await opsCall('holiday_list')).rows;
-  $('#bsm-content').html(`${opsMeta.admin?`<div class="bsm-toolbar"><div class="bsm-spacer"></div><button type="button" id="holiday-template" class="bsm-btn">${excelIcon()} Template</button><button type="button" id="holiday-upload" class="bsm-btn">↥ Upload Excel</button><input type="file" id="holiday-upload-file" accept=".xlsx" hidden>${opsButton('holiday-add','+ Add')}</div>`:''}<div class="bsm-panel">${opsTable(['Date','Holiday',...(opsMeta.admin?['Action']:[])],opsRows.map(h=>`<tr><td>${dateFmt(h.holiday_date)}</td><td>${esc(h.holiday_name)}</td>${opsMeta.admin?`<td>${opsButton('holiday-edit','Edit',h.id)} ${opsButton('holiday-delete','Delete',h.id)}</td>`:''}</tr>`).join(''))}</div>`);
+  $('#bsm-content').html(`${opsMeta.admin?`<div class="bsm-toolbar"><div class="bsm-spacer"></div><button type="button" id="holiday-template" class="bsm-btn">${excelIcon()} Template</button><button type="button" id="holiday-upload" class="bsm-btn">↥ Upload Excel</button><input type="file" id="holiday-upload-file" accept=".xlsx" hidden>${opsButton('holiday-add','+ Add')}</div>`:''}<div class="bsm-panel">${opsTable(['Date','Holiday',...(opsMeta.admin?['Action']:[])],opsRows.map(h=>`<tr><td>${dateFmt(h.holiday_date)}</td><td>${esc(h.holiday_name)}</td>${opsMeta.admin?`<td class="bsm-actions"><button type="button" class="bsm-action-edit" data-ops="holiday-edit" data-id="${esc(h.id)}" title="Edit" aria-label="Edit Holiday">✎</button><button type="button" class="bsm-action-delete" data-ops="holiday-delete" data-id="${esc(h.id)}" title="Delete" aria-label="Delete Holiday"><img class="bsm-delete-icon" src="${BSM.deleteIcon}" alt=""></button></td>`:''}</tr>`).join(''))}</div>`);
 }
 
 $(document).on('click','#holiday-template',async function(){
