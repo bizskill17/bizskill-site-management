@@ -3170,3 +3170,8 @@ html:has(body.bsm-blank-body),body.bsm-blank-body{max-width:100%;overflow-x:clip
 .bsm-app #bsm-nav .bsm-nav-section-icon{width:20px!important;height:20px!important;font-size:15px!important}
 .bsm-app .bsm-sidebar .bsm-sidebar-user{margin:6px 10px 0!important;padding:7px 10px!important;font-size:12px!important;border-radius:7px!important}
 .bsm-app .bsm-sidebar .bsm-logout{min-height:36px!important;margin:6px 10px 10px!important;padding:8px 10px!important;font-size:13px!important;border-radius:7px!important}
+
+/* Center the company name independently of the mobile close control. */
+.bsm-app .bsm-sidebar .bsm-sidebar-head{position:relative;justify-content:center!important;text-align:center!important}
+.bsm-app .bsm-sidebar .bsm-sidebar-head>div{width:100%;text-align:center!important}
+.bsm-app .bsm-sidebar .bsm-sidebar-head #bsm-menu-close{position:absolute;right:14px;top:50%;transform:translateY(-50%);margin:0}
