@@ -79,15 +79,26 @@ trait BSM_Site_Procurement {
         if(!$req)throw new Exception('Select an approved Requisition.');
         $date=$this->sp_date($d['po_date']??current_time('Y-m-d'));$required=$this->sp_date($d['required_date']??'',true);
         $lock=$this->ops_lock('site_procurement');
-        try{$this->sp_write($wpdb->query('START TRANSACTION'));$rows=$this->sp_requirements($site,$req);$by=[];foreach($rows as $x)$by[(int)$x['requisition_item_id']]=$x;
+        try{$this->sp_write($wpdb->query('START TRANSACTION'));
+            $request=sanitize_text_field($d['request_id']??'');$key=$request!==''?hash('sha256',$this->plugin_user_id().':'.$request):'';
+            $fingerprint=hash('sha256',wp_json_encode([$site,$req,$date,$required,$input]));
+            if($key!==''){
+                $previous=$wpdb->get_results($wpdb->prepare("SELECT id,po_no,remarks FROM {$p}purchase_orders WHERE remarks LIKE %s ORDER BY id",'%'.$key.'%'),ARRAY_A)?:[];$replayed=[];
+                foreach($previous as $prior){$meta=json_decode($prior['remarks'],true);if(($meta['submission_key']??'')!==$key)continue;
+                    if(($meta['submission_hash']??'')!==$fingerprint)throw new Exception('This submission was already used with different PO details. Reload the form.');
+                    $replayed[]=['id'=>(int)$prior['id'],'po_no'=>$prior['po_no']];
+                }
+                if($replayed){$this->sp_write($wpdb->query('COMMIT'));return ['created'=>$replayed,'message'=>'PO submission already processed.','replayed'=>true];}
+            }
+            $rows=$this->sp_requirements($site,$req);$by=[];foreach($rows as $x)$by[(int)$x['requisition_item_id']]=$x;
             $groups=[];$seen=[];
             foreach($input as $it){$ri=(int)($it['requisition_item_id']??0);$qty=$this->sp_qty($it['po_qty']??0,'PO Qty');if($qty<=0)continue;
                 if(isset($seen[$ri])||!isset($by[$ri]))throw new Exception('Select unique pending items from the approved Requisition.');$seen[$ri]=true;$x=$by[$ri];
                 if($qty>(float)$x['pending_po_qty']+0.009)throw new Exception('PO Qty exceeds pending approved quantity for '.$x['item_name'].'.');
                 $vendor=(int)($it['vendor_id']??0);$quotes=[];$suppliers=[];$chosen=null;
                 foreach((array)($it['quotations']??[]) as $q){$v=(int)($q['vendor_id']??0);$rate=$q['rate']??'';if(!$v&&$rate==='')continue;
-                    if(!$v||isset($suppliers[$v])||!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}vendors WHERE id=%d AND status='active'",$v)))throw new Exception('Select distinct active suppliers.');
-                    $rate=$this->sp_qty($rate,'Rate');$suppliers[$v]=true;$quotes[]=['supplier_id'=>$v,'rate'=>$rate];if($v===$vendor)$chosen=$rate;
+                    if(!$v||!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}vendors WHERE id=%d AND status='active'",$v)))throw new Exception('Select active suppliers.');
+                    $rate=$this->sp_qty($rate,'Rate');$suppliers[$v]=true;$quotes[]=['supplier_id'=>$v,'rate'=>$rate];if($v===$vendor)$chosen=$chosen===null?$rate:min($chosen,$rate);
                 }
                 if(count($quotes)<1||count($quotes)>3||$chosen===null)throw new Exception('Choose a supplier from one to three complete quotations.');
                 $reason=sanitize_text_field($it['selection_reason']??'');if($chosen>min(array_column($quotes,'rate'))&&$reason==='')throw new Exception('Enter a reason for choosing a higher rate.');
@@ -95,7 +106,7 @@ trait BSM_Site_Procurement {
             }
             if(!$groups)throw new Exception('Enter PO Qty and choose a Supplier for at least one pending item.');$created=[];
             foreach($groups as $vendor=>$items){$now=current_time('mysql');$no=$this->next_no('purchase_orders','PO');
-                $this->sp_write($wpdb->insert($p.'purchase_orders',['po_no'=>$no,'po_date'=>$date,'vendor_id'=>$vendor,'site_id'=>$site,'requisition_id'=>$req,'site_flow'=>1,'warehouse_id'=>0,'required_date'=>$required?:($rows[0]['required_date']??null),'remarks'=>wp_json_encode(['supplier_quotations'=>$items]),'status'=>'pending_approval','created_by'=>$this->plugin_user_id(),'created_at'=>$now,'updated_at'=>$now]));$id=(int)$wpdb->insert_id;
+                $this->sp_write($wpdb->insert($p.'purchase_orders',['po_no'=>$no,'po_date'=>$date,'vendor_id'=>$vendor,'site_id'=>$site,'requisition_id'=>$req,'site_flow'=>1,'warehouse_id'=>0,'required_date'=>$required?:($rows[0]['required_date']??null),'remarks'=>wp_json_encode(['supplier_quotations'=>$items,'submission_key'=>$key,'submission_hash'=>$fingerprint]),'status'=>'pending_approval','created_by'=>$this->plugin_user_id(),'created_at'=>$now,'updated_at'=>$now]));$id=(int)$wpdb->insert_id;
                 foreach($items as $it){$this->sp_write($wpdb->insert($p.'purchase_order_items',['purchase_order_id'=>$id,'requisition_item_id'=>$it['requisition_item_id'],'item_id'=>$it['item_id'],'unit_id'=>$it['unit_id'],'po_qty'=>$it['po_qty'],'rate'=>$it['rate'],'created_at'=>$now]));$poi=(int)$wpdb->insert_id;
                     $this->sp_write($wpdb->insert($p.'purchase_order_item_allocations',['purchase_order_item_id'=>$poi,'requisition_item_id'=>$it['requisition_item_id'],'allocated_qty'=>$it['po_qty'],'created_at'=>$now]));}
                 $created[]=['id'=>$id,'po_no'=>$no];}

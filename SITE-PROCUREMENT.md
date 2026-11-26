@@ -34,3 +34,9 @@ POs with historical receipts or ambiguous item matches require manual reconcilia
 - PHP lint and class/trait load checks pass. The older `tests/operations.php` suite still expects employee-specific holidays and fails its pre-existing Holiday assertion; suites importing it inherit that blocker. This release does not change Holiday or payroll behavior.
 
 Live WordPress/MySQL deployment and historical reconciliation must be verified on the installation. SQLite tests do not substitute for a live database migration check.
+
+## 0.0.106 follow-up
+
+Pending PO now lists each site's requisitions separately with dates and a Create PO action. Repeated supplier quotations are allowed and their lowest rate is used. New PO forms send a submission identifier; the server serializes creation and returns the original supplier-split orders on an unchanged retry, including after their pending balance has been consumed. Reusing an identifier with changed details is rejected. Existing API clients without an identifier retain quantity validation but must supply request_id for retry protection.
+
+Lifecycle tests additionally cover repeated supplier rates, unchanged retries and changed-payload rejection. Browser checks cover the requisition list and its Create PO action. Historical allocations remain explicit reviewed transactions; live stock reconciliation is not performed by this change.
