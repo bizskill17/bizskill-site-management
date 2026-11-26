@@ -3,7 +3,7 @@
 
 const App = {
   current: 'dashboard', page: 1, search: '', editId: 0, options: {},
-  nav: [{"group": "Dashboard", "items": [["dashboard", "Dashboard"]]}, {"group": "Master", "items": [["sites", "Sites"], ["items", "Items"], ["item_categories", "Item Categories"], ["units", "Units"], ["vendors", "Suppliers"], ["labour_contractors", "Labour Contractors"], ["contractor_employees", "Contractor Employee"], ["users", "Users"], ["designations", "Designations"], ["gst_rates", "GST Rates"], ["states", "States"], ["holiday_list", "Holidays"]]}, {"group": "BOQ", "items": [["boq_form", "BOQ Form"], ["boq_master", "BOQ Master"], ["boq_items", "BOQ Items"]]}, {"group": "Requisition", "items": [["requisition_form", "Create Requisition"], ["pending_requisition_approval", "Pending Approval"], ["material_requisitions", "Requisition Master"], ["material_requisition_item", "Requisition Items"]]}, {"group": "Purchase Order", "items": [["pending_po_items", "Approved Requisition Pending PO"], ["purchase_order_form", "Create PO"], ["pending_po_approval", "Pending PO Approval"], ["purchase_order_master", "PO Master"], ["purchase_order_items_master", "PO Items"], ["purchase_order_pending_receipt", "Ordered but Not Received"]]}, {"group": "Goods Receipts", "items": [["purchase_order_pending_receipt", "Pending Goods Receipts"], ["purchase_form", "Goods Receipt Form"], ["purchase_register", "Goods Receipt Master"], ["purchase_items_register", "Goods Receipt Items"], ["pending_invoice_copy", "Pending Invoice Copy"]]}, {"group": "Inventory", "items": [["site_inventory", "Site Inventory"], ["site_opening_stock", "Opening Stock"], ["stock_ledger", "Stock Ledger"]]}, {"group": "Attendance", "items": [["labour_attendance", "Daily Labour Attendance", "Labour"], ["report_labour", "Labour Report", "Labour"], ["office_daily_attendance", "Daily Office Attendance", "Office"], ["office_attendance_master", "Office Attendance Master", "Office"]]}, {"group": "Time Sheet", "items": [["time_sheet", "Time Sheet Form"], ["time_sheet_master", "Time Sheet Master"]]}, {"group": "Settings", "items": [["company_settings", "Company Settings"], ["notifications", "Notifications"], ["view_settings", "View Permissions"], ["data_reset", "Clear Transaction Data"]]}],
+  nav: [{"group": "Dashboard", "items": [["dashboard", "Dashboard"]]}, {"group": "Master", "items": [["sites", "Sites"], ["items", "Items"], ["item_categories", "Item Categories"], ["units", "Units"], ["vendors", "Suppliers"], ["labour_contractors", "Labour Contractors"], ["users", "Users"], ["designations", "Designations"], ["gst_rates", "GST Rates"], ["states", "States"], ["holiday_list", "Holidays"]]}, {"group": "BOQ", "items": [["boq_form", "BOQ Form"], ["boq_master", "BOQ Master"], ["boq_items", "BOQ Items"]]}, {"group": "Requisition", "items": [["requisition_form", "Create Requisition"], ["pending_requisition_approval", "Pending Approval"], ["material_requisitions", "Requisition Master"], ["material_requisition_item", "Requisition Items"]]}, {"group": "Purchase Order", "items": [["pending_po_items", "Approved Requisition Pending PO"], ["purchase_order_form", "Create PO"], ["pending_po_approval", "Pending PO Approval"], ["purchase_order_master", "PO Master"], ["purchase_order_items_master", "PO Items"], ["purchase_order_pending_receipt", "Ordered but Not Received"]]}, {"group": "Goods Receipts", "items": [["purchase_order_pending_receipt", "Pending Goods Receipts"], ["purchase_form", "Goods Receipt Form"], ["purchase_register", "Goods Receipt Master"], ["purchase_items_register", "Goods Receipt Items"], ["pending_invoice_copy", "Pending Invoice Copy"]]}, {"group": "Inventory", "items": [["site_inventory", "Site Inventory"], ["site_opening_stock", "Opening Stock"], ["stock_ledger", "Stock Ledger"]]}, {"group": "Attendance", "items": [["labour_attendance", "Daily Labour Attendance", "Labour"], ["report_labour", "Labour Report", "Labour"], ["office_daily_attendance", "Daily Office Attendance", "Office"], ["office_attendance_master", "Office Attendance Master", "Office"]]}, {"group": "Time Sheet", "items": [["time_sheet", "Time Sheet Form"], ["time_sheet_master", "Time Sheet Master"]]}, {"group": "Settings", "items": [["company_settings", "Company Settings"], ["notifications", "Notifications"], ["view_settings", "View Permissions"], ["data_reset", "Clear Transaction Data"]]}],
   configs: {}
 };
 
@@ -169,7 +169,7 @@ function bsmHiddenSet(){return new Set((BSM.hiddenViews||[]).filter(k=>!BSM_PROT
 function isViewHidden(k){return bsmHiddenSet().has(k);}
 function canManageMaster(key){
   if(BSM.currentUser?.is_admin)return true;
-  return ['vendors','contractor_employees','holiday_list'].includes(key)&&(BSM.currentUser?.allowed_views||[]).includes(key)&&!isViewHidden(key);
+  return ['vendors','holiday_list'].includes(key)&&(BSM.currentUser?.allowed_views||[]).includes(key)&&!isViewHidden(key);
 }
 function firstVisibleView(){
   const allowed=(BSM.currentUser&&BSM.currentUser.is_admin)?null:new Set((BSM.currentUser&&BSM.currentUser.allowed_views)||[]);
@@ -608,7 +608,7 @@ async function openView(key){
   if(isViewHidden(key)){const fb=firstVisibleView();if(fb&&fb!==key)return openView(fb);$('#bsm-content').html('<div class="bsm-empty">This view is hidden. An administrator can turn it on in Settings → Show / Hide Views.</div>');return;}
   exitInlineFormMode();
   App.current=key;App.page=1;App.search='';buildNav();$('.bsm-sidebar').removeClass('open');
-  if(['holiday_list','time_sheet','time_sheet_master','contractor_employees','contractor_calculated_bill','site_transfer_form','site_transfer_master'].includes(key)){await ensureOptions(['sites','contractors','units']);return renderOperations(key);}
+  if(['holiday_list','time_sheet','time_sheet_master','contractor_calculated_bill','site_transfer_form','site_transfer_master'].includes(key)){await ensureOptions(['sites','contractors','units']);return renderOperations(key);}
   if(key==='stock_ledger')return renderStockLedger();
   if(key==='historical_records')return renderHistoricalRecords();
   if(key==='notifications')return renderNotifications();
@@ -2856,7 +2856,7 @@ function toggleUserSalaryFields(){
   });
 }
 function allUserViews(){
-  const out=[];App.nav.forEach(g=>{if(g.group==='Settings')return;g.items.forEach(([key,label])=>{if((g.group!=='Master'||['vendors','contractor_employees','holiday_list'].includes(key))&&!isViewHidden(key))out.push({key,label,group:g.group});})});return out;
+  const out=[];App.nav.forEach(g=>{if(g.group==='Settings')return;g.items.forEach(([key,label])=>{if((g.group!=='Master'||['vendors','holiday_list'].includes(key))&&!isViewHidden(key))out.push({key,label,group:g.group});})});return out;
 }
 function parseJsonArray(v){if(Array.isArray(v))return v;try{const x=JSON.parse(v||'[]');return Array.isArray(x)?x:[]}catch(e){return []}}
 function renderUserAccess(row={}){
@@ -4621,7 +4621,6 @@ async function renderOperations(key){
   if(key==='holiday_list')return opsHolidays();
   if(key==='time_sheet')return opsTimeForm();
   if(key==='time_sheet_master')return opsTimeMaster();
-  if(key==='contractor_employees')return opsWorkers();
   if(key==='contractor_calculated_bill')return opsBill();
   if(key==='site_transfer_form')return opsTransferForm();
   return opsTransfers();

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.152
+ * Version: 0.0.153
  * Author: BizSkill
  */
 
@@ -18,7 +18,7 @@ final class BSM_Site_Management {
     use BSM_Notifications;
     use BSM_Site_Procurement;
     use BSM_Application_Scope;
-    const VERSION = '0.0.152';
+    const VERSION = '0.0.153';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -303,7 +303,6 @@ final class BSM_Site_Management {
             'holiday_list' => ['Holiday List', 'holiday-list'],
             'time_sheet' => ['Time Sheet', 'time-sheet'],
             'time_sheet_master' => ['Time Sheet Master', 'time-sheet-master'],
-            'contractor_employees' => ['Contractor Employee', 'contractor-employees'],
             'contractor_calculated_bill' => ['Employee / Time Based Bill', 'contractor-calculated-bill'],
             'site_transfer_form' => ['Site-to-Site Transfer Form', 'site-transfer-form'],
             'site_transfer_master' => ['Site-to-Site Transfer Master', 'site-transfer-master'],
