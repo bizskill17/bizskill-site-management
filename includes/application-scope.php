@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) exit;
 /** The active application surface. Historical tables are never removed here. */
 trait BSM_Application_Scope {
     private function app_pages() {
-        $keep=['dashboard','sites','items','item_categories','units','vendors','labour_contractors','contractor_employees','users','designations','gst_rates','states','holiday_list','boq_form','boq_master','boq_items','boq_monitoring','requisition_form','pending_requisition_approval','material_requisitions','material_requisition_item','pending_po_items','purchase_order_form','pending_po_approval','purchase_order_master','purchase_order_items_master','purchase_order_pending_receipt','purchase_form','purchase_register','purchase_items_register','pending_invoice_copy','site_inventory','site_opening_stock','consumption_form','site_consumptions','consumption_items_register','return_form','material_returns','material_returns_item_master','site_transfer_form','site_transfer_master','daily_outward_summary','labour_attendance','report_labour','office_daily_attendance','office_attendance_master','time_sheet','time_sheet_master','company_settings','notifications','view_settings','procurement_review','data_reset'];
+        $keep=['dashboard','sites','items','item_categories','units','vendors','labour_contractors','contractor_employees','users','designations','gst_rates','states','holiday_list','boq_form','boq_master','boq_items','boq_monitoring','requisition_form','pending_requisition_approval','material_requisitions','material_requisition_item','pending_po_items','purchase_order_form','pending_po_approval','purchase_order_master','purchase_order_items_master','purchase_order_pending_receipt','purchase_form','purchase_register','purchase_items_register','pending_invoice_copy','site_inventory','site_opening_stock','labour_attendance','report_labour','office_daily_attendance','office_attendance_master','time_sheet','time_sheet_master','company_settings','notifications','view_settings','procurement_review','data_reset'];
         $pages=array_intersect_key($this->legacy_app_pages(),array_flip($keep));
         $pages['purchase_order_form']=['Create PO','purchase-order-form'];
         $pages['stock_ledger']=['Stock Ledger','stock-ledger'];$pages['historical_records']=['Historical Records','historical-records'];
@@ -12,7 +12,7 @@ trait BSM_Application_Scope {
         return $pages;
     }
     private function scope_removed_modules() {
-        return ['bank_accounts','customers','warehouses','expense_categories','allowance_types','employee_allowance_limits','employee_allowances','salary_slips','salary_batches','vendor_payments','contractor_bills','contractor_bill_items','contractor_payments','contractor_advances','site_fund_allocations','site_expenses','customer_receipts','gst_invoices','quotations','sales_quotations','sales_invoices','sales_documents','tax_invoices','tax_invoice_items','gst_invoice_items','quotation_items','material_dispatches','site_receipts'];
+        return ['site_consumptions','material_returns','site_transfers','bank_accounts','customers','warehouses','expense_categories','allowance_types','employee_allowance_limits','employee_allowances','salary_slips','salary_batches','vendor_payments','contractor_bills','contractor_bill_items','contractor_payments','contractor_advances','site_fund_allocations','site_expenses','customer_receipts','gst_invoices','quotations','sales_quotations','sales_invoices','sales_documents','tax_invoices','tax_invoice_items','gst_invoice_items','quotation_items','material_dispatches','site_receipts'];
     }
     private function scope_guard_request() {
         $action=sanitize_key($_POST['action']??$_GET['action']??'');
@@ -24,8 +24,9 @@ trait BSM_Application_Scope {
             if($id){global $wpdb;if(!(int)$wpdb->get_var($wpdb->prepare("SELECT site_flow FROM {$this->prefix}$module WHERE id=%d",$id)))wp_send_json_error(['message'=>'Use Historical Records to review this transaction.'],403);}
         }
         if(in_array($module,$this->scope_removed_modules(),true))wp_send_json_error(['message'=>'This module is no longer available. Historical records are preserved.'],403);
-        $blocked=['bsm_project_tracker','bsm_project_tracker_save','bsm_pending_contractor_bill_copy','bsm_purchase_pending_approval','bsm_purchase_approval_get','bsm_purchase_approval_save','bsm_vendor_outstanding','bsm_vendor_payment_save','bsm_dispatch_items_register','bsm_site_material_item_receipt','bsm_return_receipt_master','bsm_return_receipt_item_master','bsm_sales_register','bsm_sales_pdf','bsm_daily_expense_summary','bsm_pending_site_receive_challans','bsm_pending_material_returns','bsm_update_contractor_payment_status','bsm_update_contractor_paid_amount','bsm_contractor_advance_available','bsm_monthly_salary','bsm_allowance_submit','bsm_allowance_list','bsm_allowance_decide','bsm_allowance_limits','bsm_salary_template_rows','bsm_salary_upload_preview','bsm_salary_commit','bsm_salary_slips','bsm_pending_dispatch','bsm_dispatch_source_stock','bsm_dispatch_prefill','bsm_site_receipt_prefill'];
+        $blocked=['bsm_consumption_items_register','bsm_material_returns_item_master','bsm_daily_outward_summary','bsm_project_tracker','bsm_project_tracker_save','bsm_pending_contractor_bill_copy','bsm_purchase_pending_approval','bsm_purchase_approval_get','bsm_purchase_approval_save','bsm_vendor_outstanding','bsm_vendor_payment_save','bsm_dispatch_items_register','bsm_site_material_item_receipt','bsm_return_receipt_master','bsm_return_receipt_item_master','bsm_sales_register','bsm_sales_pdf','bsm_daily_expense_summary','bsm_pending_site_receive_challans','bsm_pending_material_returns','bsm_update_contractor_payment_status','bsm_update_contractor_paid_amount','bsm_contractor_advance_available','bsm_monthly_salary','bsm_allowance_submit','bsm_allowance_list','bsm_allowance_decide','bsm_allowance_limits','bsm_salary_template_rows','bsm_salary_upload_preview','bsm_salary_commit','bsm_salary_slips','bsm_pending_dispatch','bsm_dispatch_source_stock','bsm_dispatch_prefill','bsm_site_receipt_prefill'];
         if(in_array($action,$blocked,true))wp_send_json_error(['message'=>'This section is no longer available.'],403);
+        if($action==='bsm_operations'&&strpos(sanitize_key($_POST['op']??''),'transfer')===0)wp_send_json_error(['message'=>'Site transfers are no longer available.'],403);
         if($action==='bsm_operations'&&strpos(sanitize_key($_POST['op']??''),'bill')===0)wp_send_json_error(['message'=>'Contractor billing is no longer available.'],403);
         if($action==='bsm_report'&&!in_array(sanitize_key($_POST['report']??''),['material_stock','stock','labour','labour_summary'],true))wp_send_json_error(['message'=>'This report is no longer available.'],403);
     }
@@ -33,6 +34,9 @@ trait BSM_Application_Scope {
         $this->verify_ajax();if(!$this->nt_admin())wp_send_json_error(['message'=>'Only administrators can review historical records.'],403);
         global $wpdb;$module=sanitize_key($_POST['module']??'');
         $definitions=[
+          'site_consumptions'=>['id','consumption_no','consumption_date','site_id','status'],
+          'material_returns'=>['id','return_no','return_date','site_id','status'],
+          'site_transfers'=>['id','transfer_no','transfer_date','from_site_id','to_site_id','status'],
           'material_dispatches'=>['id','dispatch_no','dispatch_date','site_id','status'],
           'site_receipts'=>['id','receipt_no','receipt_date','site_id','status'],
           'material_inwards'=>['id','inward_no','inward_date','site_id','vendor_id','status'],
