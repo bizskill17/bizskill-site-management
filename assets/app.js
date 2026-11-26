@@ -4627,8 +4627,19 @@ async function renderOperations(key){
 }
 async function opsHolidays(){
   setTitle('Holiday List');opsRows=(await opsCall('holiday_list')).rows;
-  $('#bsm-content').html(`${opsMeta.admin?`<div class="bsm-toolbar"><div class="bsm-spacer"></div>${opsButton('holiday-add','+ Add')}</div>`:''}<div class="bsm-panel">${opsTable(['Date','Holiday',...(opsMeta.admin?['Action']:[])],opsRows.map(h=>`<tr><td>${dateFmt(h.holiday_date)}</td><td>${esc(h.holiday_name)}</td>${opsMeta.admin?`<td>${opsButton('holiday-edit','Edit',h.id)} ${opsButton('holiday-delete','Delete',h.id)}</td>`:''}</tr>`).join(''))}</div>`);
+  $('#bsm-content').html(`${opsMeta.admin?`<div class="bsm-toolbar"><div class="bsm-spacer"></div><button type="button" id="holiday-template" class="bsm-btn">${excelIcon()} Template</button><button type="button" id="holiday-upload" class="bsm-btn">↥ Upload Excel</button><input type="file" id="holiday-upload-file" accept=".xlsx" hidden>${opsButton('holiday-add','+ Add')}</div>`:''}<div class="bsm-panel">${opsTable(['Date','Holiday',...(opsMeta.admin?['Action']:[])],opsRows.map(h=>`<tr><td>${dateFmt(h.holiday_date)}</td><td>${esc(h.holiday_name)}</td>${opsMeta.admin?`<td>${opsButton('holiday-edit','Edit',h.id)} ${opsButton('holiday-delete','Delete',h.id)}</td>`:''}</tr>`).join(''))}</div>`);
 }
+
+$(document).on('click','#holiday-template',async function(){
+ const button=$(this).prop('disabled',true);try{const blob=await BSMExcel.holidayTemplate(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Holiday-Template.xlsx';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){showToast(e.message,true);}finally{button.prop('disabled',false);}
+});
+$(document).on('click','#holiday-upload',()=>$('#holiday-upload-file').trigger('click'));
+$(document).on('change','#holiday-upload-file',async function(){
+ const file=this.files?.[0];if(!file)return;const button=$('#holiday-upload').prop('disabled',true);
+ try{const rows=await BSMExcel.read(file,'holiday'),result=await opsCall('holiday_import',{rows});await opsHolidays();showToast(result.added+' holiday added; '+result.skipped+' duplicate skipped.');}
+ catch(e){showToast(e.message||'Unable to import Holidays.',true);}finally{this.value='';button.prop('disabled',false);}
+});
+
 function opsHolidayForm(holiday={}){
   if(!opsMeta.admin)return;
   setTitle(holiday.id?'Edit Holiday':'Add Holiday');

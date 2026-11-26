@@ -295,6 +295,23 @@ trait BSM_Workforce_Transfers {
                 $row=['holiday_date'=>$this->ops_date($d['holiday_date']??''),'holiday_name'=>$name,'employee_ids'=>'[]'];
                 $duplicate=(int)$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}holidays WHERE holiday_date=%s AND holiday_name=%s AND id<>%d",$row['holiday_date'],$name,$id));if($duplicate)throw new Exception('This Holiday already exists.');
                 $this->ops_write($id?$wpdb->update($p.'holidays',$row,['id'=>$id]):$wpdb->insert($p.'holidays',$row));break;
+            case 'holiday_import':
+                $this->ops_require_admin();
+                $rows=$d['rows']??[];
+                if(!is_array($rows)||!$rows||count($rows)>1000)throw new Exception('Upload between 1 and 1000 Holiday rows.');
+                $valid=[];$seen=[];$skipped=0;
+                foreach($rows as $n=>$entry){
+                    $date=$this->ops_date($entry['holiday_date']??'');
+                    $name=sanitize_text_field($entry['holiday_name']??'');
+                    if($name===''||strlen($name)>190)throw new Exception('Row '.($n+2).': Holiday name is required and must be at most 190 characters.');
+                    $key=$date.'|'.strtolower($name);
+                    if(isset($seen[$key])||(int)$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}holidays WHERE holiday_date=%s AND holiday_name=%s",$date,$name))){$skipped++;continue;}
+                    $seen[$key]=true;$valid[]=['holiday_date'=>$date,'holiday_name'=>$name,'employee_ids'=>'[]'];
+                }
+                $wpdb->query('START TRANSACTION');
+                try{foreach($valid as $row)$this->ops_write($wpdb->insert($p.'holidays',$row));$wpdb->query('COMMIT');}
+                catch(Throwable $e){$wpdb->query('ROLLBACK');throw $e;}
+                $result=['added'=>count($valid),'skipped'=>$skipped];break;
             case 'holiday_delete':$this->ops_require_admin();$this->ops_write($wpdb->delete($p.'holidays',['id'=>(int)$d['id']]));break;
             case 'worker_delete':
                 $result=$this->ops_delete_inactive_worker((int)($d['id']??0),(int)($d['contractor_id']??0));break;

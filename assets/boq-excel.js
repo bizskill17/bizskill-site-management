@@ -17,7 +17,7 @@ async function template(items=[]){
  zip.file('xl/worksheets/sheet2.xml',declaration+'<worksheet xmlns="'+NS+'"><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Item</t></is></c></row>'+items.map((item,i)=>'<row r="'+(i+2)+'"><c r="A'+(i+2)+'" t="inlineStr"><is><t>'+xml(item.label??item.item_name??'')+'</t></is></c></row>').join('')+'</sheetData></worksheet>');
  return zip.generateAsync({type:'blob',compression:'DEFLATE',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
 }
-async function read(file){
+async function read(file,kind='boq'){
  if(!file||!/^.+\.xlsx$/i.test(file.name))throw Error('Choose an .xlsx Excel workbook.');if(file.size>2*1024*1024)throw Error('Excel file must not exceed 2 MB.');
  const Zip=zipClass();let zip;try{zip=await Zip.loadAsync(await file.arrayBuffer());}catch(e){throw Error('This is not a valid .xlsx workbook.');}
  if(Object.keys(zip.files).length>2000)throw Error('The workbook contains too many files.');
@@ -34,11 +34,25 @@ async function read(file){
   const cells={};let position=0;
   for(const cell of Array.from(row.children).filter(x=>x.localName==='c')){const col=(cell.getAttribute('r')||String.fromCharCode(65+position)).replace(/\d/g,'');position++;const type=cell.getAttribute('t'),raw=nodes(cell,'v')[0]?.textContent||'';cells[col]=(type==='s'?(shared[Number(raw)]??''):type==='inlineStr'?nodes(cell,'t').map(x=>x.textContent).join(''):raw).trim();}
   if(!Object.values(cells).some(Boolean))continue;
-  if(!header){const entries=Object.entries(cells),item=entries.find(([,v])=>/^(item|item name|material|material name)$/i.test(v)),qty=entries.find(([,v])=>/^(boq qty|boq quantity|quantity|qty)$/i.test(v));if(!item||!qty)throw Error('Use the BOQ template with Item and BOQ Qty columns.');itemCol=item[0];qtyCol=qty[0];header=true;continue;}
+  if(!header){const entries=Object.entries(cells),item=entries.find(([,v])=> (kind==='holiday'?/^(date|holiday date)$/i:/^(item|item name|material|material name)$/i).test(v)),qty=entries.find(([,v])=> (kind==='holiday'?/^(holiday|holiday name)$/i:/^(boq qty|boq quantity|quantity|qty)$/i).test(v));if(!item||!qty)throw Error(kind==='holiday'?'Use the Holiday template with Date and Holiday columns.':'Use the BOQ template with Item and BOQ Qty columns.');itemCol=item[0];qtyCol=qty[0];header=true;continue;}
   const name=cells[itemCol]||'',quantity=cells[qtyCol]||'';if(!name&&!quantity)continue;
-  rows.push({item_name:name,boq_qty:quantity});if(rows.length>1000)throw Error('Maximum 1000 BOQ items allowed.');
+  rows.push(kind==='holiday'?{holiday_date:holidayDate(name),holiday_name:quantity}:{item_name:name,boq_qty:quantity});if(rows.length>1000)throw Error('Maximum 1000 rows allowed.');
  }
- if(!rows.length)throw Error('No filled item rows found. Enter items and quantities below the headings.');return rows;
+ if(!rows.length)throw Error('No filled rows found below the headings.');return rows;
 }
-global.BSMExcel={template,read};
+
+function holidayDate(value){
+ const v=String(value).trim();
+ if(/^\d+(\.\d+)?$/.test(v)){const n=Number(v);if(n<1||n>2958465)throw Error('Invalid holiday date.');return new Date(Date.UTC(1899,11,30)+Math.floor(n)*86400000).toISOString().slice(0,10);}
+ if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;
+ const m=v.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+ throw Error('Use DD/MM/YYYY for holiday dates.');
+}
+async function holidayTemplate(){
+ const blob=await template([]),zip=await (zipClass()).loadAsync(blob);
+ zip.file('xl/workbook.xml',declaration+'<workbook xmlns="'+NS+'" xmlns:r="'+REL+'"><sheets><sheet name="Holidays" sheetId="1" r:id="rId1"/></sheets></workbook>');
+ zip.file('xl/worksheets/sheet1.xml',declaration+'<worksheet xmlns="'+NS+'"><cols><col min="1" max="1" width="22" customWidth="1"/><col min="2" max="2" width="48" customWidth="1"/></cols><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Date</t></is></c><c r="B1" t="inlineStr"><is><t>Holiday</t></is></c></row></sheetData></worksheet>');
+ return zip.generateAsync({type:'blob',compression:'DEFLATE',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+global.BSMExcel={template,read,holidayTemplate};
 })(window);
