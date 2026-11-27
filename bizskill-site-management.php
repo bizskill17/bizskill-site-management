@@ -4086,6 +4086,21 @@ final class BSM_Site_Management {
             $gst_type=(string)$wpdb->get_var($wpdb->prepare("SELECT gst_type FROM {$p}vendors WHERE id=%d",(int)$head['vendor_id']));
             if(!in_array($gst_type,['intra_state','inter_state','no_gst'],true)) $gst_type='no_gst';
         }
+        $po_id = (int)($head['purchase_order_id'] ?? 0);
+        if ($po_id) {
+            try {
+                $lock = $this->ops_lock('site_procurement');
+                register_shutdown_function(function () use ($wpdb, $lock) {
+                    $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock));
+                });
+                $this->procurement_request_transaction($committed);
+                $po_before = $this->procurement_snapshot('po', $po_id);
+                $status = $wpdb->get_var($wpdb->prepare("SELECT status FROM {$p}material_inwards WHERE id=%d FOR UPDATE", $id));
+                if ($status !== 'pending_approval') throw new Exception('Purchase is no longer pending approval');
+            } catch (Throwable $error) {
+                wp_send_json_error(['message' => $error->getMessage()]);
+            }
+        }
         $sum_taxable=$sum_cgst=$sum_sgst=$sum_igst=$sum_total=0.0; $totalApproved=0.0;
         foreach($items as $it){
             $iid=(int)($it['id']??0); $aq=round((float)($it['approved_qty']??0),2); $submittedRate=isset($it['rate'])?round((float)$it['rate'],2):null;
@@ -4112,7 +4127,16 @@ final class BSM_Site_Management {
         $ok=$wpdb->update($p.'material_inwards',['taxable_amount'=>round($sum_taxable,2),'cgst_amount'=>round($sum_cgst,2),'sgst_amount'=>round($sum_sgst,2),'igst_amount'=>round($sum_igst,2),'total_amount'=>$grand,'status'=>'approved','approved_by'=>$plugin_uid,'approved_at'=>current_time('mysql'),'updated_at'=>current_time('mysql')],['id'=>$id]);
         if($ok===false) wp_send_json_error(['message'=>'Unable to approve Purchase: '.$wpdb->last_error]);
         $this->sync_ledgers('material_inwards',$id);
-        if(!empty($head['purchase_order_id'])) $this->refresh_purchase_order_status((int)$head['purchase_order_id']);
+        if ($po_id) {
+            try {
+                $this->sp_write($this->refresh_purchase_order_status($po_id));
+                $this->procurement_record_change('po', $po_id, $po_before, 'Receipt status changed');
+                $this->sp_write($wpdb->query('COMMIT'));
+                $committed = true;
+            } catch (Throwable $error) {
+                wp_send_json_error(['message' => $error->getMessage()]);
+            }
+        }
         wp_send_json_success(['id'=>$id,'status'=>'approved','message'=>'Purchase approved successfully']);
     }
 
