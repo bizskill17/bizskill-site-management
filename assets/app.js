@@ -915,7 +915,7 @@ $(document).on('click','.po-share',async function(){
 
 
 function procurementHistoryButton(type,id){
-  return '<button type="button" class="bsm-btn bsm-btn-small bsm-procurement-history" data-type="'+type+'" data-id="'+Number(id)+'" title="Change History" aria-label="Change History"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg></button>';
+  return '<button type="button" class="bsm-procurement-history" style="display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;min-width:26px;height:24px;line-height:1" data-type="'+type+'" data-id="'+Number(id)+'" title="Change History" aria-label="Change History"><svg aria-hidden="true" style="display:block" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg></button>';
 }
 
 $(document).on('click','.bsm-procurement-history',async function(event){
