@@ -833,7 +833,7 @@ function poApprovalIcon(action){
 function poShareStatus(latest){
   if(!latest)return '';
   const labels={accepted:'Accepted',failed:'Failed',review_required:'Check provider',sending:'Sending or interrupted'};
-  return [labels[latest.status]||latest.status,latest.time&&latest.time+' IST',latest.detail].filter(Boolean).join(' · ');
+  return [labels[latest.status]||latest.status,latest.time,latest.detail].filter(Boolean).join(' · ');
 }
 function poShareActions(row){
   if(!row.sharing)return '';
