@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.181
+ * Version: 0.0.182
  * Author: BizSkill
  */
 
@@ -18,7 +18,7 @@ final class BSM_Site_Management {
     use BSM_Notifications;
     use BSM_Site_Procurement;
     use BSM_Application_Scope;
-    const VERSION = '0.0.181';
+    const VERSION = '0.0.182';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -908,7 +908,11 @@ final class BSM_Site_Management {
         $pdf="%PDF-1.4\n";$offs=[0];foreach($objs as $ix=>$o){$offs[]=strlen($pdf);$pdf.=($ix+1)." 0 obj\n$o\nendobj\n";}$xref=strlen($pdf);$pdf.="xref\n0 ".(count($objs)+1)."\n0000000000 65535 f \n";for($i=1;$i<=count($objs);$i++)$pdf.=sprintf("%010d 00000 n \n",$offs[$i]);$pdf.="trailer\n<< /Size ".(count($objs)+1)." /Root 1 0 R >>\nstartxref\n$xref\n%%EOF";
         if ($returnBytes) return $pdf;
         $up=wp_upload_dir();if(!empty($up['error']))return '';$dir=trailingslashit($up['basedir']).'bizskill-purchase-orders';if(!is_dir($dir)&&!wp_mkdir_p($dir))return '';
-        $vendorFile=preg_replace('~[\\\\/:*?"<>|]+~','-',trim((string)($h['vendor_name']??'Supplier')));$poFile=preg_replace('/[^A-Za-z0-9_-]+/','',(string)($h['po_no']?:$id));$fn=trim($vendorFile).' - '.$poFile.'.pdf';$path=trailingslashit($dir).$fn;if(@file_put_contents($path,$pdf,LOCK_EX)===false)return '';return trailingslashit($up['baseurl']).'bizskill-purchase-orders/'.rawurlencode($fn);
+        $number = str_replace('/', '-', (string) ($h['po_no'] ?: $id));
+        $filename = preg_replace('/[^A-Za-z0-9_-]+/', '-', $number).'.pdf';
+        $path = trailingslashit($dir).$filename;
+        if (@file_put_contents($path, $pdf, LOCK_EX) !== strlen($pdf)) return '';
+        return trailingslashit($up['baseurl']).'bizskill-purchase-orders/'.$filename;
     }
 
     public function legacy_ajax_purchase_order_cancel(){
