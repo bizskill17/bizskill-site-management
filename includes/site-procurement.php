@@ -131,6 +131,200 @@ trait BSM_Site_Procurement {
             $h['received_qty']=0;foreach($items as &$it){$it['received_qty']=$this->po_item_received_qty($it['id']);$it['pending_qty']=max(0,round($it['po_qty']-$it['received_qty'],2));$h['received_qty']+=$it['received_qty'];}unset($it);wp_send_json_success(['head'=>$h,'items'=>$items]);
         }catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);}
     }
+
+    private function po_share_eligible($status) {
+        return in_array($status, ['approved', 'sent', 'partly_received', 'partially_received', 'fully_received'], true);
+    }
+
+    private function po_share_recipient($channel, $value) {
+        $value = trim((string) $value);
+        if ($channel === 'email') return is_email($value) ? $value : '';
+        $mobile = preg_replace('/[\s().-]+/', '', $value);
+        if (preg_match('/^[6-9][0-9]{9}$/D', $mobile)) return '91'.$mobile;
+        return preg_match('/^\+?[1-9][0-9]{10,14}$/D', $mobile) ? ltrim($mobile, '+') : '';
+    }
+
+    private function po_share_key($id, $channel) {
+        return 'bsm_po_share_'.(int) $id.'_'.$channel;
+    }
+
+    private function po_share_summary($attempt) {
+        if (!$attempt) return null;
+        return [
+            'status' => $attempt['status'],
+            'recipient' => $attempt['recipient'],
+            'time' => wp_date('d/m/Y h:i A', $attempt['at'], new DateTimeZone('Asia/Kolkata')),
+            'detail' => $attempt['detail'],
+        ];
+    }
+
+    private function po_share_preview($po, $channel, $recipient) {
+        global $wpdb;
+        $company = $wpdb->get_row("SELECT company_name,email FROM {$this->prefix}company_settings ORDER BY id DESC LIMIT 1", ARRAY_A) ?: [];
+        $companyName = sanitize_text_field($company['company_name'] ?? '') ?: 'BizSkill';
+        $number = sanitize_text_field($po['po_no']);
+        $subject = 'Purchase Order '.$number.' | '.$companyName;
+        $message = 'Dear '.($po['vendor_name'] ?: 'Supplier').",\n\nPlease find attached approved Purchase Order ".$number.".\n";
+        $message .= "\nDelivery Site: ".($po['site_name'] ?: '—');
+        if (!empty($po['site_location'])) $message .= "\nDelivery Address: ".$po['site_location'];
+        $message .= "\nRequired Delivery Date: ".$this->nt_date($po['required_date']);
+        $message .= "\n\nPlease confirm receipt and your expected delivery date.\n\nRegards,\nPurchase Team\n".$companyName;
+        $revision = hash('sha256', wp_json_encode([$po['vendor_id'], $po['approved_at'], $po['updated_at'], $recipient, $subject, $message]));
+        return [
+            'recipient' => $recipient,
+            'subject' => $subject,
+            'message' => $message,
+            'filename' => sanitize_file_name('PO-'.$number.'.pdf'),
+            'reply_to' => is_email($company['email'] ?? '') ? $company['email'] : '',
+            'revision' => $revision,
+        ];
+    }
+
+    public function ajax_po_share() {
+        $this->verify_ajax();
+        $this->sp_access(['purchase_order_master']);
+        global $wpdb;
+        $id = absint($_POST['id'] ?? 0);
+        $channel = sanitize_key($_POST['channel'] ?? '');
+        $send = ($_POST['mode'] ?? '') === 'send';
+        if (!$id || !in_array($channel, ['email', 'whatsapp'], true)) {
+            wp_send_json_error(['message' => 'Select a PO and a sharing channel.']);
+        }
+
+        $lock = null;
+        try {
+            if ($send) $lock = $this->ops_lock('site_procurement');
+            $po = $this->sp_po_head($id);
+            if (!$this->po_share_eligible($po['status'])) throw new Exception('Only approved POs can be shared.');
+            $supplier = $wpdb->get_row($wpdb->prepare("SELECT mobile,email FROM {$this->prefix}vendors WHERE id=%d", $po['vendor_id']), ARRAY_A);
+            $field = $channel === 'email' ? 'email' : 'mobile';
+            $recipient = $this->po_share_recipient($channel, $supplier[$field] ?? '');
+            if (!$recipient) throw new Exception('Update the supplier’s '.$field.' in Suppliers Master.');
+            $preview = $this->po_share_preview($po, $channel, $recipient);
+            $key = $this->po_share_key($id, $channel);
+            $history = get_option($key, []);
+            $last = $history ? end($history) : null;
+            $preview['latest'] = $this->po_share_summary($last);
+
+            if ($send) {
+                $revision = sanitize_text_field($_POST['revision'] ?? '');
+                if (!hash_equals($preview['revision'], $revision)) throw new Exception('The PO or recipient changed. Reopen the preview.');
+                $request = sanitize_text_field($_POST['request'] ?? '');
+                if (!preg_match('/^[a-zA-Z0-9-]{16,64}$/D', $request)) throw new Exception('Reopen the preview before sending.');
+                foreach ($history as $attempt) {
+                    if ($attempt['request'] === $request) throw new Exception('This send was already submitted. Reopen the preview to see its status.');
+                }
+                if (($last['request'] ?? '') !== sanitize_text_field($_POST['previous'] ?? '')) throw new Exception('The send history changed. Reopen the preview.');
+                $confirmed = ($_POST['resend'] ?? '') === '1';
+                if ($last && in_array($last['status'], ['accepted', 'review_required', 'sending'], true) && !$confirmed) {
+                    throw new Exception('Confirm the resend before continuing.');
+                }
+
+                $attempt = [
+                    'request' => $request, 'at' => time(), 'recipient' => $recipient,
+                    'status' => 'sending', 'detail' => 'Send started.', 'user_id' => get_current_user_id(),
+                ];
+                $history[] = $attempt;
+                if (!update_option($key, $history, false)) throw new Exception('Unable to record the send attempt.');
+                try {
+                    $document = $this->generate_purchase_order_pdf($id, true);
+                    [$attempt['status'], $attempt['detail']] = !$document
+                        ? ['failed', 'Unable to generate the PO PDF.']
+                        : ($channel === 'email' ? $this->po_share_email($preview, $document) : $this->po_share_whatsapp($preview, $document));
+                } catch (Throwable $error) {
+                    $attempt['status'] = 'review_required';
+                    $attempt['detail'] = 'Send interrupted. Check the provider before retrying.';
+                }
+                $history[count($history) - 1] = $attempt;
+                if (!update_option($key, $history, false)) throw new Exception('Unable to save the result. Check the provider before retrying.');
+                $preview['latest'] = $this->po_share_summary($attempt);
+                $last = $attempt;
+            }
+            $preview['previous'] = $last['request'] ?? '';
+            unset($preview['reply_to']);
+            $result = $preview;
+        } catch (Throwable $error) {
+            $failure = $error->getMessage();
+        } finally {
+            if ($lock) $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock));
+        }
+        if (isset($failure)) wp_send_json_error(['message' => $failure]);
+        wp_send_json_success($result);
+    }
+
+    private function po_share_email($preview, $document) {
+        require_once ABSPATH.'wp-admin/includes/file.php';
+        $file = wp_tempnam($preview['filename']);
+        if (!$file) return ['failed', 'Unable to prepare the PO PDF attachment.'];
+        // Use a private temporary directory so the attachment retains its PDF filename.
+        $dir = $file.'.d';
+        $path = trailingslashit($dir).$preview['filename'];
+        try {
+            if (!mkdir($dir, 0700) || file_put_contents($path, $document) !== strlen($document)) {
+                return ['failed', 'Unable to prepare the PO PDF attachment.'];
+            }
+            $headers = $preview['reply_to'] ? ['Reply-To: '.$preview['reply_to']] : [];
+            return wp_mail($preview['recipient'], $preview['subject'], $preview['message'], $headers, [$path])
+                ? ['accepted', 'Accepted by the mail service.']
+                : ['failed', 'The mail service could not send this email.'];
+        } finally {
+            if (is_file($path)) unlink($path);
+            if (is_dir($dir)) rmdir($dir);
+            unlink($file);
+        }
+    }
+
+    private function po_share_whatsapp($preview, $document) {
+        $settings = $this->nt_settings();
+        $password = $this->nt_password($settings['password']);
+        if (!$settings['username'] || !$password || get_option('bsm_notifications_blocked')) {
+            return ['failed', 'Check the MessageAutoSender credentials in Settings.'];
+        }
+        $token = bin2hex(random_bytes(24));
+        if (!set_transient('bsm_po_share_pdf_'.$token, ['pdf' => base64_encode($document), 'filename' => $preview['filename']], DAY_IN_SECONDS)) {
+            return ['failed', 'Unable to prepare the PO PDF attachment.'];
+        }
+        $url = add_query_arg(['action' => 'bsm_po_share_pdf', 'token' => $token], admin_url('admin-ajax.php'));
+        $response = wp_remote_post('https://app.messageautosender.com/api/v1/message/create', [
+            'timeout' => 20,
+            'redirection' => 0,
+            'headers' => [
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+                'Authorization' => 'Basic '.base64_encode($settings['username'].':'.$password),
+            ],
+            'body' => wp_json_encode([
+                'receiverMobileNo' => $preview['recipient'],
+                'message' => [$preview['message']],
+                'filePathUrl' => [$url],
+            ]),
+        ]);
+        if (is_wp_error($response)) return ['review_required', 'Provider outcome unknown. Check WhatsApp history before retrying.'];
+        $code = wp_remote_retrieve_response_code($response);
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+        $status = strtolower((string) ($body['status'] ?? ''));
+        if ($code >= 500) return ['review_required', 'Provider outcome unknown (HTTP '.$code.'). Check WhatsApp history.'];
+        if ($code < 200 || $code >= 300 || !empty($body['error']) || (isset($body['success']) && !$body['success']) || in_array($status, ['failed', 'error'], true)) {
+            delete_transient('bsm_po_share_pdf_'.$token);
+            return ['failed', 'MessageAutoSender rejected the request (HTTP '.$code.').'];
+        }
+        if (!empty($body['success']) || !empty($body['id']) || !empty($body['messageId']) || !empty($body['data']) || in_array($status, ['success', 'accepted', 'queued'], true)) {
+            return ['accepted', 'Accepted by MessageAutoSender.'];
+        }
+        return ['review_required', 'Provider response was inconclusive. Check WhatsApp history before retrying.'];
+    }
+
+    public function ajax_po_share_pdf() {
+        $token = sanitize_text_field($_GET['token'] ?? '');
+        $file = preg_match('/^[0-9a-f]{48}$/D', $token) ? get_transient('bsm_po_share_pdf_'.$token) : false;
+        if (!$file) wp_die('Attachment unavailable.', '', ['response' => 404]);
+        nocache_headers();
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="'.$file['filename'].'"');
+        echo base64_decode($file['pdf'], true);
+        exit;
+    }
+
     public function ajax_purchase_order_master() {
         $this->sp_access(['purchase_order_master','pending_po_approval']);
         $this->verify_ajax();$this->site_procurement_upgrade();global $wpdb;$p=$this->prefix;
@@ -138,9 +332,20 @@ trait BSM_Site_Procurement {
         foreach(['site_id','vendor_id'] as $key)if(!empty($_POST[$key])){$where.=" AND po.$key=%d";$args[]=(int)$_POST[$key];}
         if(!empty($_POST['status'])){$where.=' AND po.status=%s';$args[]=sanitize_key($_POST['status']);}
         if(!empty($_POST['search'])){$where.=' AND (po.po_no LIKE %s OR s.site_name LIKE %s OR r.requisition_no LIKE %s OR v.vendor_name LIKE %s)';$term='%'.$wpdb->esc_like(sanitize_text_field($_POST['search'])).'%';array_push($args,$term,$term,$term,$term);}
-        $sql="SELECT po.*,s.site_name,r.requisition_no,v.vendor_name,u.name created_by_name FROM {$p}purchase_orders po LEFT JOIN {$p}sites s ON s.id=po.site_id LEFT JOIN {$p}material_requisitions r ON r.id=po.requisition_id LEFT JOIN {$p}vendors v ON v.id=po.vendor_id LEFT JOIN {$p}users u ON u.id=po.created_by WHERE $where ORDER BY po.id DESC";
+        $sql="SELECT po.*,s.site_name,r.requisition_no,v.vendor_name,v.mobile supplier_mobile,v.email supplier_email,u.name created_by_name FROM {$p}purchase_orders po LEFT JOIN {$p}sites s ON s.id=po.site_id LEFT JOIN {$p}material_requisitions r ON r.id=po.requisition_id LEFT JOIN {$p}vendors v ON v.id=po.vendor_id LEFT JOIN {$p}users u ON u.id=po.created_by WHERE $where ORDER BY po.id DESC";
         $rows=$wpdb->get_results($args?$wpdb->prepare($sql,$args):$sql,ARRAY_A)?:[];
-        foreach($rows as &$x){$x['approved_date']=$this->requisition_approved_date($x['approved_at']??'');$x['created_time_ist']='';if(!empty($x['created_at'])&&substr($x['created_at'],0,4)!=='0000'){try{$stamp=new DateTimeImmutable($x['created_at'],wp_timezone());$x['created_time_ist']=$stamp->setTimezone(new DateTimeZone('Asia/Kolkata'))->format('H:i');}catch(Exception $e){}}$x['approved_by_name']=$this->nt_name($x['approved_by']??0,true);$x['po_qty']=0;$x['received_qty']=0;$x['total_amount']=0;$its=$wpdb->get_results($wpdb->prepare("SELECT * FROM {$p}purchase_order_items WHERE purchase_order_id=%d",$x['id']),ARRAY_A)?:[];$x['item_count']=count($its);foreach($its as $it){$x['po_qty']+=$it['po_qty'];$x['received_qty']+=$this->po_item_received_qty($it['id']);$x['total_amount']+=$it['po_qty']*$it['rate'];}$x['pending_qty']=max(0,round($x['po_qty']-$x['received_qty'],2));}unset($x);wp_send_json_success(['rows'=>$rows]);
+        foreach($rows as &$x){
+            if ($this->po_share_eligible($x['status'])) {
+                foreach (['whatsapp' => 'supplier_mobile', 'email' => 'supplier_email'] as $channel => $field) {
+                    $history = get_option($this->po_share_key($x['id'], $channel), []);
+                    $x['sharing'][$channel] = [
+                        'available' => (bool) $this->po_share_recipient($channel, $x[$field]),
+                        'latest' => $this->po_share_summary($history ? end($history) : null),
+                    ];
+                }
+            }
+            unset($x['supplier_mobile'], $x['supplier_email']);
+            $x['approved_date']=$this->requisition_approved_date($x['approved_at']??'');$x['created_time_ist']='';if(!empty($x['created_at'])&&substr($x['created_at'],0,4)!=='0000'){try{$stamp=new DateTimeImmutable($x['created_at'],wp_timezone());$x['created_time_ist']=$stamp->setTimezone(new DateTimeZone('Asia/Kolkata'))->format('H:i');}catch(Exception $e){}}$x['approved_by_name']=$this->nt_name($x['approved_by']??0,true);$x['po_qty']=0;$x['received_qty']=0;$x['total_amount']=0;$its=$wpdb->get_results($wpdb->prepare("SELECT * FROM {$p}purchase_order_items WHERE purchase_order_id=%d",$x['id']),ARRAY_A)?:[];$x['item_count']=count($its);foreach($its as $it){$x['po_qty']+=$it['po_qty'];$x['received_qty']+=$this->po_item_received_qty($it['id']);$x['total_amount']+=$it['po_qty']*$it['rate'];}$x['pending_qty']=max(0,round($x['po_qty']-$x['received_qty'],2));}unset($x);wp_send_json_success(['rows'=>$rows]);
     }
     public function ajax_purchase_order_items_master() {
         $this->sp_po_item_rows(false);
