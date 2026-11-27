@@ -845,7 +845,7 @@ function poShareActions(row){
     const contact=row.sharing[channel], label=channel==='email'?'Email':'WhatsApp';
     const field=channel==='email'?'Email':'Mobile';
     const status=poShareStatus(contact.latest);
-    const title=(contact.available?label+' approved PO':'Update supplier '+field+' in Suppliers Master')+(status?' · '+status:'');
+    const title=(contact.available?label+' Approved PO':'Update supplier '+field+' in Suppliers Master')+(status?' · '+status:'');
     const safeTitle=esc(title).replace(/"/g,'&quot;');
     const color=channel==='email'?'#1d5fbf':'#12804a';
     const icon='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true">'+paths[channel]+'</svg>';
