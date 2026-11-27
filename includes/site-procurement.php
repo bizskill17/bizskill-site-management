@@ -172,7 +172,7 @@ trait BSM_Site_Procurement {
         $message .= "\nDelivery Site: ".($po['site_name'] ?: '—');
         if (!empty($po['site_location'])) $message .= "\nDelivery Address: ".$po['site_location'];
         $message .= "\nRequired Delivery Date: ".$this->nt_date($po['required_date']);
-        $message .= "\n\nPlease confirm receipt and your expected delivery date.\n\nRegards,\n".($channel === 'email' ? '' : "Purchase Team\n").$companyName;
+        $message .= "\n\nPlease confirm receipt and your expected delivery date.\n\nRegards,\n".$companyName;
         $revision = hash('sha256', wp_json_encode([$po['vendor_id'], $po['approved_at'], $po['updated_at'], $recipient, $subject, $message, $channel === 'email' ? $senderEmail : '']));
         return [
             'recipient' => $recipient,
@@ -311,24 +311,27 @@ trait BSM_Site_Procurement {
         if (!$settings['username'] || !$password || get_option('bsm_notifications_blocked')) {
             return ['failed', 'Check the MessageAutoSender credentials in Settings.'];
         }
-        $token = bin2hex(random_bytes(24));
-        if (!set_transient('bsm_po_share_pdf_'.$token, ['pdf' => base64_encode($document), 'filename' => $preview['filename']], DAY_IN_SECONDS)) {
-            return ['failed', 'Unable to prepare the PO PDF attachment.'];
+        $boundary = 'bsm-'.bin2hex(random_bytes(24));
+        $parts = [
+            'receiverMobileNo' => $preview['recipient'],
+            'message' => $preview['message'],
+        ];
+        $payload = '';
+        foreach ($parts as $name => $value) {
+            $payload .= "--$boundary\r\nContent-Disposition: form-data; name=\"$name\"\r\n\r\n$value\r\n";
         }
-        $url = add_query_arg(['action' => 'bsm_po_share_pdf', 'token' => $token], admin_url('admin-ajax.php'));
+        $filename = preg_replace('/[^A-Za-z0-9._-]/', '-', $preview['filename']);
+        $payload .= "--$boundary\r\nContent-Disposition: form-data; name=\"uploadFile\"; filename=\"$filename\"\r\n";
+        $payload .= "Content-Type: application/pdf\r\n\r\n".$document."\r\n--$boundary--\r\n";
         $response = wp_remote_post('https://app.messageautosender.com/api/v1/message/create', [
             'timeout' => 20,
             'redirection' => 0,
             'headers' => [
                 'Accept' => 'application/json',
-                'Content-Type' => 'application/json',
+                'Content-Type' => 'multipart/form-data; boundary='.$boundary,
                 'Authorization' => 'Basic '.base64_encode($settings['username'].':'.$password),
             ],
-            'body' => wp_json_encode([
-                'receiverMobileNo' => $preview['recipient'],
-                'message' => [$preview['message']],
-                'filePathUrl' => [$url],
-            ]),
+            'body' => $payload,
         ]);
         if (is_wp_error($response)) return ['review_required', 'Provider outcome unknown. Check WhatsApp history before retrying.'];
         $code = wp_remote_retrieve_response_code($response);
@@ -336,7 +339,6 @@ trait BSM_Site_Procurement {
         $status = strtolower((string) ($body['status'] ?? ''));
         if ($code >= 500) return ['review_required', 'Provider outcome unknown (HTTP '.$code.'). Check WhatsApp history.'];
         if ($code < 200 || $code >= 300 || !empty($body['error']) || (isset($body['success']) && !$body['success']) || in_array($status, ['failed', 'error'], true)) {
-            delete_transient('bsm_po_share_pdf_'.$token);
             return ['failed', 'MessageAutoSender rejected the request (HTTP '.$code.').'];
         }
         $confirmed = preg_match('/^2[0-9]{2}$/D', $status)
