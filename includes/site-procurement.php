@@ -162,6 +162,10 @@ trait BSM_Site_Procurement {
         global $wpdb;
         $company = $wpdb->get_row("SELECT company_name,email FROM {$this->prefix}company_settings ORDER BY id DESC LIMIT 1", ARRAY_A) ?: [];
         $companyName = sanitize_text_field($company['company_name'] ?? '') ?: 'BizSkill';
+        $senderEmail = trim((string) ($company['email'] ?? ''));
+        if ($channel === 'email' && !is_email($senderEmail)) {
+            throw new Exception('Enter a valid Email in Company Settings before sending a PO.');
+        }
         $number = sanitize_text_field($po['po_no']);
         $subject = 'Purchase Order '.$number.' | '.$companyName;
         $message = 'Dear '.($po['vendor_name'] ?: 'Supplier').",\n\nPlease find attached approved Purchase Order ".$number.".\n";
@@ -169,13 +173,14 @@ trait BSM_Site_Procurement {
         if (!empty($po['site_location'])) $message .= "\nDelivery Address: ".$po['site_location'];
         $message .= "\nRequired Delivery Date: ".$this->nt_date($po['required_date']);
         $message .= "\n\nPlease confirm receipt and your expected delivery date.\n\nRegards,\n".($channel === 'email' ? '' : "Purchase Team\n").$companyName;
-        $revision = hash('sha256', wp_json_encode([$po['vendor_id'], $po['approved_at'], $po['updated_at'], $recipient, $subject, $message]));
+        $revision = hash('sha256', wp_json_encode([$po['vendor_id'], $po['approved_at'], $po['updated_at'], $recipient, $subject, $message, $channel === 'email' ? $senderEmail : '']));
         return [
             'recipient' => $recipient,
             'subject' => $subject,
             'message' => $message,
             'filename' => sanitize_file_name(str_replace('/', '-', $number).'.pdf') ?: 'Purchase-Order.pdf',
-            'reply_to' => is_email($company['email'] ?? '') ? $company['email'] : '',
+            'sender_email' => $senderEmail,
+            'sender_name' => $companyName,
             'revision' => $revision,
         ];
     }
@@ -241,7 +246,7 @@ trait BSM_Site_Procurement {
                 $last = $attempt;
             }
             $preview['previous'] = $last['request'] ?? '';
-            unset($preview['reply_to']);
+            unset($preview['sender_email'], $preview['sender_name']);
             $result = $preview;
         } catch (Throwable $error) {
             $failure = $error->getMessage();
@@ -263,7 +268,12 @@ trait BSM_Site_Procurement {
             if (!mkdir($dir, 0700) || file_put_contents($path, $document) !== strlen($document)) {
                 return ['failed', 'Unable to prepare the PO PDF attachment.'];
             }
-            $headers = $preview['reply_to'] ? ['Reply-To: '.$preview['reply_to']] : [];
+            $fromEmail = static function () use ($preview) { return $preview['sender_email']; };
+            $fromName = static function () use ($preview) { return $preview['sender_name']; };
+            $headers = [
+                'From: '.$preview['sender_name'].' <'.$preview['sender_email'].'>',
+                'Reply-To: '.$preview['sender_email'],
+            ];
             $reason = '';
             $capture = static function ($error) use (&$reason) {
                 $message = $error->get_error_message();
@@ -275,6 +285,8 @@ trait BSM_Site_Procurement {
                     $reason = 'WordPress mail failed. Check the mail plugin log for the transport error.';
                 }
             };
+            add_filter('wp_mail_from', $fromEmail, PHP_INT_MAX);
+            add_filter('wp_mail_from_name', $fromName, PHP_INT_MAX);
             add_action('wp_mail_failed', $capture);
             try {
                 $accepted = wp_mail($preview['recipient'], $preview['subject'], $preview['message'], $headers, [$path]);
@@ -283,6 +295,8 @@ trait BSM_Site_Procurement {
                     : ['failed', $reason ?: 'WordPress mail returned a failure. Check the mail configuration and retry.'];
             } finally {
                 remove_action('wp_mail_failed', $capture);
+                remove_filter('wp_mail_from_name', $fromName, PHP_INT_MAX);
+                remove_filter('wp_mail_from', $fromEmail, PHP_INT_MAX);
             }
         } finally {
             if (is_file($path)) unlink($path);
