@@ -168,7 +168,7 @@ trait BSM_Site_Procurement {
         $message .= "\nDelivery Site: ".($po['site_name'] ?: '—');
         if (!empty($po['site_location'])) $message .= "\nDelivery Address: ".$po['site_location'];
         $message .= "\nRequired Delivery Date: ".$this->nt_date($po['required_date']);
-        $message .= "\n\nPlease confirm receipt and your expected delivery date.\n\nRegards,\nPurchase Team\n".$companyName;
+        $message .= "\n\nPlease confirm receipt and your expected delivery date.\n\nRegards,\n".($channel === 'email' ? '' : "Purchase Team\n").$companyName;
         $revision = hash('sha256', wp_json_encode([$po['vendor_id'], $po['approved_at'], $po['updated_at'], $recipient, $subject, $message]));
         return [
             'recipient' => $recipient,
