@@ -872,7 +872,7 @@ $(document).on('click','.po-share',async function(){
   const dialog=document.createElement('dialog');
   dialog.setAttribute('aria-labelledby','bsm-po-share-title');
   dialog.style.cssText='max-width:min(500px, calc(100vw - 32px));width:100%;padding:0;overflow:hidden;border:1px solid #b5c9e8;border-radius:12px;color:#172b49;font:14px/1.4 system-ui,sans-serif';
-  $(dialog).html('<div style="max-height:65vh;overflow:auto;padding:12px 16px 8px;overflow-wrap:anywhere"><h3 id="bsm-po-share-title" style="margin:0 0 8px;font-size:16px;line-height:1.35"></h3><p class="po-share-recipient" style="margin:0 0 4px"></p><p class="po-share-subject" style="margin:0 0 4px"></p><pre class="po-share-message" style="white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;margin:8px 0"></pre><p style="margin:0">Attachment: <button type="button" class="po-pdf po-share-attachment" style="width:auto;height:auto;overflow-wrap:anywhere" title="Open PO PDF"></button></p></div><footer style="padding:8px 16px;border-top:1px solid #b5c9e8;font-size:13px"><p class="po-share-result" role="status" style="margin:0 0 8px;overflow-wrap:anywhere"></p><div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" class="bsm-btn po-share-close">Close</button><button type="button" class="bsm-btn bsm-btn-primary po-share-send"></button></div></footer>');
+  $(dialog).html('<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px 4px 16px"><h3 id="bsm-po-share-title" style="margin:0;font-size:16px;line-height:1.35"></h3><button type="button" class="bsm-btn bsm-btn-small po-share-close" aria-label="Close preview" title="Close" style="min-width:30px;width:30px;height:30px;padding:0;font-size:20px;line-height:1">&times;</button></div><div style="max-height:60vh;overflow:auto;padding:4px 16px 8px;overflow-wrap:anywhere"><p class="po-share-recipient" style="margin:0 0 4px"></p><p class="po-share-subject" style="margin:0 0 4px"></p><pre class="po-share-message" style="white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;margin:8px 0"></pre><p style="margin:0">Attachment: <button type="button" class="po-pdf po-share-attachment" style="width:auto;height:auto;overflow-wrap:anywhere" title="Open PO PDF"></button></p></div><footer style="padding:8px 16px;border-top:1px solid #b5c9e8;font-size:13px"><p class="po-share-result" role="status" style="margin:0 0 8px;overflow-wrap:anywhere"></p><div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" class="bsm-btn po-share-close">Close</button><button type="button" class="bsm-btn bsm-btn-primary po-share-send"></button></div></footer>');
   $(dialog).find('h3').text(label+' Approved PO');
   $(dialog).find('.po-share-recipient').text('To: '+preview.recipient);
   $(dialog).find('.po-share-subject').text(channel==='email'?'Subject: '+preview.subject:'').toggle(channel==='email');
@@ -905,7 +905,7 @@ $(document).on('click','.po-share',async function(){
     }finally{
       $send.removeAttr('aria-busy').hide();
       $close.prop('disabled',false);
-      if(dialog.open)$close.focus();
+      if(dialog.open)$close.last().focus();
       if(App.current==='purchase_order_master')loadPurchaseOrderMaster();
     }
   });
