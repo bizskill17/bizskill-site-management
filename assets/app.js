@@ -829,9 +829,82 @@ function poApprovalIcon(action){
   const path=action==='approve'?'<path d="m5 12 4 4L19 6"/>':action==='reject'?'<path d="m7 7 10 10M17 7 7 17"/>':'<circle cx="12" cy="12" r="9"/><path d="m6 6 12 12"/>';
   return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">'+path+'</svg>';
 }
+
+function poShareStatus(latest){
+  if(!latest)return '';
+  const labels={accepted:'Accepted',failed:'Failed',review_required:'Check provider',sending:'Sending or interrupted'};
+  return [labels[latest.status]||latest.status,latest.time&&latest.time+' IST',latest.detail].filter(Boolean).join(' · ');
+}
+function poShareActions(row){
+  if(!row.sharing)return '';
+  const paths={
+    whatsapp:'<path d="M20.5 11.5a8.5 8.5 0 0 1-12.2 7.7L4 20l.8-4.3a8.5 8.5 0 1 1 15.7-4.2Z"/><path d="M9 8c0 3 3 6 6 6l1-1-2-1-1 1c-1.6-.7-2.3-1.4-3-3l1-1-1-2z"/>',
+    email:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/>'
+  };
+  return ['whatsapp','email'].map(channel=>{
+    const contact=row.sharing[channel], label=channel==='email'?'Email':'WhatsApp';
+    const field=channel==='email'?'Email':'Mobile';
+    const status=poShareStatus(contact.latest);
+    const title=(contact.available?label+' approved PO':'Update supplier '+field+' in Suppliers Master')+(status?' · '+status:'');
+    const safeTitle=esc(title).replace(/"/g,'&quot;');
+    const color=channel==='email'?'#1d5fbf':'#12804a';
+    const icon='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true">'+paths[channel]+'</svg>';
+    return '<button type="button" class="bsm-btn bsm-btn-small po-share" data-id="'+Number(row.id)+'" data-channel="'+channel+'" title="'+safeTitle+'" aria-label="'+safeTitle+'" aria-disabled="'+(!contact.available)+'" style="color:'+color+';min-width:30px;width:30px;height:30px;padding:4px;opacity:'+(contact.available?'1':'.45')+'">'+icon+'</button>';
+  }).join('');
+}
+
+$(document).on('click','.po-share',async function(){
+  if(this.getAttribute('aria-disabled')==='true'||this.disabled)return;
+  const source=this, id=Number(this.dataset.id), channel=this.dataset.channel;
+  const label=channel==='email'?'Email':'WhatsApp';
+  source.disabled=true;
+  let response;
+  try{
+    response=await ajax('bsm_po_share',{id,channel});
+  }catch(error){
+    showToast(error.responseJSON?.data?.message||'Could not open the PO preview.',true);
+    return;
+  }finally{
+    source.disabled=false;
+  }
+  if(!response.success){showToast(response.data?.message||'Could not open the PO preview.',true);return;}
+  const preview=response.data;
+  const resend=['accepted','review_required','sending'].includes(preview.latest?.status);
+  const dialog=document.createElement('dialog');
+  dialog.setAttribute('aria-labelledby','bsm-po-share-title');
+  dialog.style.cssText='max-width:min(500px, calc(100vw - 32px));width:100%;padding:20px;border:1px solid #b5c9e8;border-radius:12px;color:#172b49';
+  $(dialog).html('<h3 id="bsm-po-share-title"></h3><p class="po-share-recipient"></p><p class="po-share-subject"></p><pre class="po-share-message" style="white-space:pre-wrap;overflow-wrap:anywhere;font:inherit"></pre><p>Attachment: <button type="button" class="bsm-pdf-link po-pdf po-share-attachment" title="Open PO PDF"></button></p><p class="po-share-result" role="status"></p><div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" class="bsm-btn po-share-close">Close</button><button type="button" class="bsm-btn bsm-btn-primary po-share-send"></button></div>');
+  $(dialog).find('h3').text(label+' approved PO');
+  $(dialog).find('.po-share-recipient').text('To: '+preview.recipient);
+  $(dialog).find('.po-share-subject').text(channel==='email'?'Subject: '+preview.subject:'').toggle(channel==='email');
+  $(dialog).find('.po-share-message').text(preview.message);
+  $(dialog).find('.po-share-attachment').attr('data-id',id).text(preview.filename);
+  $(dialog).find('.po-share-result').text(poShareStatus(preview.latest));
+  const $send=$(dialog).find('.po-share-send').text(resend?'Confirm Resend':preview.latest?.status==='failed'?'Retry':'Send '+label);
+  const $close=$(dialog).find('.po-share-close').on('click',()=>dialog.close());
+  const request=Array.from(crypto.getRandomValues(new Uint8Array(16)),byte=>byte.toString(16).padStart(2,'0')).join('');
+  dialog.addEventListener('cancel',event=>{if($close.prop('disabled'))event.preventDefault();});
+  dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+  $send.one('click',async ()=>{
+    $send.prop('disabled',true);
+    $close.prop('disabled',true);
+    try{
+      const result=await ajax('bsm_po_share',{id,channel,mode:'send',request,revision:preview.revision,previous:preview.previous,resend:resend?1:0});
+      $(dialog).find('.po-share-result').text(result.success?poShareStatus(result.data.latest):result.data?.message||'Unable to send.');
+    }catch(error){
+      $(dialog).find('.po-share-result').text(error.responseJSON?.data?.message||'Send outcome unknown. Reopen the preview to check the status.');
+    }finally{
+      $close.prop('disabled',false).focus();
+      if(App.current==='purchase_order_master')loadPurchaseOrderMaster();
+    }
+  });
+  document.body.append(dialog);
+  dialog.showModal();
+});
+
 async function loadPurchaseOrderMaster(exportAll=false){
   const pendingApproval=App.current==='pending_po_approval';
-  const r=await ajax('bsm_purchase_order_master',{site_id:$('#po_master_site').val()||'',search:$('#po_master_search').val()||'',vendor_id:$('#po_master_vendor').val()||'',status:pendingApproval?'pending_approval':($('#po_master_status').val()||'')});if(!r.success){if(!exportAll)$('#po_master_list').html('<div class="bsm-empty">Unable to load PO Master.</div>');return null;}const rows=r.data.rows||[];if(exportAll)return rows;const amt=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>PO No.</th>'+(pendingApproval?'<th>Date</th>':'<th>Creation Date</th><th>Approved Date</th>')+'<th>Site</th><th>Requisition No.</th><th>Supplier</th><th>Required Date</th><th>Items</th><th class="num">PO Qty</th><th class="num">Received</th><th class="num">Pending</th><th class="num">Total</th>'+'<th>Created By</th>'+(pendingApproval?'':'<th>Approved By</th>')+'<th>PDF</th>'+(pendingApproval?'':'<th>Status</th>')+'<th>Action</th></tr></thead><tbody>';rows.forEach((x,i)=>{const pdf=`<button type="button" class="bsm-pdf-link po-pdf" data-id="${x.id}" title="Download PO PDF" aria-label="Download PO PDF"><svg class="bsm-pdf-icon" viewBox="0 0 32 36" aria-hidden="true"><path d="M6.5 1.5h12l7 7v25H6.5z" fill="#fff" stroke="#ef2020" stroke-width="2" stroke-linejoin="round"/><path d="M18.5 1.5v7h7" fill="none" stroke="#ef2020" stroke-width="2" stroke-linejoin="round"/><rect x="3" y="19" width="26" height="11" rx="2" fill="#ef2020"/><text x="16" y="27.1" text-anchor="middle" font-size="8.3" font-weight="700" font-family="Arial,Helvetica,sans-serif" fill="#fff">PDF</text></svg></button>`;const edit=String(x.status||'')!=='cancelled'?`<button type="button" class="bsm-action-edit po-edit" data-id="${x.id}" title="Edit PO">✎</button>`:'';const cancel=(Number(x.received_qty||0)<=0.009&&!['cancelled','fully_received'].includes(String(x.status||'')))?`<button class="bsm-btn bsm-btn-small bsm-btn-danger po-cancel" data-id="${x.id}" title="Cancel PO" aria-label="Cancel PO" style="min-width:30px!important;width:30px;height:30px;padding:4px!important">${poApprovalIcon('cancel')}</button>`:'';h+=`<tr><td>${i+1}</td><td>${esc(x.po_no||'')}</td><td>${dateFmt(x.po_date)}${x.created_time_ist?`<br><span class="bsm-po-time">${esc(x.created_time_ist)}</span>`:''}</td>${pendingApproval?'':`<td>${x.approved_date?esc(x.approved_date).replace(' ','<br>'):'—'}</td>`}<td>${esc(x.site_name||'Needs assignment')}</td><td>${esc(x.requisition_no||'Needs assignment')}</td><td>${esc(x.vendor_name||'')}</td><td>${dateFmt(x.required_date)}</td><td class="num">${Number(x.item_count||0)}</td><td class="num">${Number(x.po_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.received_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.pending_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${amt(x.total_amount)}</td><td>${esc(x.created_by_name||'-')}</td>${pendingApproval?'':`<td>${esc(x.approved_by_name||'-')}</td>`}<td style="text-align:center">${pdf} ${pendingApproval?`<button type="button" class="bsm-btn po-quotes" data-id="${x.id}" title="View item supplier comparison">Quotes</button>`:''}</td>${pendingApproval?'':`<td><span class="bsm-pill">${esc(String(x.status||'').replaceAll('_',' '))}</span></td>`}<td class="bsm-po-action-cell" style="min-width:144px;vertical-align:middle"><div class="bsm-actions bsm-po-actions" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;white-space:normal">${edit}${cancel}${BSM.notificationAdmin&&['created','pending_approval'].includes(x.status)?`<button type="button" class="bsm-btn nt-approve-po" style="background:#168444;color:#fff;border:1px solid #168444;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:4px;font-size:12px;cursor:pointer" data-id="${x.id}" title="Approve PO" aria-label="Approve PO">${poApprovalIcon('approve')}</button><button type="button" class="bsm-btn nt-reject-po" style="background:#fff1f2;color:#be123c;border:1px solid #fda4af;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:4px;font-size:12px;cursor:pointer" data-id="${x.id}" title="Reject PO" aria-label="Reject PO">${poApprovalIcon('reject')}</button>`:''}</div></td></tr>`;});if(!rows.length)h+='<tr><td colspan="'+(pendingApproval?15:18)+'" class="bsm-empty">No Purchase Orders found.</td></tr>';h+='</tbody></table></div>';$('#po_master_list').html(h);bsmEnhanceSearchableSelects($('#bsm-content'));return rows;
+  const r=await ajax('bsm_purchase_order_master',{site_id:$('#po_master_site').val()||'',search:$('#po_master_search').val()||'',vendor_id:$('#po_master_vendor').val()||'',status:pendingApproval?'pending_approval':($('#po_master_status').val()||'')});if(!r.success){if(!exportAll)$('#po_master_list').html('<div class="bsm-empty">Unable to load PO Master.</div>');return null;}const rows=r.data.rows||[];if(exportAll)return rows;const amt=v=>Number(v||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});let h='<div class="bsm-table-wrap"><table><thead><tr><th>Sl</th><th>PO No.</th>'+(pendingApproval?'<th>Date</th>':'<th>Creation Date</th><th>Approved Date</th>')+'<th>Site</th><th>Requisition No.</th><th>Supplier</th><th>Required Date</th><th>Items</th><th class="num">PO Qty</th><th class="num">Received</th><th class="num">Pending</th><th class="num">Total</th>'+'<th>Created By</th>'+(pendingApproval?'':'<th>Approved By</th>')+'<th>PDF</th>'+(pendingApproval?'':'<th>Status</th>')+'<th>Action</th></tr></thead><tbody>';rows.forEach((x,i)=>{const pdf=`<button type="button" class="bsm-pdf-link po-pdf" data-id="${x.id}" title="Download PO PDF" aria-label="Download PO PDF"><svg class="bsm-pdf-icon" viewBox="0 0 32 36" aria-hidden="true"><path d="M6.5 1.5h12l7 7v25H6.5z" fill="#fff" stroke="#ef2020" stroke-width="2" stroke-linejoin="round"/><path d="M18.5 1.5v7h7" fill="none" stroke="#ef2020" stroke-width="2" stroke-linejoin="round"/><rect x="3" y="19" width="26" height="11" rx="2" fill="#ef2020"/><text x="16" y="27.1" text-anchor="middle" font-size="8.3" font-weight="700" font-family="Arial,Helvetica,sans-serif" fill="#fff">PDF</text></svg></button>`;const edit=String(x.status||'')!=='cancelled'?`<button type="button" class="bsm-action-edit po-edit" data-id="${x.id}" title="Edit PO">✎</button>`:'';const cancel=(Number(x.received_qty||0)<=0.009&&!['cancelled','fully_received'].includes(String(x.status||'')))?`<button class="bsm-btn bsm-btn-small bsm-btn-danger po-cancel" data-id="${x.id}" title="Cancel PO" aria-label="Cancel PO" style="min-width:30px!important;width:30px;height:30px;padding:4px!important">${poApprovalIcon('cancel')}</button>`:'';h+=`<tr><td>${i+1}</td><td>${esc(x.po_no||'')}</td><td>${dateFmt(x.po_date)}${x.created_time_ist?`<br><span class="bsm-po-time">${esc(x.created_time_ist)}</span>`:''}</td>${pendingApproval?'':`<td>${x.approved_date?esc(x.approved_date).replace(' ','<br>'):'—'}</td>`}<td>${esc(x.site_name||'Needs assignment')}</td><td>${esc(x.requisition_no||'Needs assignment')}</td><td>${esc(x.vendor_name||'')}</td><td>${dateFmt(x.required_date)}</td><td class="num">${Number(x.item_count||0)}</td><td class="num">${Number(x.po_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.received_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${Number(x.pending_qty||0).toLocaleString('en-IN',{maximumFractionDigits:2})}</td><td class="num">${amt(x.total_amount)}</td><td>${esc(x.created_by_name||'-')}</td>${pendingApproval?'':`<td>${esc(x.approved_by_name||'-')}</td>`}<td style="text-align:center">${pdf} ${pendingApproval?`<button type="button" class="bsm-btn po-quotes" data-id="${x.id}" title="View item supplier comparison">Quotes</button>`:''}</td>${pendingApproval?'':`<td><span class="bsm-pill">${esc(String(x.status||'').replaceAll('_',' '))}</span></td>`}<td class="bsm-po-action-cell" style="min-width:${pendingApproval?144:154}px;vertical-align:middle"><div class="bsm-actions bsm-po-actions" style="display:flex;flex-wrap:${pendingApproval?'wrap':'nowrap'};gap:6px;align-items:center">${edit}${pendingApproval?'':poShareActions(x)}${cancel}${BSM.notificationAdmin&&['created','pending_approval'].includes(x.status)?`<button type="button" class="bsm-btn nt-approve-po" style="background:#168444;color:#fff;border:1px solid #168444;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:4px;font-size:12px;cursor:pointer" data-id="${x.id}" title="Approve PO" aria-label="Approve PO">${poApprovalIcon('approve')}</button><button type="button" class="bsm-btn nt-reject-po" style="background:#fff1f2;color:#be123c;border:1px solid #fda4af;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:4px;font-size:12px;cursor:pointer" data-id="${x.id}" title="Reject PO" aria-label="Reject PO">${poApprovalIcon('reject')}</button>`:''}</div></td></tr>`;});if(!rows.length)h+='<tr><td colspan="'+(pendingApproval?15:18)+'" class="bsm-empty">No Purchase Orders found.</td></tr>';h+='</tbody></table></div>';$('#po_master_list').html(h);bsmEnhanceSearchableSelects($('#bsm-content'));return rows;
 }
 async function renderPurchaseOrderItemsMaster(){
   setTitle('PO Items Master');
