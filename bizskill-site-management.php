@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.178
+ * Version: 0.0.179
  * Author: BizSkill
  */
 
@@ -18,7 +18,7 @@ final class BSM_Site_Management {
     use BSM_Notifications;
     use BSM_Site_Procurement;
     use BSM_Application_Scope;
-    const VERSION = '0.0.178';
+    const VERSION = '0.0.179';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -81,6 +81,9 @@ final class BSM_Site_Management {
         add_action('wp_ajax_bsm_purchase_order_create', [$this, 'ajax_purchase_order_create']);
         add_action('wp_ajax_bsm_purchase_order_manual_save', [$this, 'ajax_purchase_order_manual_save']);
         add_action('wp_ajax_bsm_purchase_order_master', [$this, 'ajax_purchase_order_master']);
+        add_action('wp_ajax_bsm_po_share', [$this, 'ajax_po_share']);
+        add_action('wp_ajax_nopriv_bsm_po_share_pdf', [$this, 'ajax_po_share_pdf']);
+        add_action('wp_ajax_bsm_po_share_pdf', [$this, 'ajax_po_share_pdf']);
         add_action('wp_ajax_bsm_purchase_order_items_master', [$this, 'ajax_purchase_order_items_master']);
         add_action('wp_ajax_bsm_purchase_order_cancel', [$this, 'ajax_purchase_order_cancel']);
         add_action('wp_ajax_bsm_purchase_order_get', [$this, 'ajax_purchase_order_get']);
@@ -845,7 +848,7 @@ final class BSM_Site_Management {
         return ['',0,0];
     }
 
-    private function generate_purchase_order_pdf($id){
+    private function generate_purchase_order_pdf($id, $returnBytes = false){
         global $wpdb;$p=$this->prefix;
         $h=$wpdb->get_row($wpdb->prepare("SELECT po.*,s.site_name,s.site_location,r.requisition_no,v.vendor_name,v.mobile vendor_mobile,v.address vendor_address,v.gstin vendor_gstin,w.warehouse_name FROM {$p}purchase_orders po LEFT JOIN {$p}sites s ON s.id=po.site_id LEFT JOIN {$p}material_requisitions r ON r.id=po.requisition_id LEFT JOIN {$p}vendors v ON v.id=po.vendor_id LEFT JOIN {$p}warehouses w ON w.id=po.warehouse_id WHERE po.id=%d",$id),ARRAY_A);if(!$h)return '';
         $rows=$wpdb->get_results($wpdb->prepare("SELECT poi.*,i.item_name,i.hsn_code,u.unit_name FROM {$p}purchase_order_items poi LEFT JOIN {$p}items i ON i.id=poi.item_id LEFT JOIN {$p}units u ON u.id=poi.unit_id WHERE poi.purchase_order_id=%d ORDER BY poi.id",$id),ARRAY_A)?:[];
@@ -870,8 +873,13 @@ final class BSM_Site_Management {
         $top=596;$headers=['Sl','Item','HSN','Qty','Unit','Rate','Amount'];$cols=[28,180,48,48,48,68,103];$tx=36;
         $rect($c,36,$top-24,523,24,$theme,$theme,0);
         foreach($headers as $i=>$hh){$txt($c,$tx+4,$top-16,$hh,6.6,true,[1,1,1]);$tx+=$cols[$i];}
-        $y=$top-24;$grand=0;
-        foreach(array_slice($rows,0,15) as $i=>$r){$y-=28;$rect($c,36,$y,523,28,[1,1,1]);$amount=(float)$r['po_qty']*(float)$r['rate'];$grand+=$amount;
+        $pageHeader=$c;$pages=[];$y=$top-24;$grand=0;
+        foreach($rows as $i=>$r){
+            if ($i > 0 && $i % 13 === 0) {
+                $pages[]=$c;
+                $c=$pageHeader;
+                $y=$top-24;
+            }$y-=28;$rect($c,36,$y,523,28,[1,1,1]);$amount=(float)$r['po_qty']*(float)$r['rate'];$grand+=$amount;
             $vals=[strval($i+1),(string)($r['item_name']??''),(string)($r['hsn_code']??''),number_format((float)$r['po_qty'],2),(string)($r['unit_name']??''),number_format((float)$r['rate'],2),number_format($amount,2)];
             $tx=36;foreach($vals as $j=>$v){$txt($c,$tx+4,$y+10,$v,6.5,$j===1);$tx+=$cols[$j];}
         }
@@ -881,11 +889,24 @@ final class BSM_Site_Management {
         $txt($c,36,$boxY+50,'Authorized Signatory',7,true,$theme);$line($c,36,$boxY+12,180,$boxY+12,$theme,.6);
         $txt($c,36,34,'For '.$companyName,7,true,$theme);
 
-        $resources="/Font << /F1 5 0 R /F2 6 0 R >>";$objs=[];
-        if($logoJpeg&&$logoW&&$logoH)$resources.=" /XObject << /Im1 7 0 R >>";
-        $objs=["<< /Type /Catalog /Pages 2 0 R >>","<< /Type /Pages /Kids [3 0 R] /Count 1 >>","<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << $resources >> /Contents 4 0 R >>","<< /Length ".strlen($c)." >>\nstream\n$c\nendstream","<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>","<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>"];
-        if($logoJpeg&&$logoW&&$logoH)$objs[]="<< /Type /XObject /Subtype /Image /Width $logoW /Height $logoH /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ".strlen($logoJpeg)." >>\nstream\n".$logoJpeg."\nendstream";
+        $pages[]=$c;
+        $resources="/Font << /F1 3 0 R /F2 4 0 R >>";
+        $objs=["<< /Type /Catalog /Pages 2 0 R >>",'',"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>","<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>"];
+        if($logoJpeg&&$logoW&&$logoH){
+            $resources.=" /XObject << /Im1 5 0 R >>";
+            $objs[]="<< /Type /XObject /Subtype /Image /Width $logoW /Height $logoH /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ".strlen($logoJpeg)." >>\nstream\n".$logoJpeg."\nendstream";
+        }
+        $kids=[];
+        foreach($pages as $stream){
+            $page=count($objs)+1;
+            $contents=$page+1;
+            $kids[]="$page 0 R";
+            $objs[]="<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << $resources >> /Contents $contents 0 R >>";
+            $objs[]="<< /Length ".strlen($stream)." >>\nstream\n$stream\nendstream";
+        }
+        $objs[1]="<< /Type /Pages /Kids [".implode(' ',$kids)."] /Count ".count($kids)." >>";
         $pdf="%PDF-1.4\n";$offs=[0];foreach($objs as $ix=>$o){$offs[]=strlen($pdf);$pdf.=($ix+1)." 0 obj\n$o\nendobj\n";}$xref=strlen($pdf);$pdf.="xref\n0 ".(count($objs)+1)."\n0000000000 65535 f \n";for($i=1;$i<=count($objs);$i++)$pdf.=sprintf("%010d 00000 n \n",$offs[$i]);$pdf.="trailer\n<< /Size ".(count($objs)+1)." /Root 1 0 R >>\nstartxref\n$xref\n%%EOF";
+        if ($returnBytes) return $pdf;
         $up=wp_upload_dir();if(!empty($up['error']))return '';$dir=trailingslashit($up['basedir']).'bizskill-purchase-orders';if(!is_dir($dir)&&!wp_mkdir_p($dir))return '';
         $vendorFile=preg_replace('~[\\\\/:*?"<>|]+~','-',trim((string)($h['vendor_name']??'Supplier')));$poFile=preg_replace('/[^A-Za-z0-9_-]+/','',(string)($h['po_no']?:$id));$fn=trim($vendorFile).' - '.$poFile.'.pdf';$path=trailingslashit($dir).$fn;if(@file_put_contents($path,$pdf,LOCK_EX)===false)return '';return trailingslashit($up['baseurl']).'bizskill-purchase-orders/'.rawurlencode($fn);
     }
