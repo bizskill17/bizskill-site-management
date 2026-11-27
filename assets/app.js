@@ -885,18 +885,28 @@ $(document).on('click','.po-share',async function(){
   const request=Array.from(crypto.getRandomValues(new Uint8Array(16)),byte=>byte.toString(16).padStart(2,'0')).join('');
   dialog.addEventListener('cancel',event=>{if($close.prop('disabled'))event.preventDefault();});
   dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+  const $result=$(dialog).find('.po-share-result');
   $send.one('click',async ()=>{
-    $(dialog).find('.po-share-result').text('Sending '+label+'…');
-    $send.prop('disabled',true);
+    $result.text('Sending '+label+'…');
+    $send.prop('disabled',true).attr('aria-busy','true').prepend(
+      '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="margin-right:6px;vertical-align:middle"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3" opacity=".3"/><path d="M12 3a9 9 0 0 1 9 9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".8s" repeatCount="indefinite"/></path></svg>'
+    );
     $close.prop('disabled',true);
     try{
       const result=await ajax('bsm_po_share',{id,channel,mode:'send',request,revision:preview.revision,previous:preview.previous,resend:resend?1:0});
-      $(dialog).find('.po-share-result').text(result.success?poShareStatus(result.data.latest):result.data?.message||'Unable to send.');
+      const latest=result.success?result.data?.latest:null;
+      if(latest?.status==='accepted'){
+        dialog.close();
+        showToast(label+' accepted by the sending service.');
+      }else{
+        $result.text(result.success?poShareStatus(latest)||'No send status returned.':result.data?.message||'Unable to send.');
+      }
     }catch(error){
-      $(dialog).find('.po-share-result').text(error.responseJSON?.data?.message||'Send outcome unknown. Reopen the preview to check the status.');
+      $result.text(error.responseJSON?.data?.message||'Send outcome unknown. Reopen the preview to check the status.');
     }finally{
-      $send.hide();
-      $close.prop('disabled',false).focus();
+      $send.removeAttr('aria-busy').hide();
+      $close.prop('disabled',false);
+      if(dialog.open)$close.focus();
       if(App.current==='purchase_order_master')loadPurchaseOrderMaster();
     }
   });
