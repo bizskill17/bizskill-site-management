@@ -174,7 +174,7 @@ trait BSM_Site_Procurement {
             'recipient' => $recipient,
             'subject' => $subject,
             'message' => $message,
-            'filename' => sanitize_file_name('PO-'.$number.'.pdf'),
+            'filename' => sanitize_file_name(str_replace('/', '-', $number).'.pdf') ?: 'Purchase-Order.pdf',
             'reply_to' => is_email($company['email'] ?? '') ? $company['email'] : '',
             'revision' => $revision,
         ];
@@ -264,9 +264,26 @@ trait BSM_Site_Procurement {
                 return ['failed', 'Unable to prepare the PO PDF attachment.'];
             }
             $headers = $preview['reply_to'] ? ['Reply-To: '.$preview['reply_to']] : [];
-            return wp_mail($preview['recipient'], $preview['subject'], $preview['message'], $headers, [$path])
-                ? ['accepted', 'Accepted by the mail service.']
-                : ['failed', 'The mail service could not send this email.'];
+            $reason = '';
+            $capture = static function ($error) use (&$reason) {
+                $message = $error->get_error_message();
+                if (preg_match('/authenticat|credentials/i', $message)) {
+                    $reason = 'SMTP authentication failed. Check the WordPress mail settings.';
+                } elseif (preg_match('/connect|timed out|timeout/i', $message)) {
+                    $reason = 'WordPress could not connect to the mail server. Check the SMTP settings.';
+                } else {
+                    $reason = 'WordPress mail failed. Check the mail plugin log for the transport error.';
+                }
+            };
+            add_action('wp_mail_failed', $capture);
+            try {
+                $accepted = wp_mail($preview['recipient'], $preview['subject'], $preview['message'], $headers, [$path]);
+                return $accepted
+                    ? ['accepted', 'Accepted by the mail service.']
+                    : ['failed', $reason ?: 'WordPress mail returned a failure. Check the mail configuration and retry.'];
+            } finally {
+                remove_action('wp_mail_failed', $capture);
+            }
         } finally {
             if (is_file($path)) unlink($path);
             if (is_dir($dir)) rmdir($dir);
