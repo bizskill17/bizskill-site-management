@@ -339,7 +339,10 @@ trait BSM_Site_Procurement {
             delete_transient('bsm_po_share_pdf_'.$token);
             return ['failed', 'MessageAutoSender rejected the request (HTTP '.$code.').'];
         }
-        if (!empty($body['success']) || !empty($body['id']) || !empty($body['messageId']) || !empty($body['data']) || in_array($status, ['success', 'accepted', 'queued'], true)) {
+        $confirmed = preg_match('/^2[0-9]{2}$/D', $status)
+            && strtolower(trim((string) ($body['message'] ?? ''))) === 'success'
+            && !empty($body['result']['id']);
+        if ($confirmed || !empty($body['success']) || !empty($body['id']) || !empty($body['messageId']) || !empty($body['data']) || in_array($status, ['success', 'accepted', 'queued'], true)) {
             return ['accepted', 'Accepted by MessageAutoSender.'];
         }
         return ['review_required', 'Provider response was inconclusive. Check WhatsApp history before retrying.'];
