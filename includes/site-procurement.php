@@ -232,7 +232,7 @@ trait BSM_Site_Procurement {
                 $history[] = $attempt;
                 if (!update_option($key, $history, false)) throw new Exception('Unable to record the send attempt.');
                 try {
-                    $document = $this->generate_purchase_order_pdf($id, true);
+                    $document = $this->generate_purchase_order_pdf($id, $channel === 'email');
                     [$attempt['status'], $attempt['detail']] = !$document
                         ? ['failed', 'Unable to generate the PO PDF.']
                         : ($channel === 'email' ? $this->po_share_email($preview, $document) : $this->po_share_whatsapp($preview, $document));
@@ -305,33 +305,25 @@ trait BSM_Site_Procurement {
         }
     }
 
-    private function po_share_whatsapp($preview, $document) {
+    private function po_share_whatsapp($preview, $pdfUrl) {
         $settings = $this->nt_settings();
         $password = $this->nt_password($settings['password']);
         if (!$settings['username'] || !$password || get_option('bsm_notifications_blocked')) {
             return ['failed', 'Check the MessageAutoSender credentials in Settings.'];
         }
-        $boundary = 'bsm-'.bin2hex(random_bytes(24));
-        $parts = [
-            'receiverMobileNo' => $preview['recipient'],
-            'message' => $preview['message'],
-        ];
-        $payload = '';
-        foreach ($parts as $name => $value) {
-            $payload .= "--$boundary\r\nContent-Disposition: form-data; name=\"$name\"\r\n\r\n$value\r\n";
-        }
-        $filename = preg_replace('/[^A-Za-z0-9._-]/', '-', $preview['filename']);
-        $payload .= "--$boundary\r\nContent-Disposition: form-data; name=\"uploadFile\"; filename=\"$filename\"\r\n";
-        $payload .= "Content-Type: application/pdf\r\n\r\n".$document."\r\n--$boundary--\r\n";
         $response = wp_remote_post('https://app.messageautosender.com/api/v1/message/create', [
             'timeout' => 20,
             'redirection' => 0,
             'headers' => [
                 'Accept' => 'application/json',
-                'Content-Type' => 'multipart/form-data; boundary='.$boundary,
+                'Content-Type' => 'application/json',
                 'Authorization' => 'Basic '.base64_encode($settings['username'].':'.$password),
             ],
-            'body' => $payload,
+            'body' => wp_json_encode([
+                'receiverMobileNo' => $preview['recipient'],
+                'message' => [$preview['message']],
+                'filePathUrl' => [$pdfUrl],
+            ]),
         ]);
         if (is_wp_error($response)) return ['review_required', 'Provider outcome unknown. Check WhatsApp history before retrying.'];
         $code = wp_remote_retrieve_response_code($response);
