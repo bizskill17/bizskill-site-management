@@ -168,7 +168,11 @@ trait BSM_Site_Procurement {
         }
         $number = sanitize_text_field($po['po_no']);
         $subject = 'Purchase Order '.$number.' | '.$companyName;
-        $message = 'Dear '.($po['vendor_name'] ?: 'Supplier').",\n\nPlease find attached approved Purchase Order ".$number.".\n";
+        $message = 'Dear '.($po['vendor_name'] ?: 'Supplier').",\n\n";
+        $message .= $channel === 'email'
+            ? "Please find attached approved Purchase Order ".$number.".\n"
+            : "Please download approved Purchase Order ".$number." using the link below.\n";
+        if ($channel === 'whatsapp') $message .= "Download PO PDF: {PO_PDF_URL}\n";
         $message .= "\nDelivery Site: ".($po['site_name'] ?: '—');
         if (!empty($po['site_location'])) $message .= "\nDelivery Address: ".$po['site_location'];
         $message .= "\nRequired Delivery Date: ".$this->nt_date($po['required_date']);
@@ -246,6 +250,7 @@ trait BSM_Site_Procurement {
                 $last = $attempt;
             }
             $preview['previous'] = $last['request'] ?? '';
+            $preview['message'] = str_replace('{PO_PDF_URL}', '(link added when sent)', $preview['message']);
             unset($preview['sender_email'], $preview['sender_name']);
             $result = $preview;
         } catch (Throwable $error) {
@@ -321,8 +326,7 @@ trait BSM_Site_Procurement {
             ],
             'body' => wp_json_encode([
                 'receiverMobileNo' => $preview['recipient'],
-                'message' => [$preview['message']],
-                'filePathUrl' => [$pdfUrl],
+                'message' => [str_replace('{PO_PDF_URL}', $pdfUrl, $preview['message'])],
             ]),
         ]);
         if (is_wp_error($response)) return ['review_required', 'Provider outcome unknown. Check WhatsApp history before retrying.'];
