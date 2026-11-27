@@ -872,8 +872,8 @@ $(document).on('click','.po-share',async function(){
   const resend=['accepted','review_required','sending'].includes(preview.latest?.status);
   const dialog=document.createElement('dialog');
   dialog.setAttribute('aria-labelledby','bsm-po-share-title');
-  dialog.style.cssText='max-width:min(500px, calc(100vw - 32px));width:100%;padding:20px;border:1px solid #b5c9e8;border-radius:12px;color:#172b49';
-  $(dialog).html('<h3 id="bsm-po-share-title"></h3><p class="po-share-recipient"></p><p class="po-share-subject"></p><pre class="po-share-message" style="white-space:pre-wrap;overflow-wrap:anywhere;font:inherit"></pre><p>Attachment: <button type="button" class="bsm-pdf-link po-pdf po-share-attachment" title="Open PO PDF"></button></p><p class="po-share-result" role="status"></p><div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" class="bsm-btn po-share-close">Close</button><button type="button" class="bsm-btn bsm-btn-primary po-share-send"></button></div>');
+  dialog.style.cssText='max-width:min(500px, calc(100vw - 32px));width:100%;padding:0;overflow:hidden;border:1px solid #b5c9e8;border-radius:12px;color:#172b49';
+  $(dialog).html('<div style="max-height:55vh;overflow:auto;padding:16px 20px 4px"><h3 id="bsm-po-share-title"></h3><p class="po-share-recipient"></p><p class="po-share-subject"></p><pre class="po-share-message" style="white-space:pre-wrap;overflow-wrap:anywhere;font:inherit"></pre><p>Attachment: <button type="button" class="po-pdf po-share-attachment" style="width:auto;height:auto;overflow-wrap:anywhere" title="Open PO PDF"></button></p></div><footer style="padding:8px 20px 14px;border-top:1px solid #b5c9e8"><p class="po-share-result" role="status" style="margin:0 0 8px;overflow-wrap:anywhere"></p><div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" class="bsm-btn po-share-close">Close</button><button type="button" class="bsm-btn bsm-btn-primary po-share-send"></button></div></footer>');
   $(dialog).find('h3').text(label+' approved PO');
   $(dialog).find('.po-share-recipient').text('To: '+preview.recipient);
   $(dialog).find('.po-share-subject').text(channel==='email'?'Subject: '+preview.subject:'').toggle(channel==='email');
@@ -886,6 +886,7 @@ $(document).on('click','.po-share',async function(){
   dialog.addEventListener('cancel',event=>{if($close.prop('disabled'))event.preventDefault();});
   dialog.addEventListener('close',()=>dialog.remove(),{once:true});
   $send.one('click',async ()=>{
+    $(dialog).find('.po-share-result').text('Sending '+label+'…');
     $send.prop('disabled',true);
     $close.prop('disabled',true);
     try{
@@ -894,6 +895,7 @@ $(document).on('click','.po-share',async function(){
     }catch(error){
       $(dialog).find('.po-share-result').text(error.responseJSON?.data?.message||'Send outcome unknown. Reopen the preview to check the status.');
     }finally{
+      $send.hide();
       $close.prop('disabled',false).focus();
       if(App.current==='purchase_order_master')loadPurchaseOrderMaster();
     }
