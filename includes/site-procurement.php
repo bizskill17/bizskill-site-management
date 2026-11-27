@@ -163,9 +163,6 @@ trait BSM_Site_Procurement {
         $company = $wpdb->get_row("SELECT company_name,email FROM {$this->prefix}company_settings ORDER BY id DESC LIMIT 1", ARRAY_A) ?: [];
         $companyName = sanitize_text_field($company['company_name'] ?? '') ?: 'BizSkill';
         $senderEmail = trim((string) ($company['email'] ?? ''));
-        if ($channel === 'email' && !is_email($senderEmail)) {
-            throw new Exception('Enter a valid Email in Company Settings before sending a PO.');
-        }
         $number = sanitize_text_field($po['po_no']);
         $subject = 'Purchase Order '.$number.' | '.$companyName;
         $message = 'Dear '.($po['vendor_name'] ?: 'Supplier').",\n\n";
@@ -184,7 +181,6 @@ trait BSM_Site_Procurement {
             'message' => $message,
             'filename' => sanitize_file_name(str_replace('/', '-', $number).'.pdf') ?: 'Purchase-Order.pdf',
             'sender_email' => $senderEmail,
-            'sender_name' => $companyName,
             'revision' => $revision,
         ];
     }
@@ -251,7 +247,7 @@ trait BSM_Site_Procurement {
             }
             $preview['previous'] = $last['request'] ?? '';
             $preview['message'] = str_replace('{PO_PDF_URL}', '(link added when sent)', $preview['message']);
-            unset($preview['sender_email'], $preview['sender_name']);
+            unset($preview['sender_email']);
             $result = $preview;
         } catch (Throwable $error) {
             $failure = $error->getMessage();
@@ -273,12 +269,7 @@ trait BSM_Site_Procurement {
             if (!mkdir($dir, 0700) || file_put_contents($path, $document) !== strlen($document)) {
                 return ['failed', 'Unable to prepare the PO PDF attachment.'];
             }
-            $fromEmail = static function () use ($preview) { return $preview['sender_email']; };
-            $fromName = static function () use ($preview) { return $preview['sender_name']; };
-            $headers = [
-                'From: '.$preview['sender_name'].' <'.$preview['sender_email'].'>',
-                'Reply-To: '.$preview['sender_email'],
-            ];
+            $headers = is_email($preview['sender_email']) ? ['Reply-To: '.$preview['sender_email']] : [];
             $reason = '';
             $capture = static function ($error) use (&$reason) {
                 $message = $error->get_error_message();
@@ -290,8 +281,6 @@ trait BSM_Site_Procurement {
                     $reason = 'WordPress mail failed. Check the mail plugin log for the transport error.';
                 }
             };
-            add_filter('wp_mail_from', $fromEmail, PHP_INT_MAX);
-            add_filter('wp_mail_from_name', $fromName, PHP_INT_MAX);
             add_action('wp_mail_failed', $capture);
             try {
                 $accepted = wp_mail($preview['recipient'], $preview['subject'], $preview['message'], $headers, [$path]);
@@ -300,8 +289,6 @@ trait BSM_Site_Procurement {
                     : ['failed', $reason ?: 'WordPress mail returned a failure. Check the mail configuration and retry.'];
             } finally {
                 remove_action('wp_mail_failed', $capture);
-                remove_filter('wp_mail_from_name', $fromName, PHP_INT_MAX);
-                remove_filter('wp_mail_from', $fromEmail, PHP_INT_MAX);
             }
         } finally {
             if (is_file($path)) unlink($path);
