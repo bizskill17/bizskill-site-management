@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.182
+ * Version: 0.0.183
  * Author: BizSkill
  */
 
@@ -18,7 +18,7 @@ final class BSM_Site_Management {
     use BSM_Notifications;
     use BSM_Site_Procurement;
     use BSM_Application_Scope;
-    const VERSION = '0.0.182';
+    const VERSION = '0.0.183';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -46,6 +46,8 @@ final class BSM_Site_Management {
         add_action('init', [$this, 'operations_upgrade'], 11);
         add_action('init', [$this, 'site_procurement_upgrade'], 12);
         add_action('init', [$this, 'boq_editor_upgrade'], 13);
+        add_action('init', [$this, 'procurement_history_upgrade'], 14);
+        add_action('wp_ajax_bsm_procurement_history', [$this, 'ajax_procurement_history']);
         add_action('wp_ajax_bsm_stock_ledger', [$this, 'ajax_scope_stock_ledger']);
         add_action('wp_ajax_bsm_historical_records', [$this, 'ajax_scope_history']);
         add_action('wp_ajax_bsm_site_purchase_receipts', [$this, 'ajax_site_purchase_receipts']);
@@ -600,7 +602,7 @@ final class BSM_Site_Management {
         $total=0.0;$received=0.0;
         foreach($items as $it){$total+=(float)$it['po_qty'];$received+=min((float)$it['po_qty'],$this->po_item_received_qty((int)$it['id']));}
         $new=$received<=0.009?($status==='approved'?'approved':'created'):(($received+0.009>=$total&&$total>0)?'fully_received':'partly_received');
-        $wpdb->update($p.'purchase_orders',['status'=>$new,'updated_at'=>current_time('mysql')],['id'=>$po_id]);
+        return $wpdb->update($p.'purchase_orders',['status'=>$new,'updated_at'=>current_time('mysql')],['id'=>$po_id]);
     }
 
     private function pending_po_summary($warehouse, $site_id = 0) {
@@ -2511,7 +2513,7 @@ final class BSM_Site_Management {
         $countSql="SELECT COUNT(*) FROM $table WHERE $where"; $dataSql="SELECT * FROM $table WHERE $where ORDER BY id DESC"; if(!$export_all) $dataSql.=" LIMIT 20 OFFSET $offset";
         if($args){$countSql=$wpdb->prepare($countSql,$args);$dataSql=$wpdb->prepare($dataSql,$args);} 
         $total=(int)$wpdb->get_var($countSql); $rows=$wpdb->get_results($dataSql,ARRAY_A);
-        if($key==='material_requisitions'){foreach($rows as &$req_row){$req_row['created_time']=$this->requisition_created_time($req_row['created_at']??'');$req_row['approved_date']=$this->requisition_approved_date($req_row['approved_at']??'');$req_row['approved_by_name']=$this->nt_name($req_row['approved_by']??0,true);}unset($req_row);}
+        if($key==='material_requisitions'){foreach($rows as &$req_row){$req_row['created_time']=$this->requisition_created_time($req_row['created_at']??'');$req_row['approved_date']=$this->requisition_approved_date($req_row['approved_at']??'');$req_row['approved_by_name']=$this->nt_name($req_row['approved_by']??0,true);}unset($req_row);$this->procurement_latest_changes($rows,'requisition');}
         if($key==='labour_attendance'){
             $updater_names=[];
             foreach($rows as &$attendance){
@@ -3880,6 +3882,15 @@ final class BSM_Site_Management {
             $dispatch_committed=false;
             register_shutdown_function(function()use($wpdb,&$dispatch_committed){if(!$dispatch_committed)$wpdb->query('ROLLBACK');});
         }
+        if ($key === 'material_requisitions') {
+            try {
+                $this->procurement_request_transaction($req_committed);
+                $req_before = $this->procurement_snapshot('requisition', $id);
+                if ($id && !$req_before) throw new Exception('Requisition not found.');
+            } catch (Throwable $error) {
+                wp_send_json_error(['message' => $error->getMessage()]);
+            }
+        }
         $row=$this->sanitize_row($m['table'],$data);
         if($key==='labour_contractors' && $contractor_employees_input!==null){
             try{$id=$this->ops_save_contractor_employees($id,$row,$contractor_employees_input);}catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);}
@@ -3887,8 +3898,8 @@ final class BSM_Site_Management {
         else { $ok=$wpdb->insert($table,$row); if(!$ok) wp_send_json_error(['message'=>$wpdb->last_error?:'Save failed']); $id=(int)$wpdb->insert_id; }
         if(!empty($m['child'])) {
             $child=$this->prefix.$m['child']; $deleted=$wpdb->delete($child,[$m['fk']=>$id]);
-            if($key==='material_dispatches' && $deleted===false)wp_send_json_error(['message'=>'Unable to replace dispatch items']);
-            foreach($items as $it){ if(!is_array($it)) continue; $it[$m['fk']]=$id; $clean=$this->sanitize_row($m['child'],$it); if(!empty($clean['item_id']) || in_array($key,['gst_invoices','quotations','tax_invoices'],true) || !empty($clean['description'])) $ok=$wpdb->insert($child,$clean); if($key==='material_dispatches' && $ok===false)wp_send_json_error(['message'=>'Unable to save dispatch items']); }
+            if(in_array($key,['material_dispatches','material_requisitions'],true) && $deleted===false)wp_send_json_error(['message'=>'Unable to replace items']);
+            foreach($items as $it){ if(!is_array($it)) continue; $it[$m['fk']]=$id; $clean=$this->sanitize_row($m['child'],$it); if(!empty($clean['item_id']) || in_array($key,['gst_invoices','quotations','tax_invoices'],true) || !empty($clean['description'])) $ok=$wpdb->insert($child,$clean); if(in_array($key,['material_dispatches','material_requisitions'],true) && $ok===false)wp_send_json_error(['message'=>'Unable to save items']); }
         }
         if($key==='material_dispatches' && !empty($data['requisition_id'])) $this->update_requisition_dispatch_status((int)$data['requisition_id']);
         $this->sync_ledgers($key,$id);
@@ -3931,6 +3942,15 @@ final class BSM_Site_Management {
         }
         if($key==='contractor_bills') $this->allocate_contractor_advance($id,(int)($data['contractor_id']??0),(int)($data['site_id']??0),$requested_contractor_advance_adjustment);
         if(in_array($key,['quotations','tax_invoices'],true)) $this->generate_sales_pdf($key,$id);
+        if ($key === 'material_requisitions') {
+            try {
+                $this->procurement_record_change('requisition', $id, $req_before, $req_before ? 'Edited' : 'Created');
+                $this->sp_write($wpdb->query('COMMIT'));
+                $req_committed = true;
+            } catch (Throwable $error) {
+                wp_send_json_error(['message' => $error->getMessage()]);
+            }
+        }
         wp_send_json_success(['id'=>$id,'message'=>'Saved successfully']);
     }
 
@@ -4261,10 +4281,162 @@ final class BSM_Site_Management {
         wp_send_json_success($row);
     }
 
+    public function procurement_history_upgrade() {
+        global $wpdb;
+        if (get_option($this->prefix.'procurement_history_schema') === '1') return;
+        $table = $this->prefix.'procurement_history';
+        $charset = $wpdb->get_charset_collate();
+        $created = $wpdb->query("CREATE TABLE IF NOT EXISTS $table (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            record_type VARCHAR(20) NOT NULL, record_id BIGINT UNSIGNED NOT NULL,
+            editor_id BIGINT UNSIGNED NOT NULL, editor_name VARCHAR(250) NOT NULL,
+            saved_at DATETIME NOT NULL, action VARCHAR(30) NOT NULL, changes LONGTEXT NOT NULL,
+            KEY record_history (record_type,record_id,id)
+        ) ENGINE=InnoDB $charset");
+        if ($created !== false) update_option($this->prefix.'procurement_history_schema', '1', false);
+    }
+
+    private function procurement_snapshot($type, $id) {
+        if (!$id) return [];
+        global $wpdb;
+        $p = $this->prefix;
+        $req = $type === 'requisition';
+        $table = $req ? 'material_requisitions' : 'purchase_orders';
+        $child = $req ? 'material_requisition_items' : 'purchase_order_items';
+        $fk = $req ? 'requisition_id' : 'purchase_order_id';
+        $row = $wpdb->get_row($wpdb->prepare("SELECT * FROM $p$table WHERE id=%d", $id), ARRAY_A);
+        if ($wpdb->last_error) throw new Exception('Unable to read the procurement record for history.');
+        if (!$row) return [];
+        unset($row['id'], $row['updated_at'], $row['created_at']);
+        if (!$req) {
+            $remarks = json_decode($row['remarks'] ?? '', true);
+            if (is_array($remarks)) {
+                $row['amendment_reason'] = $remarks['last_amendment']['reason'] ?? '';
+                $row['remarks'] = $remarks['legacy_remarks'] ?? '';
+            }
+        }
+        $items = $wpdb->get_results($wpdb->prepare("SELECT line.*, item.item_name, unit.unit_name FROM $p$child line LEFT JOIN {$p}items item ON item.id=line.item_id LEFT JOIN {$p}units unit ON unit.id=line.unit_id WHERE line.$fk=%d ORDER BY line.id", $id), ARRAY_A);
+        if ($wpdb->last_error) throw new Exception('Unable to read procurement items for history.');
+        $counts = [];
+        $lines = [];
+        foreach ($items as $item) {
+            unset($item['id'], $item[$fk], $item['created_at'], $item['updated_at']);
+            $key = (int)$item['item_id'];
+            $counts[$key] = ($counts[$key] ?? 0) + 1;
+            $lines[$key.':'.$counts[$key]] = $item;
+        }
+        return ['fields' => $row, 'items' => $lines];
+    }
+
+    private function procurement_record_change($type, $id, $before, $action) {
+        global $wpdb;
+        $after = $this->procurement_snapshot($type, $id);
+        $changes = [];
+        $compare = static function ($old, $new, $item = '') use (&$changes) {
+            foreach (array_keys($old + $new) as $key) {
+                $from = $old[$key] ?? null;
+                $to = $new[$key] ?? null;
+                if ((string)$from !== (string)$to) $changes[] = ['item' => $item, 'field' => $key, 'from' => $from, 'to' => $to];
+            }
+        };
+        $compare($before['fields'] ?? [], $after['fields'] ?? []);
+        $old = $before['items'] ?? [];
+        $new = $after['items'] ?? [];
+        foreach (array_keys($old + $new) as $key) {
+            $from = $old[$key] ?? [];
+            $to = $new[$key] ?? [];
+            $label = ($to['item_name'] ?? $from['item_name'] ?? '') ?: 'Item '.$key;
+            $compare($from, $to, $label);
+        }
+        if (!$changes) return;
+        $user = get_current_user_id();
+        $name = $user ? ($this->nt_name($user, true) ?: 'User #'.$user) : 'System';
+        $json = wp_json_encode($changes);
+        if ($json === false || !$wpdb->insert($this->prefix.'procurement_history', [
+            'record_type' => $type, 'record_id' => $id, 'editor_id' => $user,
+            'editor_name' => $name, 'saved_at' => current_time('mysql', true),
+            'action' => $action, 'changes' => $json,
+        ])) throw new Exception('Unable to save the order change history.');
+    }
+
+    private function procurement_history_time($utc) {
+        return $utc ? wp_date('d/m/Y h:i:s A', strtotime($utc.' UTC'), new DateTimeZone('Asia/Kolkata')) : '';
+    }
+
+    private function procurement_latest_changes(&$rows, $type) {
+        if (!$rows || get_option($this->prefix.'procurement_history_schema') !== '1') return;
+        global $wpdb;
+        $table = $this->prefix.'procurement_history';
+        $ids = implode(',', array_map('intval', array_column($rows, 'id')));
+        if (!$ids) return;
+        $latest = $wpdb->get_results($wpdb->prepare("SELECT h.record_id,h.editor_name,h.saved_at FROM $table h JOIN (SELECT MAX(id) id FROM $table WHERE record_type=%s AND record_id IN ($ids) GROUP BY record_id) x ON x.id=h.id", $type), OBJECT_K);
+        foreach ($rows as &$row) {
+            $entry = $latest[$row['id']] ?? null;
+            $row['last_updated_by'] = $entry->editor_name ?? '';
+            $row['last_updated_at'] = $this->procurement_history_time($entry->saved_at ?? '');
+        }
+        unset($row);
+    }
+
+    public function ajax_procurement_history() {
+        $this->verify_ajax();
+        global $wpdb;
+        $type = sanitize_key($_POST['type'] ?? '');
+        $id = absint($_POST['id'] ?? 0);
+        if (!$id || !in_array($type, ['requisition', 'po'], true)) wp_send_json_error(['message' => 'Invalid order.']);
+        $this->sp_access($type === 'po' ? ['purchase_order_master'] : ['material_requisitions']);
+        $source = $type === 'po' ? 'purchase_orders' : 'material_requisitions';
+        $record = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$this->prefix}$source WHERE id=%d", $id), ARRAY_A);
+        $scope = $this->employee_site_scope();
+        if (!$record || ($scope && !in_array((int)($record['site_id'] ?? 0), $scope, true))) wp_send_json_error(['message' => 'Order unavailable.'], 404);
+        if (get_option($this->prefix.'procurement_history_schema') !== '1') wp_send_json_error(['message' => 'Order history storage is unavailable.']);
+        $table = $this->prefix.'procurement_history';
+        $before = absint($_POST['before'] ?? 0);
+        $cursor = $before ? $wpdb->prepare(' AND id<%d', $before) : '';
+        $entries = $wpdb->get_results($wpdb->prepare("SELECT id,editor_name,saved_at,action,changes FROM $table WHERE record_type=%s AND record_id=%d $cursor ORDER BY id DESC LIMIT 21", $type, $id), ARRAY_A);
+        if ($wpdb->last_error) wp_send_json_error(['message' => 'Unable to read order history.']);
+        $more = count($entries) > 20;
+        if ($more) array_pop($entries);
+        foreach ($entries as &$entry) {
+            $entry['saved_at'] = $this->procurement_history_time($entry['saved_at']);
+            $entry['changes'] = json_decode($entry['changes'], true) ?: [];
+        }
+        unset($entry);
+        $legacy = [];
+        if (!$before && !empty($record['approved_at']) && !empty($record['approved_by'])) {
+            $legacy[] = ['action' => 'Approval recorded', 'editor_name' => $this->nt_name($record['approved_by'], true), 'saved_at' => $this->requisition_approved_date($record['approved_at'])];
+        }
+        if (!$before && !empty($record['created_at'])) {
+            $legacy[] = ['action' => 'Creation recorded', 'editor_name' => $type === 'po' ? $this->nt_name($record['created_by'] ?? 0) : '', 'saved_at' => $this->requisition_approved_date($record['created_at'])];
+        }
+        wp_send_json_success(['entries' => $entries, 'more' => $more, 'legacy' => $legacy]);
+    }
+
+    private function procurement_request_transaction(&$committed) {
+        global $wpdb;
+        $this->sp_write($wpdb->query('START TRANSACTION'));
+        $committed = false;
+        register_shutdown_function(static function () use ($wpdb, &$committed) {
+            if (!$committed) $wpdb->query('ROLLBACK');
+        });
+    }
+
     public function ajax_requisition_approval_save(){
         $this->verify_ajax();
         $this->migrate_requisition_table();
         global $wpdb; $p=$this->prefix; $id=intval($_POST['id']??0);
+        $this->sp_access(['pending_requisition_approval','purchase_pending_approval']);
+        try {
+            $lock = $this->ops_lock('site_procurement');
+            register_shutdown_function(function () use ($wpdb, $lock) {
+                $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock));
+            });
+            $this->procurement_request_transaction($committed);
+            $before = $this->procurement_snapshot('requisition', $id);
+            $this->sp_site((int)($before['fields']['site_id'] ?? 0));
+        } catch (Throwable $error) {
+            wp_send_json_error(['message' => $error->getMessage()]);
+        }
         $status=$wpdb->get_var($wpdb->prepare("SELECT status FROM {$p}material_requisitions WHERE id=%d",$id));
         if(!$status) wp_send_json_error(['message'=>'Requisition not found']);
         if(!in_array($status,['pending_approval','submitted','draft'],true)) wp_send_json_error(['message'=>'Requisition is no longer pending approval']);
@@ -4295,6 +4467,13 @@ final class BSM_Site_Management {
         $saved_status=$wpdb->get_var($wpdb->prepare("SELECT status FROM {$p}material_requisitions WHERE id=%d",$id));
         if($saved_status!==$final_status) wp_send_json_error(['message'=>'Requisition status was not updated. Please try again.']);
 
+        try {
+            $this->procurement_record_change('requisition', $id, $before, ucfirst($final_status));
+            $this->sp_write($wpdb->query('COMMIT'));
+            $committed = true;
+        } catch (Throwable $error) {
+            wp_send_json_error(['message' => $error->getMessage()]);
+        }
         wp_send_json_success([
             'message'=>$final_status==='approved'?'Requisition approved':'Requisition rejected',
             'status'=>$final_status,
@@ -4660,6 +4839,35 @@ final class BSM_Site_Management {
         if($key==='employee_allowance_limits' && !$this->allowance_admin_allowed()) wp_send_json_error(['message'=>'Only HO/Admin can delete Employee Allowance Limits'],403);
         $g=$this->record_guard($key,$id);
         if(!$g['can_delete']) wp_send_json_error(['message'=>$g['delete_message']?:'This record is already in use and cannot be deleted.']);
+        if ($key === 'material_requisitions') {
+            try {
+                $lock = $this->ops_lock('site_procurement');
+                try {
+                    $this->sp_write($wpdb->query('START TRANSACTION'));
+                    $before = $this->procurement_snapshot('requisition', $id);
+                    if (!$before) throw new Exception('Requisition not found.');
+                    $this->sp_site((int)$before['fields']['site_id']);
+                    $linked = $wpdb->get_var($wpdb->prepare("SELECT po.id FROM {$this->prefix}purchase_orders po WHERE po.requisition_id=%d AND po.status NOT IN ('cancelled','rejected') LIMIT 1", $id));
+                    if ($linked) throw new Exception('This Requisition has Purchase Orders and cannot be deleted.');
+                    $this->sp_write($wpdb->delete($this->prefix.$m['child'], [$m['fk'] => $id]));
+                    foreach (['stock_ledger','site_fund_ledger'] as $ledger) {
+                        $this->sp_write($wpdb->delete($this->prefix.$ledger, ['reference_type' => $key, 'reference_id' => $id]));
+                    }
+                    $this->sp_write($wpdb->delete($this->prefix.'documents', ['module' => $key, 'reference_id' => $id]));
+                    $this->sp_write($wpdb->delete($this->prefix.$m['table'], ['id' => $id]));
+                    $this->procurement_record_change('requisition', $id, $before, 'Deleted');
+                    $this->sp_write($wpdb->query('COMMIT'));
+                } catch (Throwable $error) {
+                    $wpdb->query('ROLLBACK');
+                    throw $error;
+                } finally {
+                    $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock));
+                }
+            } catch (Throwable $error) {
+                wp_send_json_error(['message' => $error->getMessage()]);
+            }
+            wp_send_json_success(['message' => 'Deleted']);
+        }
         if(!empty($m['child'])) $wpdb->delete($this->prefix.$m['child'],[$m['fk']=>$id]);
         $wpdb->delete($this->prefix.'stock_ledger',['reference_type'=>$key,'reference_id'=>$id]);
         $wpdb->delete($this->prefix.'site_fund_ledger',['reference_type'=>$key,'reference_id'=>$id]);
