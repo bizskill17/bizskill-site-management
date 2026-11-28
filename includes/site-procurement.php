@@ -75,6 +75,13 @@ trait BSM_Site_Procurement {
         }catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);}
         wp_send_json_success($result);
     }
+    private function sp_po_notes($value) {
+        if (!is_string($value)) throw new Exception('Enter Notes as text.');
+        $notes = sanitize_textarea_field($value);
+        if (preg_match('/\A.{1001}/us', $notes)) throw new Exception('Notes must be 1,000 characters or fewer.');
+        return $notes;
+    }
+
     private function sp_po_create($d,$input) {
         global $wpdb;$p=$this->prefix;$site=(int)($d['site_id']??0);$req=(int)($d['requisition_id']??0);$this->sp_site($site);
         if(!$req)throw new Exception('Select an approved Requisition.');
@@ -82,7 +89,10 @@ trait BSM_Site_Procurement {
         $lock=$this->ops_lock('site_procurement');
         try{$this->sp_write($wpdb->query('START TRANSACTION'));
             $request=sanitize_text_field($d['request_id']??'');$key=$request!==''?hash('sha256',$this->plugin_user_id().':'.$request):'';
-            $fingerprint=hash('sha256',wp_json_encode([$site,$req,$date,$required,$input]));
+            $notes=$this->sp_po_notes(wp_unslash($d['notes']??''));
+            $fingerprintData=[$site,$req,$date,$required,$input];
+            if($notes!=='') $fingerprintData[]=$notes;
+            $fingerprint=hash('sha256',wp_json_encode($fingerprintData));
             if($key!==''){
                 $previous=$wpdb->get_results($wpdb->prepare("SELECT id,po_no,remarks FROM {$p}purchase_orders WHERE remarks LIKE %s ORDER BY id",'%'.$key.'%'),ARRAY_A)?:[];$replayed=[];
                 foreach($previous as $prior){$meta=json_decode($prior['remarks'],true);if(($meta['submission_key']??'')!==$key)continue;
@@ -107,7 +117,7 @@ trait BSM_Site_Procurement {
             }
             if(!$groups)throw new Exception('Enter PO Qty and choose a Supplier for at least one pending item.');$created=[];
             foreach($groups as $vendor=>$items){$now=current_time('mysql');$no=$this->next_no('purchase_orders','PO');
-                $this->sp_write($wpdb->insert($p.'purchase_orders',['po_no'=>$no,'po_date'=>$date,'vendor_id'=>$vendor,'site_id'=>$site,'requisition_id'=>$req,'site_flow'=>1,'warehouse_id'=>0,'required_date'=>$required?:($rows[0]['required_date']??null),'remarks'=>wp_json_encode(['supplier_quotations'=>$items,'submission_key'=>$key,'submission_hash'=>$fingerprint]),'status'=>'pending_approval','created_by'=>$this->plugin_user_id(),'created_at'=>$now,'updated_at'=>$now]));$id=(int)$wpdb->insert_id;
+                $this->sp_write($wpdb->insert($p.'purchase_orders',['po_no'=>$no,'po_date'=>$date,'vendor_id'=>$vendor,'site_id'=>$site,'requisition_id'=>$req,'site_flow'=>1,'warehouse_id'=>0,'required_date'=>$required?:($rows[0]['required_date']??null),'remarks'=>wp_json_encode(['supplier_quotations'=>$items,'supplier_notes'=>$notes,'submission_key'=>$key,'submission_hash'=>$fingerprint]),'status'=>'pending_approval','created_by'=>$this->plugin_user_id(),'created_at'=>$now,'updated_at'=>$now]));$id=(int)$wpdb->insert_id;
                 foreach($items as $it){$this->sp_write($wpdb->insert($p.'purchase_order_items',['purchase_order_id'=>$id,'requisition_item_id'=>$it['requisition_item_id'],'item_id'=>$it['item_id'],'unit_id'=>$it['unit_id'],'po_qty'=>$it['po_qty'],'rate'=>$it['rate'],'created_at'=>$now]));$poi=(int)$wpdb->insert_id;
                     $this->sp_write($wpdb->insert($p.'purchase_order_item_allocations',['purchase_order_item_id'=>$poi,'requisition_item_id'=>$it['requisition_item_id'],'allocated_qty'=>$it['po_qty'],'created_at'=>$now]));}
                 $this->procurement_record_change('po', $id, [], 'Created');
@@ -129,6 +139,8 @@ trait BSM_Site_Procurement {
         $this->sp_access(['purchase_order_master','pending_po_approval','purchase_order_items_master','purchase_order_pending_receipt','purchase_form']);
         $this->verify_ajax();$this->site_procurement_upgrade();global $wpdb;$p=$this->prefix;
         try{$h=$this->sp_po_head((int)($_POST['id']??0));$items=$wpdb->get_results($wpdb->prepare("SELECT poi.*,i.item_name,u.unit_name FROM {$p}purchase_order_items poi LEFT JOIN {$p}items i ON i.id=poi.item_id LEFT JOIN {$p}units u ON u.id=poi.unit_id WHERE purchase_order_id=%d ORDER BY poi.id",$h['id']),ARRAY_A)?:[];
+            $metadata=json_decode($h['remarks']??'',true);
+            $h['notes']=is_array($metadata)?($metadata['supplier_notes']??''):'';
             $h['received_qty']=0;foreach($items as &$it){$it['received_qty']=$this->po_item_received_qty($it['id']);$it['pending_qty']=max(0,round($it['po_qty']-$it['received_qty'],2));$h['received_qty']+=$it['received_qty'];}unset($it);wp_send_json_success(['head'=>$h,'items'=>$items]);
         }catch(Throwable $e){wp_send_json_error(['message'=>$e->getMessage()]);}
     }
@@ -396,7 +408,8 @@ trait BSM_Site_Procurement {
                 foreach(($snapshot['supplier_quotations']??[]) as $n=>$quoteLine)if((int)($quoteLine['requisition_item_id']??0)===$ri || (int)($quoteLine['item_id']??0)===(int)$old['item_id']){$snapshot['supplier_quotations'][$n]['selected_rate']=$rate;$snapshot['supplier_quotations'][$n]['po_qty']=$qty;}
                 $this->sp_write($wpdb->delete($p.'purchase_order_item_allocations',['purchase_order_item_id'=>$key]));$this->sp_write($wpdb->insert($p.'purchase_order_item_allocations',['purchase_order_item_id'=>$key,'requisition_item_id'=>$ri,'allocated_qty'=>$qty,'created_at'=>current_time('mysql')]));}
             $vendor=(int)($d['vendor_id']??$po['vendor_id']);if(!$wpdb->get_var($wpdb->prepare("SELECT id FROM {$p}vendors WHERE id=%d AND status='active'",$vendor)))throw new Exception('Select an active Supplier.');if($received>0.009&&$vendor!=(int)$po['vendor_id'])throw new Exception('Supplier cannot change after receipt.');
-            $financial_change=$financial_change||$vendor!=(int)$po['vendor_id'];$note=sanitize_text_field($d['remarks']??'');if($financial_change&&$note==='')throw new Exception('Enter an amendment reason for Supplier or Rate changes.');$snapshot['last_amendment']=['reason'=>$note,'by'=>get_current_user_id(),'at'=>current_time('mysql')];
+            $financial_change=$financial_change||$vendor!=(int)$po['vendor_id'];$note=sanitize_text_field($d['remarks']??'');if($financial_change&&$note==='')throw new Exception('Enter an amendment reason for Supplier or Rate changes.');if (array_key_exists('notes', $d)) $snapshot['supplier_notes'] = $this->sp_po_notes($d['notes']);
+            $snapshot['last_amendment']=['reason'=>$note,'by'=>get_current_user_id(),'at'=>current_time('mysql')];
             $this->sp_write($wpdb->update($p.'purchase_orders',['remarks'=>wp_json_encode($snapshot),'po_date'=>$this->sp_date($d['po_date']??$po['po_date']),'required_date'=>$this->sp_date($d['required_date']??'',true),'vendor_id'=>$vendor,'status'=>'pending_approval','approved_by'=>null,'approved_at'=>null,'updated_at'=>current_time('mysql')],['id'=>$id]));
             $this->procurement_record_change('po',$id,$before,'Amended');
             $this->sp_write($wpdb->query('COMMIT'));$result=['message'=>'PO updated and sent for approval.'];
