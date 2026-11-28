@@ -872,14 +872,19 @@ $(document).on('click','.po-share',async function(){
   const dialog=document.createElement('dialog');
   dialog.setAttribute('aria-labelledby','bsm-po-share-title');
   dialog.style.cssText='max-width:min(500px, calc(100vw - 32px));width:100%;padding:0;overflow:hidden;border:1px solid #b5c9e8;border-radius:12px;color:#172b49;font:14px/1.4 system-ui,sans-serif';
-  $(dialog).html('<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px 4px 16px"><h3 id="bsm-po-share-title" style="margin:0;font-size:16px;line-height:1.35"></h3><button type="button" class="bsm-btn bsm-btn-small po-share-close" aria-label="Close preview" title="Close" style="min-width:30px;width:30px;height:30px;padding:0;font-size:20px;line-height:1">&times;</button></div><div style="max-height:60vh;overflow:auto;padding:4px 16px 8px;overflow-wrap:anywhere"><p class="po-share-recipient" style="margin:0 0 4px"></p><p class="po-share-subject" style="margin:0 0 4px"></p><pre class="po-share-message" style="white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;margin:8px 0"></pre><p style="margin:0">Attachment: <button type="button" class="po-pdf po-share-attachment" style="width:auto;height:auto;overflow-wrap:anywhere" title="Open PO PDF"></button></p></div><footer style="padding:8px 16px;border-top:1px solid #b5c9e8;font-size:13px"><p class="po-share-result" role="status" style="margin:0 0 8px;overflow-wrap:anywhere"></p><div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" class="bsm-btn po-share-close">Close</button><button type="button" class="bsm-btn bsm-btn-primary po-share-send"></button></div></footer>');
+  $(dialog).html('<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px 4px 16px"><h3 id="bsm-po-share-title" style="margin:0;font-size:16px;line-height:1.35"></h3><button type="button" class="bsm-btn bsm-btn-small po-share-close" aria-label="Close preview" title="Close" style="min-width:30px;width:30px;height:30px;padding:0;font-size:20px;line-height:1">&times;</button></div><div style="max-height:60vh;overflow:auto;padding:4px 16px 8px;overflow-wrap:anywhere"><p class="po-share-from" style="margin:0 0 4px"></p><p class="po-share-recipient" style="margin:0 0 4px"></p><p class="po-share-subject" style="margin:0 0 4px"></p><pre class="po-share-message" style="white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;margin:8px 0"></pre><p style="margin:0">Attachment: <button type="button" class="po-pdf po-share-attachment" style="width:auto;height:auto;overflow-wrap:anywhere" title="Open PO PDF"></button></p></div><footer style="padding:8px 16px;border-top:1px solid #b5c9e8;font-size:13px"><p class="po-share-result" role="status" style="margin:0 0 8px;overflow-wrap:anywhere"></p><div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" class="bsm-btn po-share-close">Close</button><button type="button" class="bsm-btn bsm-btn-primary po-share-send"></button></div></footer>');
   $(dialog).find('h3').text(label+' Approved PO');
+  $(dialog).find('.po-share-from').text('From: '+(preview.from||'Set the Gmail address in Company Settings')).toggle(channel==='email');
   $(dialog).find('.po-share-recipient').text('To: '+preview.recipient);
   $(dialog).find('.po-share-subject').text(channel==='email'?'Subject: '+preview.subject:'').toggle(channel==='email');
   $(dialog).find('.po-share-message').text(preview.message);
   $(dialog).find('.po-share-attachment').attr('data-id',id).text(preview.filename);
   $(dialog).find('.po-share-result').text(poShareStatus(preview.latest));
   const $send=$(dialog).find('.po-share-send').text(resend?'Confirm Resend':preview.latest?.status==='failed'?'Retry':'Send '+label);
+  if(channel==='email'&&!preview.gmail_ready){
+    $send.prop('disabled',true);
+    $(dialog).find('.po-share-result').text('Connect Gmail in Company Settings to send PO emails.');
+  }
   const $close=$(dialog).find('.po-share-close').on('click',()=>dialog.close());
   const request=Array.from(crypto.getRandomValues(new Uint8Array(16)),byte=>byte.toString(16).padStart(2,'0')).join('');
   dialog.addEventListener('cancel',event=>{if($close.prop('disabled'))event.preventDefault();});
@@ -1608,7 +1613,7 @@ async function renderCompanySettings(){
   h+=`<tr><td>GSTIN</td><td>${val(row.gstin)}</td></tr>`;
   h+=`<tr><td>PAN</td><td>${val(row.pan)}</td></tr>`;
   h+=`<tr><td>Phone</td><td>${val(row.phone)}</td></tr>`;
-  h+=`<tr><td>Email</td><td>${val(row.email)}</td></tr>`;
+  h+=`<tr><td>Email</td><td>${val(row.email)}${BSM.currentUser?.is_admin?' <span id="bsm-po-gmail-settings" role="status">Checking Gmail connection…</span>':''}</td></tr>`;
   h+=`<tr><td>Company Logo</td><td>${row.logo_url?`<img class="bsm-company-settings-logo-view" src="${esc(row.logo_url)}" alt="Company Logo">`:'-'}</td></tr>`;
   h+=`<tr><td>UPI QR</td><td>${row.upi_qr_url?`<img class="bsm-company-settings-logo-view" src="${esc(row.upi_qr_url)}" alt="UPI QR">`:'-'}</td></tr>`;
   h+=`<tr><td>Bank Details</td><td>${[row.bank_account_holder&&`Account Holder: ${row.bank_account_holder}`,row.bank_name&&`Bank: ${row.bank_name}`,row.bank_branch&&`Branch: ${row.bank_branch}`,row.bank_ifsc&&`IFSC: ${row.bank_ifsc}`,row.bank_account_no&&`Account No.: ${row.bank_account_no}`].filter(Boolean).map(esc).join('<br>')||'-'}</td></tr>`;
@@ -1616,6 +1621,33 @@ async function renderCompanySettings(){
 
   h+='</tbody></table></div>';
   $('.bsm-settings-panel').html(h);
+  const $gmail=$('#bsm-po-gmail-settings');
+  if(!$gmail.length)return;
+  try{
+    const gmail=await ajax('bsm_po_gmail_connection');
+    if(!gmail.success)throw new Error(gmail.data?.message||'Unable to load Gmail status.');
+    const {configured,email,redirect_uri}=gmail.data;
+    if(!configured){
+      $gmail.text('Google OAuth setup required. Redirect URI: '+redirect_uri);
+      return;
+    }
+    const ready=Boolean(email)&&email.toLowerCase()===String(row.email||'').trim().toLowerCase();
+    $gmail.text(ready?'Gmail connected. ':'Gmail disconnected. ');
+    const $connect=$('<button>',{type:'button',class:'bsm-btn bsm-btn-small'}).text(email?'Reconnect Gmail':'Connect Gmail').appendTo($gmail);
+    $connect.on('click',async ()=>{
+      $connect.prop('disabled',true);
+      try{
+        const response=await ajax('bsm_po_gmail_connection',{mode:'connect'});
+        if(!response.success)throw new Error(response.data?.message||'Unable to start Gmail authorization.');
+        location.assign(response.data.url);
+      }catch(error){
+        showToast(error.message||'Unable to start Gmail authorization.',true);
+        $connect.prop('disabled',false);
+      }
+    });
+  }catch(error){
+    $gmail.text(error.message||'Unable to load Gmail status.');
+  }
 }
 
 function openCompanySettingsEditor(){
