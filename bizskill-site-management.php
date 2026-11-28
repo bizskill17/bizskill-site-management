@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.184
+ * Version: 0.0.185
  * Author: BizSkill
  */
 
@@ -18,7 +18,7 @@ final class BSM_Site_Management {
     use BSM_Notifications;
     use BSM_Site_Procurement;
     use BSM_Application_Scope;
-    const VERSION = '0.0.184';
+    const VERSION = '0.0.185';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -84,6 +84,8 @@ final class BSM_Site_Management {
         add_action('wp_ajax_bsm_purchase_order_manual_save', [$this, 'ajax_purchase_order_manual_save']);
         add_action('wp_ajax_bsm_purchase_order_master', [$this, 'ajax_purchase_order_master']);
         add_action('wp_ajax_bsm_po_share', [$this, 'ajax_po_share']);
+        add_action('wp_ajax_bsm_po_gmail_connection', [$this, 'ajax_po_gmail_connection']);
+        add_action('admin_post_bsm_po_gmail_callback', [$this, 'po_gmail_callback']);
         add_action('wp_ajax_nopriv_bsm_po_share_pdf', [$this, 'ajax_po_share_pdf']);
         add_action('wp_ajax_bsm_po_share_pdf', [$this, 'ajax_po_share_pdf']);
         add_action('wp_ajax_bsm_purchase_order_items_master', [$this, 'ajax_purchase_order_items_master']);
