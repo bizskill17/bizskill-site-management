@@ -260,6 +260,12 @@ trait BSM_Site_Procurement {
             }
             $preview['previous'] = $last['request'] ?? '';
             $preview['message'] = str_replace('{PO_PDF_URL}', '(link added when sent)', $preview['message']);
+            $preview['from'] = $channel === 'email' ? $preview['sender_email'] : '';
+            if ($channel === 'email') {
+                $connected = get_option('bsm_po_gmail_connection', []);
+                $preview['gmail_ready'] = $this->po_gmail_configured() && !empty($connected['token'])
+                    && is_email($preview['from']) && strcasecmp($connected['email'] ?? '', $preview['from']) === 0;
+            }
             unset($preview['sender_email']);
             $result = $preview;
         } catch (Throwable $error) {
@@ -271,43 +277,126 @@ trait BSM_Site_Procurement {
         wp_send_json_success($result);
     }
 
-    private function po_share_email($preview, $document) {
-        require_once ABSPATH.'wp-admin/includes/file.php';
-        $file = wp_tempnam($preview['filename']);
-        if (!$file) return ['failed', 'Unable to prepare the PO PDF attachment.'];
-        // Use a private temporary directory so the attachment retains its PDF filename.
-        $dir = $file.'.d';
-        $path = trailingslashit($dir).$preview['filename'];
-        try {
-            if (!mkdir($dir, 0700) || file_put_contents($path, $document) !== strlen($document)) {
-                return ['failed', 'Unable to prepare the PO PDF attachment.'];
-            }
-            $headers = is_email($preview['sender_email']) ? ['Reply-To: '.$preview['sender_email']] : [];
-            $reason = '';
-            $capture = static function ($error) use (&$reason) {
-                $message = $error->get_error_message();
-                if (preg_match('/authenticat|credentials/i', $message)) {
-                    $reason = 'SMTP authentication failed. Check the WordPress mail settings.';
-                } elseif (preg_match('/connect|timed out|timeout/i', $message)) {
-                    $reason = 'WordPress could not connect to the mail server. Check the SMTP settings.';
-                } else {
-                    $reason = 'WordPress mail failed. Check the mail plugin log for the transport error.';
-                }
-            };
-            add_action('wp_mail_failed', $capture);
-            try {
-                $accepted = wp_mail($preview['recipient'], $preview['subject'], $preview['message'], $headers, [$path]);
-                return $accepted
-                    ? ['accepted', 'Accepted by the mail service.']
-                    : ['failed', $reason ?: 'WordPress mail returned a failure. Check the mail configuration and retry.'];
-            } finally {
-                remove_action('wp_mail_failed', $capture);
-            }
-        } finally {
-            if (is_file($path)) unlink($path);
-            if (is_dir($dir)) rmdir($dir);
-            unlink($file);
+    private function po_gmail_redirect_uri() {
+        return admin_url('admin-post.php?action=bsm_po_gmail_callback');
+    }
+
+    private function po_gmail_configured() {
+        return defined('BSM_GMAIL_CLIENT_ID') && BSM_GMAIL_CLIENT_ID
+            && defined('BSM_GMAIL_CLIENT_SECRET') && BSM_GMAIL_CLIENT_SECRET;
+    }
+
+    public function ajax_po_gmail_connection() {
+        $this->verify_ajax();
+        if (!$this->nt_admin()) wp_send_json_error(['message'=>'Administrator access required.'],403);
+        $connection = get_option('bsm_po_gmail_connection', []);
+        if (($_POST['mode'] ?? '') !== 'connect') {
+            wp_send_json_success([
+                'configured'=>(bool)$this->po_gmail_configured(),
+                'email'=>$connection['email'] ?? '',
+                'redirect_uri'=>$this->po_gmail_redirect_uri(),
+            ]);
         }
+        if (!$this->po_gmail_configured()) wp_send_json_error(['message'=>'Configure the Google OAuth client on the server first.']);
+        $state = bin2hex(random_bytes(32));
+        if (!set_transient('bsm_po_gmail_state_'.get_current_user_id(), $state, 600)) {
+            wp_send_json_error(['message'=>'Unable to start Gmail authorization.']);
+        }
+        $args = [
+            'client_id'=>BSM_GMAIL_CLIENT_ID, 'redirect_uri'=>$this->po_gmail_redirect_uri(),
+            'response_type'=>'code', 'scope'=>'openid email https://www.googleapis.com/auth/gmail.send',
+            'access_type'=>'offline', 'prompt'=>'consent select_account', 'state'=>$state,
+        ];
+        wp_send_json_success(['url'=>'https://accounts.google.com/o/oauth2/v2/auth?'.http_build_query($args,'','&',PHP_QUERY_RFC3986)]);
+    }
+
+    public function po_gmail_callback() {
+        if (!$this->nt_admin()) wp_die('Administrator access required.', '', ['response'=>403]);
+        $key = 'bsm_po_gmail_state_'.get_current_user_id();
+        $state = get_transient($key);
+        $returned = sanitize_text_field(wp_unslash($_GET['state'] ?? ''));
+        if (!$state || !hash_equals($state, $returned)) wp_die('Gmail authorization expired. Start again in Company Settings.');
+        delete_transient($key);
+        $code = sanitize_text_field(wp_unslash($_GET['code'] ?? ''));
+        if (!$code || !$this->po_gmail_configured()) wp_die('Gmail authorization was not completed.');
+        $tokens = $this->po_gmail_token(['code'=>$code, 'redirect_uri'=>$this->po_gmail_redirect_uri(), 'grant_type'=>'authorization_code']);
+        if (empty($tokens['refresh_token']) || empty($tokens['access_token'])) wp_die('Google did not grant offline Gmail access. Start again in Company Settings.');
+        if (!in_array('https://www.googleapis.com/auth/gmail.send', explode(' ', $tokens['scope'] ?? ''), true)) {
+            wp_die('Grant the Gmail sending permission to finish connecting.');
+        }
+        $identity = wp_remote_get('https://openidconnect.googleapis.com/v1/userinfo', [
+            'timeout'=>15, 'redirection'=>0, 'headers'=>['Authorization'=>'Bearer '.$tokens['access_token']],
+        ]);
+        $account = is_wp_error($identity) ? [] : json_decode(wp_remote_retrieve_body($identity), true);
+        $email = $account['email'] ?? '';
+        global $wpdb;
+        $expected = trim((string)$wpdb->get_var("SELECT email FROM {$this->prefix}company_settings ORDER BY id DESC LIMIT 1"));
+        if (empty($account['email_verified']) || !is_email($email) || strcasecmp($expected,$email) !== 0) {
+            wp_die('Sign in using the Gmail address saved in Company Settings.');
+        }
+        try {
+            update_option('bsm_po_gmail_connection', ['email'=>$email, 'token'=>$this->nt_encrypt($tokens['refresh_token'])], false);
+        } catch (Throwable $error) {
+            wp_die('Could not store the Gmail connection securely.');
+        }
+        $saved = get_option('bsm_po_gmail_connection', []);
+        if (($saved['email'] ?? '') !== $email || !hash_equals($tokens['refresh_token'], $this->nt_password($saved['token'] ?? ''))) {
+            wp_die('Could not save the Gmail connection.');
+        }
+        wp_safe_redirect(home_url('/'.self::PAGE_SLUG.'/company-settings/'));
+        exit;
+    }
+
+    private function po_gmail_token($body) {
+        if (!$this->po_gmail_configured()) return [];
+        $response = wp_remote_post('https://oauth2.googleapis.com/token', [
+            'timeout'=>15, 'redirection'=>0, 'body'=>$body + [
+                'client_id'=>BSM_GMAIL_CLIENT_ID, 'client_secret'=>BSM_GMAIL_CLIENT_SECRET,
+            ],
+        ]);
+        if (is_wp_error($response) || wp_remote_retrieve_response_code($response)!==200) return [];
+        return json_decode(wp_remote_retrieve_body($response), true) ?: [];
+    }
+
+    private function po_share_email($preview, $document) {
+        $connection = get_option('bsm_po_gmail_connection', []);
+        $email = $connection['email'] ?? '';
+        $refresh = $this->nt_password($connection['token'] ?? '');
+        if (!$refresh || !is_email($email) || strcasecmp($email,$preview['sender_email']) !== 0) {
+            return ['failed', 'Connect the Company Settings Gmail account before sending.'];
+        }
+        $tokens = $this->po_gmail_token(['refresh_token'=>$refresh,'grant_type'=>'refresh_token']);
+        if (empty($tokens['access_token'])) return ['failed', 'Gmail authorization is unavailable. Reconnect Gmail in Company Settings.'];
+
+        require_once ABSPATH.WPINC.'/PHPMailer/Exception.php';
+        require_once ABSPATH.WPINC.'/PHPMailer/PHPMailer.php';
+        try {
+            $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+            $mail->CharSet = 'UTF-8';
+            $mail->setFrom($email);
+            $mail->addAddress($preview['recipient']);
+            $mail->addReplyTo($email);
+            $mail->Subject = $preview['subject'];
+            $mail->Body = $preview['message'];
+            $mail->addStringAttachment($document, $preview['filename'], 'base64', 'application/pdf');
+            $mail->preSend();
+            $raw = rtrim(strtr(base64_encode($mail->getSentMIMEMessage()), '+/', '-_'), '=');
+        } catch (Throwable $error) {
+            return ['failed', 'Unable to prepare the PO email with its PDF attachment.'];
+        }
+        $response = wp_remote_post('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', [
+            'timeout'=>25, 'redirection'=>0,
+            'headers'=>['Authorization'=>'Bearer '.$tokens['access_token'], 'Content-Type'=>'application/json'],
+            'body'=>wp_json_encode(['raw'=>$raw]),
+        ]);
+        if (is_wp_error($response)) return ['review_required', 'Gmail response unavailable. Check Sent before retrying.'];
+        $code = wp_remote_retrieve_response_code($response);
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+        if ($code >= 500) return ['review_required', 'Gmail service error. Check Sent before retrying.'];
+        if ($code === 401 || $code === 403) return ['failed', 'Gmail denied the send. Check or reconnect Gmail in Company Settings.'];
+        if ($code < 200 || $code >= 300) return ['failed', 'Gmail rejected the email (HTTP '.$code.').'];
+        if (empty($body['id'])) return ['review_required', 'Gmail response was incomplete. Check Sent before retrying.'];
+        return ['accepted', 'Accepted by Gmail.'];
     }
 
     private function po_share_whatsapp($preview, $pdfUrl) {
