@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Site Management
  * Description: Site requisitions, purchase orders, direct site receipts, inventory, contractors and payments management.
- * Version: 0.0.183
+ * Version: 0.0.184
  * Author: BizSkill
  */
 
@@ -18,7 +18,7 @@ final class BSM_Site_Management {
     use BSM_Notifications;
     use BSM_Site_Procurement;
     use BSM_Application_Scope;
-    const VERSION = '0.0.183';
+    const VERSION = '0.0.184';
     const PAGE_SLUG = 'site-management';
 
     private static $instance = null;
@@ -872,6 +872,7 @@ final class BSM_Site_Management {
         $rect($c,36,616,523,96,[0.985,0.992,1]);
         $meta=[['PO No.',$h['po_no']??'-'],['Date',!empty($h['po_date'])?date('d/m/Y',strtotime($h['po_date'])):'-'],['Supplier',$h['vendor_name']??'-'],['Requisition',$h['requisition_no']??'-'],['Address',$h['vendor_address']??'-'],['GST No.',$h['vendor_gstin']??'-'],['Deliver At',trim(($h['site_name']??'').' / '.($h['site_location']??''))?:($h['warehouse_name']??'-')]];
         $y=696;foreach($meta as $i=>$mv){$txt($c,47,$y,$mv[0],7,true);$txt($c,105,$y,(string)$mv[1],7,false);$y-=12;}
+        $noteHeader = $c;
         $top=596;$headers=['Sl','Item','HSN','Qty','Unit','Rate','Amount'];$cols=[28,180,48,48,48,68,103];$tx=36;
         $rect($c,36,$top-24,523,24,$theme,$theme,0);
         foreach($headers as $i=>$hh){$txt($c,$tx+4,$top-16,$hh,6.6,true,[1,1,1]);$tx+=$cols[$i];}
@@ -891,6 +892,30 @@ final class BSM_Site_Management {
         $txt($c,36,$boxY+50,'Authorized Signatory',7,true,$theme);$line($c,36,$boxY+12,180,$boxY+12,$theme,.6);
         $txt($c,36,34,'For '.$companyName,7,true,$theme);
 
+        $metadata = json_decode($h['remarks'] ?? '', true);
+        $notes = is_array($metadata) ? trim((string)($metadata['supplier_notes'] ?? '')) : '';
+        if ($notes !== '') {
+            $noteY = $boxY - 15;
+            $showNoteTitle = true;
+            foreach (preg_split('/\R/u', $notes) as $paragraph) {
+                $paragraph = preg_replace('/(\S{64})(?=\S)/u', '$1 ', $paragraph);
+                foreach ($wrap($paragraph, 64) as $noteLine) {
+                    if ($noteY < 58) {
+                        $pages[] = $c;
+                        $c = $noteHeader;
+                        $noteY = 596;
+                        $showNoteTitle = true;
+                    }
+                    if ($showNoteTitle) {
+                        $showNoteTitle = false;
+                        $txt($c,36,$noteY,'Notes',9,true,$theme);
+                        $noteY -= 13;
+                    }
+                    $txt($c,36,$noteY,$noteLine,8);
+                    $noteY -= 11;
+                }
+            }
+        }
         $pages[]=$c;
         $resources="/Font << /F1 3 0 R /F2 4 0 R >>";
         $objs=["<< /Type /Catalog /Pages 2 0 R >>",'',"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>","<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>"];
@@ -4336,6 +4361,7 @@ final class BSM_Site_Management {
             $remarks = json_decode($row['remarks'] ?? '', true);
             if (is_array($remarks)) {
                 $row['amendment_reason'] = $remarks['last_amendment']['reason'] ?? '';
+                $row['notes'] = $remarks['supplier_notes'] ?? '';
                 $row['remarks'] = $remarks['legacy_remarks'] ?? '';
             }
         }
